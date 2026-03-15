@@ -33,6 +33,17 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/tools', require('./routes/tools'));
 app.use('/api/pdf', require('./routes/pdf'));
 
+// Add explicit seed endpoint for Railway bypass
+app.get('/api/admin/force-seed', (req, res) => {
+  try {
+    console.log('Manuel tohumlama tetiklendi...');
+    require('./seed');
+    res.send('<h1>✅ Başarılı!</h1><p>Veritabanı başarıyla yeni ürünlerle dolduruldu.</p><a href="/">Ana Sayfaya Dön</a>');
+  } catch (err) {
+    res.status(500).send(`<h1>❌ Hata</h1><p>${err.message}</p>`);
+  }
+});
+
 // Public API for categories and brands
 const { getDb } = require('./database');
 const { optionalAuth } = require('./middleware/auth');
