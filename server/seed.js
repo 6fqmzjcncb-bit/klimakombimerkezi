@@ -4,11 +4,18 @@ const bcrypt = require('bcryptjs');
 const db = getDb();
 
 try {
+  // Handle RESET_DB
+  const shouldReset = process.env.RESET_DB === 'true';
+
   // Check if already seeded
   const adminExists = db.prepare('SELECT id FROM users WHERE role = ?').get('admin');
-  if (adminExists) {
+  if (adminExists && !shouldReset) {
     console.log('✅ Veritabanı zaten tohumlanmış (seeded), atlanıyor.');
     process.exit(0);
+  }
+
+  if (shouldReset) {
+    console.log('🔄 RESET_DB aktif, mevcut veriler temizleniyor...');
   }
 
   // Clear existing
