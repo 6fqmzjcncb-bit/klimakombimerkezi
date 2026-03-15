@@ -8,7 +8,8 @@ let db;
 function getDb() {
   if (!db) {
     db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
+    db.pragma('journal_mode = DELETE'); // Changed from WAL to standard DELETE mode for Railway volume compatibility
+    db.pragma('synchronous = NORMAL');
     db.pragma('foreign_keys = ON');
     initializeSchema();
   }
