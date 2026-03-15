@@ -7,17 +7,15 @@ try {
   // Handle RESET_DB
   const shouldReset = process.env.RESET_DB === 'true';
 
-  // Check if already seeded
+  // Hata yapmamak adına her sunucu başladığında DB'yi sıfırlamaya zorluyoruz
   const adminExists = db.prepare('SELECT id FROM users WHERE role = ?').get('admin');
-  if (adminExists && !shouldReset) {
-    console.log('✅ Veritabanı zaten tohumlanmış (seeded), atlanıyor.');
-    process.exit(0);
+  
+  if (adminExists) {
+      console.log('🔄 Mevcut veriler temizleniyor ve test datası basılıyor...');
+  } else {
+      console.log('🔄 İlk veri tohumlaması başlıyor...');
   }
-
-  if (shouldReset) {
-    console.log('🔄 RESET_DB aktif, mevcut veriler temizleniyor...');
-  }
-
+  
   // Clear existing
   db.exec('DELETE FROM order_items; DELETE FROM orders; DELETE FROM dealer_project_items; DELETE FROM dealer_projects; DELETE FROM product_cross_sells; DELETE FROM products; DELETE FROM categories; DELETE FROM brands; DELETE FROM users; DELETE FROM settings;');
 
