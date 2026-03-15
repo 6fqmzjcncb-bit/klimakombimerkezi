@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bayi Paneli | Klima Kombi Merkezi</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.user-dropdown{display:none;position:absolute;right:0;top:calc(100% + 8px);background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);min-width:200px;z-index:200;overflow:hidden}
+.user-dropdown.open{display:block}
+.dropdown-item{display:flex;align-items:center;gap:var(--space-2);padding:10px 16px;font-size:14px;color:var(--c-text);cursor:pointer;transition:background var(--t-fast);border:none;background:none;width:100%;text-align:left;text-decoration:none}
+.dropdown-item:hover{background:var(--c-bg)}
+.discount-info { background: linear-gradient(135deg, #1a56db, #0f2a8a); color: #fff; border-radius: var(--r-lg); padding: var(--space-5); margin-bottom: var(--space-6); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+</style>
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+        <span style="font-size:24px">🔥</span>
+        <div>
+          <div style="font-weight:700;font-size:14px;color:var(--c-text)">Klima Kombi Merkezi</div>
+          <div style="font-size:11px;color:var(--c-primary);font-weight:600">Bayi Portalı</div>
+        </div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">Genel</div>
+      <button class="sidebar-item active" onclick="showSection('dashboard')" data-section="dashboard"><span class="icon">🏠</span> Panel</button>
+      <button class="sidebar-item" onclick="showSection('products')" data-section="products"><span class="icon">📦</span> Ürünler & Fiyatlar</button>
+      <button class="sidebar-item" onclick="showSection('cart-project')" data-section="cart-project"><span class="icon">🛒</span> Sepetim</button>
+
+      <div class="sidebar-section">Projeler</div>
+      <button class="sidebar-item" onclick="showSection('projects')" data-section="projects"><span class="icon">📁</span> Projelerim</button>
+      <button class="sidebar-item" onclick="showSection('new-project')" data-section="new-project"><span class="icon">➕</span> Yeni Proje</button>
+      <button class="sidebar-item" onclick="showSection('pdf-quote')" data-section="pdf-quote"><span class="icon">📄</span> PDF Teklif</button>
+
+      <div class="sidebar-section">Talepler</div>
+      <button class="sidebar-item" onclick="showSection('quote-form')" data-section="quote-form"><span class="icon">📬</span> Teklif İste</button>
+      <button class="sidebar-item" onclick="showSection('orders')" data-section="orders"><span class="icon">🧾</span> Siparişlerim</button>
+
+      <div class="sidebar-section">Hesap</div>
+      <button class="sidebar-item" onclick="showSection('notifications')" data-section="notifications"><span class="icon">🔔</span> Bildirimler <span class="sidebar-badge" id="notif-badge" style="display:none">0</span></button>
+      <button class="sidebar-item" onclick="showSection('profile')" data-section="profile"><span class="icon">👤</span> Profilim</button>
+      <button class="sidebar-item" onclick="Auth.logout()" style="color:var(--c-error)"><span class="icon">🚪</span> Çıkış</button>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <!-- DASHBOARD -->
+    <div id="section-dashboard" class="section-view">
+      <div class="page-header">
+        <h1>Bayi Paneli</h1>
+      </div>
+      <div class="page-body">
+        <div class="discount-info">
+          <div>
+            <div style="font-size:13px;opacity:0.8;margin-bottom:4px">Firma</div>
+            <div style="font-size:20px;font-weight:800" id="dealer-company-name">-</div>
+          </div>
+          <div>
+            <div style="font-size:13px;opacity:0.8;margin-bottom:4px">Temel İskonto Oranı</div>
+            <div style="font-size:32px;font-weight:900" id="dealer-discount">%0</div>
+          </div>
+          <div>
+            <div style="font-size:13px;opacity:0.8;margin-bottom:4px">Bayi Kodu</div>
+            <div style="font-size:18px;font-weight:700" id="dealer-code">-</div>
+          </div>
+          <div><a href="/urunler.html" class="btn" style="background:#fff;color:var(--c-primary)">Ürünlere Git</a></div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card blue"><span class="stat-icon">📁</span><div class="stat-label">Toplam Proje</div><div class="stat-value" id="dash-projects">-</div></div>
+          <div class="stat-card green"><span class="stat-icon">🧾</span><div class="stat-label">Toplam Sipariş</div><div class="stat-value" id="dash-orders">-</div></div>
+          <div class="stat-card yellow"><span class="stat-icon">⏳</span><div class="stat-label">Bekleyen Talepler</div><div class="stat-value" id="dash-pending">-</div></div>
+          <div class="stat-card orange"><span class="stat-icon">🔔</span><div class="stat-label">Okunmadı</div><div class="stat-value" id="dash-notifs">-</div></div>
+        </div>
+        <div style="margin-top:var(--space-8)"><h3 style="font-weight:700;margin-bottom:var(--space-4)">Son Projeler</h3><div id="recent-projects"></div></div>
+      </div>
+    </div>
+
+    <!-- PROJECTS -->
+    <div id="section-projects" class="section-view" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <h1>Projelerim</h1>
+        <button onclick="showSection('new-project')" class="btn btn-primary">➕ Yeni Proje</button>
+      </div>
+      <div class="page-body">
+        <div id="projects-list-inner"></div>
+      </div>
+    </div>
+
+    <!-- NEW PROJECT -->
+    <div id="section-new-project" class="section-view" style="display:none">
+      <div class="page-header"><h1>Yeni Proje Oluştur</h1></div>
+      <div class="page-body">
+        <div class="card" style="max-width:680px">
+          <div class="card-body">
+            <form id="new-project-form">
+              <div class="form-group">
+                <label class="form-label">Proje Adı <span class="required">*</span></label>
+                <input type="text" class="form-input" id="proj-name" placeholder="Örn: Ahmet Bey Villa Projesi" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Müşteri Adı</label>
+                <input type="text" class="form-input" id="proj-customer" placeholder="Müşteri / Kurum adı">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Açıklama</label>
+                <textarea class="form-textarea" id="proj-desc" placeholder="Proje detayları, adres, notlar..."></textarea>
+              </div>
+              <hr class="divider">
+              <h4 style="font-weight:700;margin-bottom:var(--space-4)">Proje Kalemleri</h4>
+              <div id="project-items-container">
+                <div class="alert alert-info">Ürün eklemek için aşağıdaki butonu kullanın ya da mevcut sepetinizi buraya aktarın.</div>
+              </div>
+              <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4)">
+                <button type="button" onclick="addProductItem()" class="btn btn-outline btn-sm">+ Ürün Ekle</button>
+                <button type="button" onclick="addManualItem()" class="btn btn-ghost btn-sm">+ Manuel Kalem (Montaj vb.)</button>
+              </div>
+              <div id="project-items-list" style="margin-top:var(--space-4)"></div>
+              <hr class="divider">
+              <button type="submit" class="btn btn-primary btn-lg">Projeyi Kaydet</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF QUOTE -->
+    <div id="section-pdf-quote" class="section-view" style="display:none">
+      <div class="page-header"><h1>PDF Teklif Oluştur</h1></div>
+      <div class="page-body">
+        <div class="card" style="max-width:680px">
+          <div class="card-body">
+            <div class="alert alert-info mb-4">Projenizi seçin, kâr marjınızı belirleyin ve PDF'i indirin. Manuel ek kalemler (montaj, işçilik) ekleyebilirsiniz.</div>
+            <div class="form-group">
+              <label class="form-label">Proje Seç <span class="required">*</span></label>
+              <select class="form-select" id="pdf-project-select"><option value="">Proje seçin...</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Genel Kâr Marjı (%)</label>
+              <input type="number" class="form-input" id="pdf-margin" placeholder="0" min="0" max="200" value="0">
+              <div class="form-hint">Tüm kalemlere uygulanacak genel marj. 0 bırakırsanız kalem bazlı marj kullanılır.</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Firma Logosu (opsiyonel)</label>
+              <input type="file" class="form-input" id="pdf-logo" accept="image/*">
+            </div>
+            <hr class="divider">
+            <h4 style="font-weight:700;margin-bottom:var(--space-4)">Manuel Ek Kalemler</h4>
+            <div id="pdf-extra-items"></div>
+            <button type="button" onclick="addPdfExtraItem()" class="btn btn-ghost btn-sm mt-2">+ Kalem Ekle (Montaj, Borulama...)</button>
+            <hr class="divider">
+            <button onclick="generatePdf()" class="btn btn-primary btn-lg" id="pdf-generate-btn">📄 PDF İndir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div id="section-orders" class="section-view" style="display:none">
+      <div class="page-header"><h1>Siparişlerim</h1></div>
+      <div class="page-body"><div id="orders-list"></div></div>
+    </div>
+
+    <!-- QUOTE FORM -->
+    <div id="section-quote-form" class="section-view" style="display:none">
+      <div class="page-header"><h1>Teklif Talebi</h1></div>
+      <div class="page-body">
+        <div class="card" style="max-width:680px">
+          <div class="card-body">
+            <p class="text-muted mb-4">Teknik dosya veya proje gereksinimleri için aşağıdaki formu doldurun.</p>
+            <form id="quote-request-form">
+              <div class="form-group">
+                <label class="form-label">Konu / Mesajınız <span class="required">*</span></label>
+                <textarea class="form-textarea" id="qr-message" rows="5" placeholder="Projenizi ve ürün ihtiyaçlarınızı açıklayın..." required></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Teknik Dosya Yükle (AutoCAD, PDF, Excel, vb.)</label>
+                <input type="file" class="form-input" id="qr-files" multiple accept=".pdf,.dwg,.dxf,.xls,.xlsx,.doc,.docx,.jpg,.jpeg,.png">
+                <div class="form-hint">Maks 50MB, birden fazla dosya seçebilirsiniz</div>
+              </div>
+              <button type="submit" class="btn btn-primary btn-lg">Talebi Gönder</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div id="section-notifications" class="section-view" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <h1>Bildirimler</h1>
+        <button onclick="markAllRead()" class="btn btn-outline btn-sm">Tümünü Okundu İşaretle</button>
+      </div>
+      <div class="page-body"><div id="notifications-list"></div></div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="section-profile" class="section-view" style="display:none">
+      <div class="page-header"><h1>Profilim</h1></div>
+      <div class="page-body">
+        <div class="card" style="max-width:540px">
+          <div class="card-body">
+            <form id="profile-form">
+              <div class="form-group"><label class="form-label">Ad Soyad</label><input type="text" class="form-input" id="prof-name"></div>
+              <div class="form-group"><label class="form-label">E-posta</label><input type="email" class="form-input" id="prof-email" readonly style="background:var(--c-bg)"></div>
+              <div class="form-group"><label class="form-label">Firma Adı</label><input type="text" class="form-input" id="prof-company"></div>
+              <div class="form-group"><label class="form-label">Vergi No</label><input type="text" class="form-input" id="prof-tax"></div>
+              <div class="form-group"><label class="form-label">Telefon</label><input type="tel" class="form-input" id="prof-phone"></div>
+              <div class="form-group"><label class="form-label">Adres</label><textarea class="form-textarea" id="prof-address" rows="2"></textarea></div>
+              <hr class="divider">
+              <h4 style="margin-bottom:var(--space-4)">Şifre Değiştir</h4>
+              <div class="form-group"><label class="form-label">Mevcut Şifre</label><input type="password" class="form-input" id="prof-cur-pass"></div>
+              <div class="form-group"><label class="form-label">Yeni Şifre</label><input type="password" class="form-input" id="prof-new-pass"></div>
+              <button type="submit" class="btn btn-primary">Kaydet</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECT DETAIL (dynamic) -->
+    <div id="section-project-detail" class="section-view" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;gap:var(--space-4)">
+        <button onclick="showSection('projects')" class="btn btn-ghost btn-sm">← Geri</button>
+        <h1 id="proj-detail-title">Proje Detayı</h1>
+      </div>
+      <div class="page-body" id="project-detail-body"></div>
+    </div>
+
+    <!-- DISCOUNT REQUEST MODAL -->
+    <div class="modal-overlay" id="discount-modal">
+      <div class="modal">
+        <div class="modal-header"><h3 class="modal-title">💰 Proje İskontosu Talep Et</h3><button class="modal-close">✕</button></div>
+        <div class="modal-body">
+          <div class="alert alert-warning mb-4">Talep ettiğiniz ek iskonto yönetici onayına sunulacak. Onaylandığında bildirim alacaksınız.</div>
+          <div class="form-group"><label class="form-label">Talep Edilen Ek İskonto (%)</label><input type="number" class="form-input" id="disc-rate" min="1" max="50" placeholder="Örn: 5"></div>
+          <div class="form-group"><label class="form-label">Gerekçe</label><textarea class="form-textarea" id="disc-reason" rows="3" placeholder="Proje büyüklüğü, rekabet durumu vb."></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button onclick="closeModal('discount-modal')" class="btn btn-ghost">İptal</button>
+          <button onclick="submitDiscountRequest()" class="btn btn-primary">Talep Gönder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+// Redirect if not dealer
+if (!Auth.isDealer()) window.location.href = '/giris.html?mode=dealer';
+
+const user = Auth.getUser();
+let currentProjectUuid = null;
+let projectItems = []; // for new project form
+
+// Init
+document.getElementById('dealer-company-name').textContent = user?.company_name || user?.name;
+document.getElementById('dealer-discount').textContent = `%${user?.discount_rate || 0}`;
+document.getElementById('dealer-code').textContent = user?.dealer_code || '-';
+
+function showSection(name) {
+  document.querySelectorAll('.section-view').forEach(el => el.style.display='none');
+  document.getElementById(`section-${name}`).style.display='block';
+  document.querySelectorAll('.sidebar-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.section === name);
+  });
+  // Load content
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'projects') loadProjects();
+  if (name === 'orders') loadOrders();
+  if (name === 'notifications') loadNotifications();
+  if (name === 'profile') loadProfile();
+  if (name === 'pdf-quote') loadProjectsForPdf();
+}
+
+async function loadDashboard() {
+  try {
+    const [projects, orders, notifs] = await Promise.all([
+      API.get('/dealer/projects'),
+      API.get('/orders'),
+      API.get('/notifications')
+    ]);
+    document.getElementById('dash-projects').textContent = projects.length;
+    document.getElementById('dash-orders').textContent = orders.length;
+    document.getElementById('dash-pending').textContent = projects.filter(p => p.status === 'pending_discount').length;
+    document.getElementById('dash-notifs').textContent = notifs.unreadCount;
+    if (notifs.unreadCount > 0) {
+      document.getElementById('notif-badge').textContent = notifs.unreadCount;
+      document.getElementById('notif-badge').style.display = '';
+    }
+
+    const recent = document.getElementById('recent-projects');
+    if (!projects.length) { recent.innerHTML='<p class="text-muted">Henüz proje yok. <button class="btn btn-outline btn-sm" onclick="showSection(\'new-project\')">İlk projeyi oluştur</button></p>'; return; }
+    recent.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Proje Adı</th><th>Müşteri</th><th>Durum</th><th>Tarih</th><th></th></tr></thead><tbody>
+      ${projects.slice(0,5).map(p => `<tr>
+        <td><strong>${p.project_name}</strong></td>
+        <td>${p.customer_name||'-'}</td>
+        <td>${Format.statusBadge(p.status)}</td>
+        <td>${Format.date(p.created_at)}</td>
+        <td><button onclick="viewProject('${p.uuid}')" class="btn btn-outline btn-sm">Detay</button></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) { console.error(e); }
+}
+
+async function loadProjects() {
+  try {
+    const projects = await API.get('/dealer/projects');
+    const el = document.getElementById('projects-list-inner');
+    if (!projects.length) { el.innerHTML = '<div class="alert alert-info">Henüz proje oluşturmadınız.</div>'; return; }
+    el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Proje Adı</th><th>Müşteri</th><th>Durum</th><th>İskonto</th><th>Kalem Sayısı</th><th>Tarih</th><th></th></tr></thead><tbody>
+      ${projects.map(p => `<tr>
+        <td><strong>${p.project_name}</strong></td>
+        <td>${p.customer_name||'-'}</td>
+        <td>${Format.statusBadge(p.status)}</td>
+        <td>${p.extra_discount_rate > 0 ? `<span class="badge badge-green">+%${p.extra_discount_rate}</span>` : '-'}</td>
+        <td>${p.items?.length||0}</td>
+        <td>${Format.date(p.created_at)}</td>
+        <td style="display:flex;gap:4px">
+          <button onclick="viewProject('${p.uuid}')" class="btn btn-outline btn-sm">Detay</button>
+          <button onclick="openPdfForProject('${p.uuid}')" class="btn btn-ghost btn-sm">📄 PDF</button>
+        </td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) { document.getElementById('projects-list-inner').innerHTML=`<p class="text-muted">${e.message}</p>`; }
+}
+
+async function viewProject(uuid) {
+  currentProjectUuid = uuid;
+  showSection('project-detail');
+  const body = document.getElementById('project-detail-body');
+  body.innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
+  try {
+    const { project, items, discount_requests } = await API.get(`/dealer/projects/${uuid}`).then(d => ({ project: d, items: d.items, discount_requests: d.discount_requests }));
+    document.getElementById('proj-detail-title').textContent = project.project_name;
+
+    const totalBase = (project.items||[]).reduce((s,i) => s + i.unit_price * i.quantity, 0);
+    const totalWithMargin = (project.items||[]).reduce((s,i) => s + i.unit_price * (1 + (i.margin_rate||0)/100) * i.quantity, 0);
+
+    body.innerHTML = `
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--space-6);align-items:start">
+        <div>
+          <div class="card mb-4">
+            <div class="card-header"><strong>Proje Bilgileri</strong></div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+                <div><div class="text-muted text-sm">Müşteri</div><div style="font-weight:600">${project.customer_name||'-'}</div></div>
+                <div><div class="text-muted text-sm">Durum</div>${Format.statusBadge(project.status)}</div>
+                <div><div class="text-muted text-sm">Ek İskonto</div><div style="font-weight:600;color:var(--c-success)">${project.extra_discount_rate>0?`%${project.extra_discount_rate}`:'-'}</div></div>
+                <div><div class="text-muted text-sm">Oluşturulma</div><div>${Format.date(project.created_at)}</div></div>
+              </div>
+              ${project.description?`<div class="mt-4"><div class="text-muted text-sm mb-1">Açıklama</div><p>${project.description}</p></div>`:''}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><strong>Proje Kalemleri</strong></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Ürün / Hizmet</th><th>Miktar</th><th>Birim Fiyat</th><th>Marj</th><th>Toplam</th></tr></thead>
+                <tbody>
+                  ${(project.items||[]).map(i => {
+                    const sellingPrice = i.unit_price * (1 + (i.margin_rate||0)/100);
+                    return `<tr>
+                      <td>${i.is_manual?'<span class="badge badge-yellow">Manuel</span> ':''}<strong>${i.label||i.product_name||'-'}</strong></td>
+                      <td>${i.quantity}</td>
+                      <td>${Format.price(i.unit_price)}</td>
+                      <td>${i.margin_rate>0?`%${i.margin_rate}`:'-'}</td>
+                      <td><strong>${Format.price(sellingPrice * i.quantity)}</strong></td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer" style="text-align:right">
+              <span style="font-size:18px;font-weight:800">Toplam: ${Format.price(totalWithMargin)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card mb-4">
+            <div class="card-body" style="display:flex;flex-direction:column;gap:var(--space-3)">
+              <button onclick="openPdfForProject('${uuid}')" class="btn btn-primary btn-full">📄 PDF Teklif Oluştur</button>
+              ${project.status !== 'pending_discount' && project.status !== 'discount_approved' ? `<button onclick="openDiscountModal('${uuid}')" class="btn btn-outline btn-full">💰 Ek İskonto Talep Et</button>` : ''}
+            </div>
+          </div>
+
+          ${discount_requests?.length ? `
+            <div class="card">
+              <div class="card-header"><strong>İskonto Talepleri</strong></div>
+              <div class="card-body">
+                ${discount_requests.map(dr => `
+                  <div style="padding:var(--space-3) 0;border-bottom:1px solid var(--c-border)">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                      <span>%${dr.requested_rate} talep</span>${Format.statusBadge(dr.status)}
+                    </div>
+                    ${dr.admin_note?`<p class="text-sm text-muted">${dr.admin_note}</p>`:''}
+                    <div class="text-sm text-muted">${Format.date(dr.created_at)}</div>
+                  </div>`).join('')}
+              </div>
+            </div>` : ''}
+        </div>
+      </div>`;
+  } catch(e) { body.innerHTML=`<p class="text-muted">${e.message}</p>`; }
+}
+
+// ---- NEW PROJECT FORM ----
+let newProjectItems = [];
+
+function addProductItem() {
+  const id = Date.now();
+  newProjectItems.push({ id, type: 'product' });
+  renderProjectItems();
+}
+function addManualItem() {
+  const id = Date.now();
+  newProjectItems.push({ id, type: 'manual', label: '', unit_price: 0, quantity: 1, margin_rate: 0 });
+  renderProjectItems();
+}
+function renderProjectItems() {
+  const cnt = document.getElementById('project-items-list');
+  if (!newProjectItems.length) { cnt.innerHTML=''; return; }
+  cnt.innerHTML = newProjectItems.map(item => `
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;padding:12px;background:var(--c-bg);border-radius:var(--r-md);border:1px solid var(--c-border)">
+      ${item.type==='manual'?`
+        <input type="text" class="form-input" style="flex:2" placeholder="Kalem adı (Montaj, Borulama...)" oninput="updateItem(${item.id},'label',this.value)">
+        <input type="number" class="form-input" style="flex:1" placeholder="Fiyat" oninput="updateItem(${item.id},'unit_price',parseFloat(this.value)||0)">
+        <input type="number" class="form-input" style="width:70px" placeholder="Adet" value="1" oninput="updateItem(${item.id},'quantity',parseInt(this.value)||1)">
+      `:`
+        <input type="number" class="form-input" placeholder="Ürün ID" style="flex:1" oninput="updateItem(${item.id},'product_id',parseInt(this.value)||null)">
+        <input type="number" class="form-input" placeholder="Fiyat" style="flex:1" oninput="updateItem(${item.id},'unit_price',parseFloat(this.value)||0)">
+        <input type="number" class="form-input" style="width:70px" placeholder="Adet" value="1" oninput="updateItem(${item.id},'quantity',parseInt(this.value)||1)">
+        <input type="text" class="form-input" placeholder="Ürün adı" style="flex:2" oninput="updateItem(${item.id},'label',this.value)">
+      `}
+      <input type="number" class="form-input" style="width:80px" placeholder="Marj %" value="0" oninput="updateItem(${item.id},'margin_rate',parseFloat(this.value)||0)">
+      <button onclick="removeItem(${item.id})" class="btn btn-danger btn-sm" style="padding:8px">✕</button>
+    </div>
+  `).join('');
+}
+function updateItem(id, key, val) { const item = newProjectItems.find(i => i.id===id); if(item) item[key]=val; }
+function removeItem(id) { newProjectItems = newProjectItems.filter(i => i.id!==id); renderProjectItems(); }
+
+document.getElementById('new-project-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = e.submitter; btn.disabled=true; btn.textContent='Kaydediliyor...';
+  try {
+    const items = newProjectItems.map(i => ({
+      product_id: i.product_id || null,
+      label: i.label || (i.type==='product'?`Ürün #${i.product_id||0}`:'Manuel Kalem'),
+      quantity: i.quantity || 1, unit_price: i.unit_price || 0,
+      margin_rate: i.margin_rate || 0, is_manual: i.type === 'manual'
+    }));
+    const res = await API.post('/dealer/projects', {
+      project_name: document.getElementById('proj-name').value,
+      customer_name: document.getElementById('proj-customer').value,
+      description: document.getElementById('proj-desc').value,
+      items
+    });
+    Toast.success('Proje kaydedildi!');
+    newProjectItems = [];
+    document.getElementById('new-project-form').reset();
+    viewProject(res.uuid);
+  } catch(err) { Toast.error(err.message); btn.disabled=false; btn.textContent='Projeyi Kaydet'; }
+});
+
+// ---- PDF ----
+async function loadProjectsForPdf() {
+  try {
+    const projects = await API.get('/dealer/projects');
+    const sel = document.getElementById('pdf-project-select');
+    sel.innerHTML = '<option value="">Proje seçin...</option>' + projects.map(p => `<option value="${p.uuid}">${p.project_name} (${p.items?.length||0} kalem)</option>`).join('');
+  } catch {}
+}
+
+let pdfExtraItems = [];
+function addPdfExtraItem() {
+  const id = Date.now();
+  pdfExtraItems.push({ id, label:'', unit_price:0, quantity:1 });
+  renderPdfExtras();
+}
+function renderPdfExtras() {
+  document.getElementById('pdf-extra-items').innerHTML = pdfExtraItems.map(i => `
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input type="text" class="form-input" style="flex:2" placeholder="Kalem adı" oninput="updatePdfExtra(${i.id},'label',this.value)">
+      <input type="number" class="form-input" style="flex:1" placeholder="Fiyat" oninput="updatePdfExtra(${i.id},'unit_price',parseFloat(this.value)||0)">
+      <input type="number" class="form-input" style="width:70px" placeholder="Adet" value="1" oninput="updatePdfExtra(${i.id},'quantity',parseInt(this.value)||1)">
+      <button onclick="removePdfExtra(${i.id})" class="btn btn-danger btn-sm">✕</button>
+    </div>`).join('');
+}
+function updatePdfExtra(id, key, val) { const i = pdfExtraItems.find(x=>x.id===id); if(i) i[key]=val; }
+function removePdfExtra(id) { pdfExtraItems = pdfExtraItems.filter(x=>x.id!==id); renderPdfExtras(); }
+
+async function generatePdf() {
+  const uuid = document.getElementById('pdf-project-select').value;
+  if (!uuid) { Toast.error('Lütfen proje seçin'); return; }
+  const btn = document.getElementById('pdf-generate-btn');
+  btn.disabled=true; btn.textContent='Hazırlanıyor...';
+  try {
+    const formData = new FormData();
+    formData.append('margin_rate_override', document.getElementById('pdf-margin').value);
+    const logo = document.getElementById('pdf-logo').files[0];
+    if (logo) formData.append('logo', logo);
+
+    const token = Auth.getToken();
+    const r = await fetch(`/api/pdf/dealer-quote/${uuid}`, {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData
+    });
+
+    if (r.headers.get('content-type')?.includes('json')) {
+      const data = await r.json();
+      if (data.url) { window.open(data.url); Toast.info('PDF oluşturulamadı, HTML teklif açıldı.'); }
+      else throw new Error(data.error || 'PDF oluşturulamadı');
+    } else {
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=`Teklif-${uuid.slice(0,8)}.pdf`; a.click();
+      Toast.success('PDF indirildi!');
+    }
+  } catch(err) { Toast.error(err.message); }
+  btn.disabled=false; btn.textContent='📄 PDF İndir';
+}
+
+function openPdfForProject(uuid) {
+  showSection('pdf-quote');
+  setTimeout(() => { document.getElementById('pdf-project-select').value = uuid; }, 300);
+}
+
+// ---- DISCOUNT ----
+function openDiscountModal(uuid) {
+  currentProjectUuid = uuid;
+  openModal('discount-modal');
+}
+async function submitDiscountRequest() {
+  const rate = parseFloat(document.getElementById('disc-rate').value);
+  if (!rate || rate <= 0) { Toast.error('Geçerli iskonto oranı girin'); return; }
+  try {
+    await API.post(`/dealer/projects/${currentProjectUuid}/discount-request`, { requested_rate: rate, reason: document.getElementById('disc-reason').value });
+    closeModal('discount-modal');
+    Toast.success('İskonto talebiniz gönderildi! Yönetici onayı bekleniyor.');
+    viewProject(currentProjectUuid);
+  } catch(e) { Toast.error(e.message); }
+}
+
+// ---- ORDERS ----
+async function loadOrders() {
+  try {
+    const orders = await API.get('/orders');
+    const el = document.getElementById('orders-list');
+    if (!orders.length) { el.innerHTML = '<div class="alert alert-info">Henüz sipariş yok.</div>'; return; }
+    el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Sipariş No</th><th>Tarih</th><th>Ödeme</th><th>Tutar</th><th>Durum</th></tr></thead><tbody>
+      ${orders.map(o => `<tr>
+        <td><code>${o.uuid.slice(0,8)}</code></td>
+        <td>${Format.date(o.created_at)}</td>
+        <td>${{'credit_card':'Kredi Kartı','bank_transfer':'Havale','cash':'Nakit'}[o.payment_method]||o.payment_method}</td>
+        <td><strong>${Format.price(o.total_amount)}</strong></td>
+        <td>${Format.statusBadge(o.status)}</td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) { document.getElementById('orders-list').innerHTML=`<p class="text-muted">${e.message}</p>`; }
+}
+
+// ---- NOTIFICATIONS ----
+async function loadNotifications() {
+  try {
+    const { notifications, unreadCount } = await API.get('/notifications');
+    const el = document.getElementById('notifications-list');
+    if (!notifications.length) { el.innerHTML='<div class="alert alert-info">Bildirim yok.</div>'; return; }
+    el.innerHTML = notifications.map(n => `
+      <div style="display:flex;gap:var(--space-4);padding:var(--space-4);border-bottom:1px solid var(--c-border);background:${n.is_read?'':'var(--c-primary-light)'}">
+        <span style="font-size:24px">${{success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'}[n.type]||'🔔'}</span>
+        <div style="flex:1">
+          <div style="font-weight:600;margin-bottom:2px">${n.title}</div>
+          <div style="font-size:13px;color:var(--c-text-muted)">${n.message}</div>
+          <div style="font-size:12px;color:var(--c-text-subtle);margin-top:4px">${Format.datetime(n.created_at)}</div>
+        </div>
+        ${n.link?`<a href="${n.link}" class="btn btn-outline btn-sm">Git</a>`:''}
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function markAllRead() {
+  try { await API.put('/notifications/mark-all-read'); loadNotifications(); Toast.success('Tümü okundu işaretlendi'); } catch {}
+}
+
+// ---- PROFILE ----
+async function loadProfile() {
+  try {
+    const user = await API.get('/auth/me');
+    document.getElementById('prof-name').value = user.name || '';
+    document.getElementById('prof-email').value = user.email || '';
+    document.getElementById('prof-company').value = user.company_name || '';
+    document.getElementById('prof-tax').value = user.tax_number || '';
+    document.getElementById('prof-phone').value = user.phone || '';
+    document.getElementById('prof-address').value = user.address || '';
+  } catch {}
+}
+document.getElementById('profile-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  try {
+    const curPass = document.getElementById('prof-cur-pass').value;
+    const newPass = document.getElementById('prof-new-pass').value;
+    const payload = { name: document.getElementById('prof-name').value, phone: document.getElementById('prof-phone').value, address: document.getElementById('prof-address').value, company_name: document.getElementById('prof-company').value, tax_number: document.getElementById('prof-tax').value };
+    if (newPass) { payload.current_password = curPass; payload.new_password = newPass; }
+    const updated = await API.put('/auth/profile', payload);
+    localStorage.setItem('kkm_user', JSON.stringify(updated));
+    Toast.success('Profil güncellendi!');
+  } catch(e) { Toast.error(e.message); }
+});
+
+// ---- QUOTE REQUEST ----
+document.getElementById('quote-request-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const user = Auth.getUser();
+  const formData = new FormData();
+  formData.append('name', user?.name || '');
+  formData.append('email', user?.email || '');
+  formData.append('company', user?.company_name || '');
+  formData.append('message', document.getElementById('qr-message').value);
+  const files = document.getElementById('qr-files').files;
+  for (const f of files) formData.append('files', f);
+  try {
+    await API.postForm('/quotes', formData);
+    Toast.success('Teklif talebiniz alındı!');
+    document.getElementById('quote-request-form').reset();
+  } catch(e) { Toast.error(e.message); }
+});
+
+// Init
+loadDashboard();
+
+// Handle URL params
+const urlAction = new URLSearchParams(location.search).get('action');
+if (urlAction === 'add-to-project') showSection('new-project');
+</script>
+</body>
+</html>

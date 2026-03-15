@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Klima Kombi Merkezi - Türkiye'nin lider ısıtma ve soğutma sistemleri platformu. Bayi ve bireysel satış.">
+<title>Klima Kombi Merkezi | Ana Sayfa</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="manifest" href="/manifest.json">
+<style>
+.hero-image { background: rgba(255,255,255,0.08); border-radius: var(--r-xl); padding: var(--space-8); text-align: center; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); }
+.hero-image .icon-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+.hero-icon-card { background: rgba(255,255,255,0.12); border-radius: var(--r-lg); padding: var(--space-5) var(--space-3); font-size: 32px; transition: transform var(--t-fast); }
+.hero-icon-card:hover { transform: scale(1.05); }
+.hero-icon-card p { font-size: 11px; margin-top: 6px; opacity: 0.8; }
+.features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-5); margin-top: var(--space-10); }
+.feature-card { background: var(--c-surface); border-radius: var(--r-lg); padding: var(--space-6); text-align: center; border: 1px solid var(--c-border); transition: all var(--t-normal); }
+.feature-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.feature-icon { font-size: 36px; margin-bottom: var(--space-3); }
+.feature-card h3 { font-size: 15px; font-weight: 700; margin-bottom: var(--space-2); }
+.feature-card p { font-size: 13px; color: var(--c-text-muted); line-height: 1.5; }
+.user-dropdown { display: none; position: absolute; right: 0; top: calc(100% + 8px); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); box-shadow: var(--shadow-lg); min-width: 200px; z-index: 200; overflow: hidden; }
+.user-dropdown.open { display: block; }
+.dropdown-item { display: flex; align-items: center; gap: var(--space-2); padding: 10px 16px; font-size: 14px; color: var(--c-text); cursor: pointer; transition: background var(--t-fast); border: none; background: none; width: 100%; text-align: left; text-decoration: none; }
+.dropdown-item:hover { background: var(--c-bg); }
+</style>
+</head>
+<body>
+
+<!-- Dealer Mode Banner -->
+<div class="dealer-mode-bar" id="dealer-mode-bar"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-inner">
+      <a href="/" class="nav-logo">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--c-primary),#1741b0);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🔥</div>
+        <div>
+          <div class="nav-logo-text">Klima Kombi Merkezi</div>
+          <div class="nav-logo-sub">Isıtma & Soğutma Sistemleri</div>
+        </div>
+      </a>
+
+      <div class="nav-search">
+        <span class="nav-search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Ürün, marka veya model ara..." autocomplete="off">
+        <div id="search-results" class="search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);z-index:200;max-height:400px;overflow-y:auto;margin-top:4px;"></div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="/araclar.html" class="nav-btn desktop-only">🔧 Sihirbazlar</a>
+        <a href="/sepet.html" class="nav-btn" style="position:relative">
+          🛒 <span class="cart-count cart-badge" style="display:none">0</span>
+        </a>
+        <div id="nav-auth-area"></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- CATEGORY NAV -->
+<div class="category-nav">
+  <div class="container">
+    <ul class="category-nav-list" id="category-nav-list">
+      <li><a href="/urunler.html">Tümü</a></li>
+    </ul>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <div>
+        <h1>Isı ve Konforun<br><span>Tek Adresi</span></h1>
+        <p>Kombi, klima, kazan ve aksesuarlarda Türkiye'nin en kapsamlı ürün yelpazesi. Bireysel ve kurumsal alımlar için özel çözümler.</p>
+        <div class="hero-buttons">
+          <a href="/urunler.html" class="btn btn-accent btn-lg">Ürünleri Keşfet</a>
+          <a href="/araclar.html" class="btn btn-outline-white btn-lg">🔧 Seçim Sihirbazı</a>
+        </div>
+        <div class="hero-badges">
+          <span class="hero-badge">✓ Garantili Ürünler</span>
+          <span class="hero-badge">✓ Hızlı Teslimat</span>
+          <span class="hero-badge">✓ Teknik Destek</span>
+        </div>
+      </div>
+      <div class="hero-image">
+        <div class="icon-grid">
+          <div class="hero-icon-card">🔥<p>Kombi</p></div>
+          <div class="hero-icon-card">❄️<p>Klima</p></div>
+          <div class="hero-icon-card">⚙️<p>Kazan</p></div>
+          <div class="hero-icon-card">🌡️<p>Termostat</p></div>
+          <div class="hero-icon-card">🔩<p>Aksesuar</p></div>
+          <div class="hero-icon-card">🛠️<p>Montaj</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DUAL LOGIN SECTION -->
+<section style="background:linear-gradient(135deg,#f8fafc,#e8f0fe);padding:var(--space-10) 0;">
+  <div class="container">
+    <div class="section-header">
+      <h2>Size Özel Deneyim</h2>
+      <p>Bireysel alışveriş ya da bayi avantajları için giriş yapın</p>
+    </div>
+    <div class="login-split" id="login-split-section">
+      <div class="login-card" onclick="window.location.href='/giris.html'">
+        <div class="login-card-icon">👤</div>
+        <h3>Bireysel Müşteri</h3>
+        <p>Ürünleri inceleyin, sepete ekleyin ve güvenli ödeme yapın</p>
+        <div style="margin-top:var(--space-5)"><span class="btn btn-outline" style="width:100%;justify-content:center">Giriş Yap / Üye Ol</span></div>
+      </div>
+      <div class="login-card dealer" onclick="window.location.href='/giris.html?mode=dealer'">
+        <div class="login-card-icon">🏢</div>
+        <h3>Bayi / Kurumsal</h3>
+        <p>İskontolu fiyatlar, proje yönetimi ve PDF teklif oluşturma</p>
+        <div style="margin-top:var(--space-5)"><span class="btn btn-warning" style="width:100%;justify-content:center;background:#f59e0b;color:#fff">Bayi Girişi</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED PRODUCTS -->
+<section style="padding:var(--space-12) 0;background:var(--c-surface)">
+  <div class="container">
+    <div class="section-header">
+      <h2>Öne Çıkan Ürünler</h2>
+      <p>En çok tercih edilen ürünlerimizi keşfedin</p>
+    </div>
+    <div class="product-grid" id="featured-products">
+      <!-- loaded by JS -->
+    </div>
+    <div style="text-align:center;margin-top:var(--space-8)">
+      <a href="/urunler.html" class="btn btn-outline btn-lg">Tüm Ürünleri Gör →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section style="padding:var(--space-12) 0;background:var(--c-bg)">
+  <div class="container">
+    <div class="section-header">
+      <h2>Neden Klima Kombi Merkezi?</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🏷️</div>
+        <h3>Rekabetçi Fiyatlar</h3>
+        <p>Doğrudan ithalatçı fiyatlarından avantajlı fiyatlarla alışveriş yapın</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔧</div>
+        <h3>Uzman Seçim Sihirbazı</h3>
+        <p>Evinize en uygun kombi, kazan veya klima sistem kombinasyonunu hesaplayın</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏢</div>
+        <h3>Bayi Ağı</h3>
+        <p>Kurumsal bayiler için özel iskontolar, proje kaydı ve PDF teklif sistemi</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🚚</div>
+        <h3>Hızlı Teslimat</h3>
+        <p>Depoda bulunan ürünler aynı gün veya ertesi gün kargo ile kapınızda</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <h3>Garanti & Servis</h3>
+        <p>Tüm ürünler resmi garantili, yetkili servis ağıyla desteklenmektedir</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Teknik Destek</h3>
+        <p>Uzman ekibimiz satış öncesi ve sonrası teknik sorularınızı yanıtlar</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OPPORTUNITY CORNER -->
+<section style="padding:var(--space-10) 0;background:var(--c-surface)">
+  <div class="container">
+    <div class="section-divider">
+      <h3>🎯 Fırsat Köşesi</h3>
+    </div>
+    <div class="opportunity-banner">
+      <div style="font-size:60px">🎉</div>
+      <div>
+        <h3 style="font-size:24px;font-weight:800;margin-bottom:var(--space-2)">Stok Fırsatları</h3>
+        <p style="opacity:0.9;margin-bottom:var(--space-4)">Seri sonu ve sınırlı stoklu sıfır ürünleri özel fiyatlarla keşfedin</p>
+        <a href="/urunler.html?opportunity=1" class="btn btn-lg" style="background:#fff;color:var(--c-success)">Fırsatları Gör →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ENGINEERING TOOLS -->
+<section style="padding:var(--space-10) 0;background:linear-gradient(135deg,#1a56db,#0f2a8a);color:#fff">
+  <div class="container">
+    <div class="section-header" style="color:#fff">
+      <h2 style="color:#fff">Mühendislik Araçları</h2>
+      <p style="color:rgba(255,255,255,0.8)">Projenize uygun sistemi otomatik hesaplayın</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-5)">
+      <a href="/araclar.html#kombi" class="card" style="border:none;background:rgba(255,255,255,0.12);backdrop-filter:blur(10px);padding:var(--space-6);display:flex;gap:var(--space-4);align-items:flex-start;border:1px solid rgba(255,255,255,0.2);text-decoration:none;transition:transform 0.2s">
+        <span style="font-size:36px">🔥</span>
+        <div><h4 style="color:#fff;margin-bottom:4px;font-size:16px">Kombi Seçim Sihirbazı</h4><p style="color:rgba(255,255,255,0.75);font-size:13px">Oda sayısı ve m²'ye göre uygun kombi modelini bulun</p></div>
+      </a>
+      <a href="/araclar.html#kazan" class="card" style="border:none;background:rgba(255,255,255,0.12);backdrop-filter:blur(10px);padding:var(--space-6);display:flex;gap:var(--space-4);align-items:flex-start;border:1px solid rgba(255,255,255,0.2);text-decoration:none;transition:transform 0.2s">
+        <span style="font-size:36px">⚙️</span>
+        <div><h4 style="color:#fff;margin-bottom:4px;font-size:16px">Kazan Seçim Programı</h4><p style="color:rgba(255,255,255,0.75);font-size:13px">Bölge ve m²'ye göre gereken kW kapasitesini hesaplayın</p></div>
+      </a>
+      <a href="/araclar.html#klima" class="card" style="border:none;background:rgba(255,255,255,0.12);backdrop-filter:blur(10px);padding:var(--space-6);display:flex;gap:var(--space-4);align-items:flex-start;border:1px solid rgba(255,255,255,0.2);text-decoration:none;transition:transform 0.2s">
+        <span style="font-size:36px">❄️</span>
+        <div><h4 style="color:#fff;margin-bottom:4px;font-size:16px">Multi Klima Konfiguratör</h4><p style="color:rgba(255,255,255,0.75);font-size:13px">Odalarınıza en uygun iç ve dış ünite kombinasyonunu bulun</p></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px">
+          <span style="font-size:28px">🔥</span> Klima Kombi Merkezi
+        </div>
+        <p>Türkiye'nin lider ısıtma ve soğutma sistemleri platformu. Bireysel ve kurumsal müşterilere hizmet.</p>
+        <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4)">
+          <a href="#" style="color:#94a3b8;font-size:20px">📘</a>
+          <a href="#" style="color:#94a3b8;font-size:20px">📸</a>
+          <a href="#" style="color:#94a3b8;font-size:20px">📺</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Ürünler</h4>
+        <ul>
+          <li><a href="/urunler.html?category=kombi">Kombiler</a></li>
+          <li><a href="/urunler.html?category=kazan">Kazanlar</a></li>
+          <li><a href="/urunler.html?category=klima">Klimalar</a></li>
+          <li><a href="/urunler.html?category=termostat">Termostatlar</a></li>
+          <li><a href="/urunler.html?opportunity=1">Fırsat Ürünleri</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Hizmetler</h4>
+        <ul>
+          <li><a href="/araclar.html">Seçim Sihirbazı</a></li>
+          <li><a href="/teklif.html">Teklif İste</a></li>
+          <li><a href="/giris.html?mode=dealer">Bayi Başvurusu</a></li>
+          <li><a href="/hesabim.html">Hesabım</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>İletişim</h4>
+        <div class="footer-contact-item">📞 <a href="tel:+902120000000" style="color:#94a3b8">+90 212 000 0000</a></div>
+        <div class="footer-contact-item">✉️ <a href="mailto:info@klimakombimerkezi.com" style="color:#94a3b8">info@klimakombimerkezi.com</a></div>
+        <div class="footer-contact-item">📍 İstanbul, Türkiye</div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 Klima Kombi Merkezi. Tüm hakları saklıdır.</p>
+      <div style="display:flex;gap:var(--space-4)">
+        <a href="#" style="color:#94a3b8;font-size:13px">Gizlilik Politikası</a>
+        <a href="#" style="color:#94a3b8;font-size:13px">KVKK</a>
+        <a href="#" style="color:#94a3b8;font-size:13px">İade Koşulları</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+// Load categories for nav
+async function loadCategories() {
+  try {
+    const cats = await fetch('/api/categories').then(r => r.json());
+    const nav = document.getElementById('category-nav-list');
+    cats.slice(0, 10).forEach(c => {
+      nav.innerHTML += `<li><a href="/urunler.html?category=${c.slug}">${c.name}</a></li>`;
+    });
+  } catch {}
+}
+
+// Load featured products
+async function loadFeaturedProducts() {
+  try {
+    const { products } = await fetch('/api/products?limit=8').then(r => r.json());
+    const grid = document.getElementById('featured-products');
+    if (!products?.length) { grid.innerHTML = '<p class="text-muted text-center" style="grid-column:1/-1">Ürün yükleniyor...</p>'; return; }
+    grid.innerHTML = products.map(p => renderProductCard(p)).join('');
+  } catch {}
+}
+
+function renderProductCard(p) {
+  const images = Array.isArray(p.images) ? p.images : [];
+  const img = images[0] || '/images/no-image.png';
+  const isDealer = Auth.isDealer();
+
+  let priceHtml = '';
+  if (p.stock_status === 'price_on_request' || p.is_hidden_price) {
+    priceHtml = `<div class="price-on-request">💰 Fiyat Sorunuz</div>`;
+  } else if (p.stock_status === 'on_request') {
+    priceHtml = `<div class="price-on-request">⏱ Tedarik: ${p.supply_days || 0} Gün - Teklif İsteyiniz</div>`;
+  } else if (isDealer && p.dealer_cash_price) {
+    priceHtml = `
+      <div class="price-retail-crossed">${Format.price(p.base_price)}</div>
+      <div class="price-dealer-cash">${Format.price(p.dealer_cash_price)}</div>
+      ${p.dealer_card_price ? `<div class="price-dealer-card">💳 K.Kartı: ${Format.price(p.dealer_card_price)}</div>` : ''}
+    `;
+  } else {
+    priceHtml = `<div class="price-retail">${Format.price(p.base_price)}</div>`;
+  }
+
+  const canBuy = !p.is_hidden_price && p.stock_status !== 'on_request' && p.stock_status !== 'price_on_request' && p.stock_status !== 'out_of_stock';
+
+  return `
+    <div class="product-card">
+      <div class="product-card-image">
+        <a href="/urun/${p.slug}.html"><img src="${img}" alt="${p.name}" loading="lazy" onerror="this.src='/images/no-image.png'"></a>
+        ${p.is_opportunity ? '<span class="product-card-badge opportunity">Fırsat</span>' : ''}
+      </div>
+      <div class="product-card-body">
+        ${p.brand_name ? `<div class="product-card-brand">${p.brand_name}</div>` : ''}
+        <a href="/urunler.html?slug=${p.slug}" class="product-card-name" style="color:var(--c-text);text-decoration:none">${p.name}</a>
+        <div class="product-card-price">${priceHtml}</div>
+      </div>
+      <div class="product-card-actions">
+        <a href="/urunler.html?slug=${p.slug}" class="btn btn-outline btn-sm" style="flex:1">İncele</a>
+        ${canBuy
+          ? `<button class="btn btn-primary btn-sm" onclick="addToCart(${p.id})" style="flex:1">🛒 Sepete Ekle</button>`
+          : `<a href="/teklif.html?product=${p.id}" class="btn btn-warning btn-sm" style="flex:1;background:#f59e0b;color:#fff">📩 Teklif Al</a>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+async function addToCart(productId) {
+  try {
+    await Cart.add(productId);
+    Toast.success('Ürün sepete eklendi!');
+  } catch(e) { Toast.error(e.message); }
+}
+
+// Search
+let searchTimeout;
+document.getElementById('search-input').addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  const q = e.target.value.trim();
+  const dropdown = document.getElementById('search-results');
+  if (q.length < 2) { dropdown.style.display = 'none'; return; }
+  searchTimeout = setTimeout(async () => {
+    try {
+      const { products } = await fetch(`/api/products?search=${encodeURIComponent(q)}&limit=6`).then(r => r.json());
+      if (!products?.length) { dropdown.style.display = 'none'; return; }
+      dropdown.innerHTML = products.map(p => `
+        <a href="/urunler.html?slug=${p.slug}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--c-border);text-decoration:none;color:var(--c-text);transition:background 0.15s" onmouseover="this.style.background='var(--c-bg)'" onmouseout="this.style.background=''">
+          <img src="${(Array.isArray(p.images)?p.images:[])[0]||'/images/no-image.png'}" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#f8fafc;padding:2px">
+          <div><div style="font-size:13px;font-weight:600">${p.name}</div><div style="font-size:12px;color:var(--c-text-muted)">${p.brand_name||''} ${Format.price(p.base_price)||''}</div></div>
+        </a>
+      `).join('') + `<a href="/urunler.html?search=${encodeURIComponent(q)}" style="display:block;padding:10px 14px;font-size:13px;color:var(--c-primary);text-align:center">Tüm sonuçları gör →</a>`;
+      dropdown.style.display = 'block';
+    } catch {}
+  }, 300);
+});
+document.addEventListener('click', e => { if (!e.target.closest('.nav-search')) document.getElementById('search-results').style.display='none'; });
+
+loadCategories();
+loadFeaturedProducts();
+
+// Hide login section if already logged in
+if (Auth.isLoggedIn()) {
+  const ls = document.getElementById('login-split-section');
+  if (ls) ls.closest('section').style.display = 'none';
+}
+</script>
+</body>
+</html>

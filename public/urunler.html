@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ürünler | Klima Kombi Merkezi</title>
+<meta name="description" content="Klima, kombi, kazan ve aksesuarlar - geniş ürün yelpazesi, bayi fiyatları ve stok bilgisi">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.products-layout { display: grid; grid-template-columns: 240px 1fr; gap: var(--space-8); align-items: start; }
+.filter-panel { background: var(--c-surface); border-radius: var(--r-lg); padding: var(--space-5); border: 1px solid var(--c-border); position: sticky; top: 80px; }
+.filter-section { margin-bottom: var(--space-5); }
+.filter-section h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-text-muted); margin-bottom: var(--space-3); }
+.filter-option { display: flex; align-items: center; gap: var(--space-2); padding: 6px 0; cursor: pointer; font-size: 14px; }
+.filter-option input { accent-color: var(--c-primary); }
+.products-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-5); gap: var(--space-3); flex-wrap: wrap; }
+.toolbar-left { display: flex; align-items: center; gap: var(--space-3); }
+.sort-select { padding: 8px 12px; border: 1.5px solid var(--c-border); border-radius: var(--r-md); font-size: 14px; }
+.view-toggle { display: flex; border: 1.5px solid var(--c-border); border-radius: var(--r-md); overflow: hidden; }
+.view-btn { padding: 8px 10px; background: var(--c-surface); border: none; cursor: pointer; font-size: 16px; transition: background var(--t-fast); }
+.view-btn.active { background: var(--c-primary); color: #fff; }
+.pagination { display: flex; gap: var(--space-2); justify-content: center; margin-top: var(--space-8); }
+.page-btn { width: 36px; height: 36px; border-radius: var(--r-md); border: 1.5px solid var(--c-border); background: var(--c-surface); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all var(--t-fast); }
+.page-btn.active { background: var(--c-primary); color: #fff; border-color: var(--c-primary); }
+.page-btn:hover:not(.active) { background: var(--c-bg); }
+.product-list-item { display: flex; gap: var(--space-4); padding: var(--space-4); border-bottom: 1px solid var(--c-border); align-items: flex-start; }
+.product-list-img { width: 120px; height: 120px; object-fit: contain; background: var(--c-bg); border-radius: var(--r-md); flex-shrink: 0; padding: 6px; }
+@media(max-width:768px){ .products-layout{grid-template-columns:1fr} .filter-panel{display:none} }
+</style>
+</head>
+<body>
+
+<div class="dealer-mode-bar" id="dealer-mode-bar"></div>
+
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-inner">
+      <a href="/" class="nav-logo">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--c-primary),#1741b0);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🔥</div>
+        <div><div class="nav-logo-text">Klima Kombi Merkezi</div></div>
+      </a>
+      <div class="nav-search">
+        <span class="nav-search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Ürün ara..." autocomplete="off">
+      </div>
+      <div class="nav-actions">
+        <a href="/araclar.html" class="nav-btn desktop-only">🔧 Sihirbazlar</a>
+        <a href="/sepet.html" class="nav-btn" style="position:relative">🛒 <span class="cart-count cart-badge" style="display:none">0</span></a>
+        <div id="nav-auth-area"></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-10)">
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="/">Ana Sayfa</a><span class="breadcrumb-sep">›</span>
+    <span id="bc-cat">Tüm Ürünler</span>
+  </div>
+
+  <div class="products-layout">
+    <!-- FILTER PANEL -->
+    <aside class="filter-panel">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:var(--space-5)">🔍 Filtrele</h3>
+
+      <div class="filter-section">
+        <h4>Kategoriler</h4>
+        <div id="category-filters"></div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Markalar</h4>
+        <div id="brand-filters"></div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Stok Durumu</h4>
+        <label class="filter-option"><input type="checkbox" id="filter-instock"> Stokta Mevcut</label>
+        <label class="filter-option"><input type="checkbox" id="filter-opportunity"> Fırsat Ürünleri</label>
+      </div>
+
+      <hr class="divider">
+      <button onclick="clearFilters()" class="btn btn-ghost btn-full btn-sm">Filtreleri Temizle</button>
+    </aside>
+
+    <!-- PRODUCT AREA -->
+    <div>
+      <div class="products-toolbar">
+        <div class="toolbar-left">
+          <span id="product-count" class="text-muted text-sm">Yükleniyor...</span>
+        </div>
+        <div style="display:flex;gap:var(--space-3);align-items:center">
+          <select class="sort-select" id="sort-select">
+            <option value="id">Varsayılan</option>
+            <option value="price">Fiyat: Düşük → Yüksek</option>
+            <option value="name">İsme Göre (A-Z)</option>
+          </select>
+          <div class="view-toggle">
+            <button class="view-btn active" id="view-grid" onclick="setView('grid')" title="Grid">⊞</button>
+            <button class="view-btn" id="view-list" onclick="setView('list')" title="Liste">☰</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="products-container" class="product-grid"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INSTALLMENT MODAL -->
+<div class="modal-overlay" id="installment-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">💳 Taksit Seçenekleri</h3>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info mb-4">Aşağıdaki taksit planları örnek oranlardır. Onay için lütfen banka ile irtibata geçin.</div>
+      <div class="installment-table-wrap" id="installment-content"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+let currentPage = 1;
+let currentView = 'grid';
+let allCategories = [];
+let allBrands = [];
+
+const params = new URLSearchParams(location.search);
+let activeCategory = params.get('category') || '';
+let activeBrand = '';
+let searchQuery = params.get('search') || '';
+let opportunityOnly = params.get('opportunity') === '1';
+let viewSlug = params.get('slug');
+
+async function loadFilters() {
+  try {
+    [allCategories, allBrands] = await Promise.all([
+      fetch('/api/categories').then(r => r.json()),
+      fetch('/api/brands').then(r => r.json())
+    ]);
+    const catEl = document.getElementById('category-filters');
+    catEl.innerHTML = `<label class="filter-option"><input type="radio" name="cat" value="" ${!activeCategory?'checked':''}> Tümü</label>`;
+    allCategories.forEach(c => {
+      catEl.innerHTML += `<label class="filter-option"><input type="radio" name="cat" value="${c.slug}" ${activeCategory===c.slug?'checked':''}> ${c.name}</label>`;
+    });
+    catEl.querySelectorAll('input').forEach(i => i.addEventListener('change', () => { activeCategory = i.value; currentPage = 1; loadProducts(); }));
+
+    const brandEl = document.getElementById('brand-filters');
+    brandEl.innerHTML = `<label class="filter-option"><input type="radio" name="brand" value="" checked> Tümü</label>`;
+    allBrands.forEach(b => {
+      brandEl.innerHTML += `<label class="filter-option"><input type="radio" name="brand" value="${b.slug}"> ${b.name}</label>`;
+    });
+    brandEl.querySelectorAll('input').forEach(i => i.addEventListener('change', () => { activeBrand = i.value; currentPage = 1; loadProducts(); }));
+  } catch {}
+}
+
+async function loadProducts() {
+  const container = document.getElementById('products-container');
+  container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></div>`;
+
+  const sort = document.getElementById('sort-select').value;
+  const qs = new URLSearchParams({ page: currentPage, limit: 16, sort });
+  if (activeCategory) qs.set('category', activeCategory);
+  if (activeBrand) qs.set('brand', activeBrand);
+  if (searchQuery) qs.set('search', searchQuery);
+  if (opportunityOnly) qs.set('opportunity', '1');
+  if (document.getElementById('filter-instock').checked) qs.set('stock_status', 'in_stock');
+
+  try {
+    const { products, total, pages } = await fetch(`/api/products?${qs}`).then(r => r.json());
+
+    document.getElementById('product-count').textContent = `${total} ürün listeleniyor`;
+
+    if (!products?.length) {
+      container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px"><p style="font-size:40px">🔍</p><p class="text-muted mt-4">Bu kriterlere uygun ürün bulunamadı.</p><button onclick="clearFilters()" class="btn btn-outline mt-4">Filtreleri Temizle</button></div>`;
+      return;
+    }
+
+    if (currentView === 'grid') {
+      container.className = 'product-grid';
+      container.innerHTML = products.map(p => renderCard(p)).join('');
+    } else {
+      container.className = '';
+      container.innerHTML = `<div class="card">${products.map(p => renderListItem(p)).join('')}</div>`;
+    }
+
+    renderPagination(pages);
+    updateBreadcrumb();
+  } catch(e) {
+    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px"><p class="text-muted">Ürünler yüklenemedi: ${e.message}</p></div>`;
+  }
+}
+
+function renderCard(p) {
+  const isDealer = Auth.isDealer();
+  const imgs = Array.isArray(p.images) ? p.images : [];
+  const img = imgs[0] || '';
+  const canBuy = !p.is_hidden_price && p.stock_status !== 'on_request' && p.stock_status !== 'price_on_request' && p.stock_status !== 'out_of_stock';
+
+  let priceHtml = '';
+  if (p.is_hidden_price || p.stock_status === 'price_on_request') {
+    priceHtml = `<div class="price-on-request">💰 Fiyat Sorunuz</div>`;
+  } else if (p.stock_status === 'on_request') {
+    priceHtml = `<div class="price-on-request">⏱ ${p.supply_days||0} Gün - Teklif İsteyiniz</div>`;
+  } else if (isDealer && p.dealer_cash_price) {
+    priceHtml = `<div class="price-retail-crossed">${Format.price(p.base_price)}</div><div class="price-dealer-cash">${Format.price(p.dealer_cash_price)}</div>${p.dealer_card_price?`<div class="price-dealer-card">💳 ${Format.price(p.dealer_card_price)}</div>`:''}`;
+  } else if (p.base_price) {
+    priceHtml = `<div class="price-retail">${Format.price(p.base_price)}</div>`;
+  }
+
+  return `
+    <div class="product-card">
+      <div class="product-card-image">
+        <a href="/urunler.html?slug=${p.slug}"><img src="${img||'/images/no-image.png'}" alt="${p.name}" loading="lazy" onerror="this.src='/images/no-image.png'"></a>
+        ${p.is_opportunity?'<span class="product-card-badge opportunity">Fırsat</span>':''}
+        ${p.stock_status==='out_of_stock'?'<span class="product-card-badge" style="background:var(--c-error)">Stok Yok</span>':''}
+      </div>
+      <div class="product-card-body">
+        ${p.brand_name?`<div class="product-card-brand">${p.brand_name}</div>`:''}
+        <a href="/urunler.html?slug=${p.slug}" class="product-card-name" style="color:var(--c-text);text-decoration:none">${p.name}</a>
+        <div class="product-card-price">${priceHtml}</div>
+        ${isDealer&&p.dealer_cash_price?`<button onclick="showInstallments(${JSON.stringify(p.dealer_card_price||p.base_price)})" class="btn btn-ghost btn-sm" style="margin-top:4px;font-size:12px">💳 Taksit Seçenekleri</button>`:''}
+      </div>
+      <div class="product-card-actions">
+        <a href="/urunler.html?slug=${p.slug}" class="btn btn-outline btn-sm" style="flex:1">İncele</a>
+        ${canBuy
+          ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();addToCart(${p.id},this)" style="flex:1">🛒 Sepete</button>`
+          : `<a href="/teklif.html?product=${p.id}" class="btn btn-sm" style="flex:1;background:#f59e0b;color:#fff">📩 Teklif Al</a>`
+        }
+      </div>
+    </div>`;
+}
+
+function renderListItem(p) {
+  const imgs = Array.isArray(p.images) ? p.images : [];
+  const isDealer = Auth.isDealer();
+  const price = isDealer && p.dealer_cash_price ? p.dealer_cash_price : p.base_price;
+  return `
+    <div class="product-list-item">
+      <img class="product-list-img" src="${imgs[0]||'/images/no-image.png'}" alt="${p.name}" onerror="this.src='/images/no-image.png'">
+      <div style="flex:1">
+        <div style="font-size:12px;color:var(--c-primary);font-weight:600">${p.brand_name||''}</div>
+        <h3 style="font-size:15px;font-weight:700;margin:4px 0">${p.name}</h3>
+        <p style="font-size:13px;color:var(--c-text-muted);margin-bottom:8px">${p.short_description||''}</p>
+        <div style="display:flex;align-items:center;gap:12px">
+          ${Format.stockBadge(p.stock_status, p.supply_days)}
+          ${p.sku?`<span style="font-size:12px;color:var(--c-text-subtle)">SKU: ${p.sku}</span>`:''}
+        </div>
+      </div>
+      <div style="flex-shrink:0;text-align:right">
+        <div style="font-size:20px;font-weight:800;color:${isDealer?'var(--c-success)':'var(--c-text)'}">${price?Format.price(price):'Fiyat Sorunuz'}</div>
+        ${isDealer&&p.base_price&&p.dealer_cash_price?`<div style="font-size:12px;text-decoration:line-through;color:var(--c-text-subtle)">${Format.price(p.base_price)}</div>`:''}
+        <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
+          <a href="/urunler.html?slug=${p.slug}" class="btn btn-outline btn-sm">Detay</a>
+          ${p.stock_status==='in_stock'?`<button onclick="addToCart(${p.id},this)" class="btn btn-primary btn-sm">🛒 Ekle</button>`:`<a href="/teklif.html?product=${p.id}" class="btn btn-sm" style="background:#f59e0b;color:#fff">📩 Teklif</a>`}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderPagination(total) {
+  const pag = document.getElementById('pagination');
+  pag.innerHTML = '';
+  if (total <= 1) return;
+  for (let i = 1; i <= total; i++) {
+    const btn = document.createElement('button');
+    btn.className = `page-btn${i === currentPage ? ' active' : ''}`;
+    btn.textContent = i;
+    btn.onclick = () => { currentPage = i; loadProducts(); window.scrollTo(0, 0); };
+    pag.appendChild(btn);
+  }
+}
+
+function updateBreadcrumb() {
+  const bcCat = document.getElementById('bc-cat');
+  if (activeCategory) {
+    const cat = allCategories.find(c => c.slug === activeCategory);
+    bcCat.textContent = cat?.name || 'Ürünler';
+  } else if (opportunityOnly) {
+    bcCat.textContent = 'Fırsat Ürünleri';
+  } else {
+    bcCat.textContent = 'Tüm Ürünler';
+  }
+  document.title = `${bcCat.textContent} | Klima Kombi Merkezi`;
+}
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('view-grid').classList.toggle('active', v === 'grid');
+  document.getElementById('view-list').classList.toggle('active', v === 'list');
+  loadProducts();
+}
+
+function clearFilters() {
+  activeCategory = ''; activeBrand = ''; searchQuery = ''; opportunityOnly = false;
+  document.querySelectorAll('input[name="cat"]')[0]?.click();
+  document.querySelectorAll('input[name="brand"]')[0]?.click();
+  document.getElementById('filter-instock').checked = false;
+  document.getElementById('filter-opportunity').checked = false;
+  currentPage = 1; loadProducts();
+}
+
+async function addToCart(productId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  try {
+    await Cart.add(productId); Toast.success('Sepete eklendi!');
+  } catch(e) { Toast.error(e.message); }
+  finally { if(btn) { btn.disabled=false; btn.textContent='🛒 Ekle'; } }
+}
+
+function showInstallments(price) {
+  const plans = [
+    { name: 'Garanti Bankası', installments: 3, rate: 0 },
+    { name: 'Yapı Kredi', installments: 6, rate: 1.49 },
+    { name: 'Ziraat Bankası', installments: 9, rate: 2.05 },
+    { name: 'İş Bankası', installments: 12, rate: 2.49 }
+  ];
+  const html = `<table class="installment-table-wrap" style="width:100%">
+    <thead><tr><th>Banka</th><th>Taksit</th><th>Aylık</th><th>Toplam</th></tr></thead>
+    <tbody>${plans.map(p => {
+      const total = price * Math.pow(1 + p.rate/100, p.installments);
+      const monthly = total / p.installments;
+      return `<tr class="${p.rate===0?'best':''}"><td>${p.name}</td><td>${p.installments} Taksit${p.rate===0?' 🏆':''}</td><td>${Format.price(monthly)}</td><td>${Format.price(total)}</td></tr>`;
+    }).join('')}</tbody></table>`;
+  document.getElementById('installment-content').innerHTML = html;
+  openModal('installment-modal');
+}
+
+// Search
+let st;
+document.getElementById('search-input').value = searchQuery;
+document.getElementById('search-input').addEventListener('input', e => {
+  clearTimeout(st);
+  st = setTimeout(() => { searchQuery = e.target.value; currentPage = 1; loadProducts(); }, 400);
+});
+
+document.getElementById('filter-instock').addEventListener('change', () => { currentPage=1; loadProducts(); });
+document.getElementById('filter-opportunity').addEventListener('change', (e) => { opportunityOnly = e.target.checked; currentPage=1; loadProducts(); });
+document.getElementById('sort-select').addEventListener('change', () => { currentPage=1; loadProducts(); });
+
+// Single product detail view
+if (viewSlug) {
+  loadSingleProduct(viewSlug);
+}
+
+async function loadSingleProduct(slug) {
+  document.querySelector('.products-layout').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px"><div class="spinner" style="margin:0 auto"></div></div>';
+  try {
+    const { product, crossSells, installmentPlans } = await fetch(`/api/products/${slug}`, { headers: Auth.headers() }).then(r => r.json());
+    const isDealer = Auth.isDealer();
+    const canBuy = !product.is_hidden_price && product.stock_status !== 'on_request' && product.stock_status !== 'price_on_request' && product.stock_status !== 'out_of_stock';
+    const imgs = Array.isArray(product.images) ? product.images : [];
+
+    document.querySelector('.products-layout').innerHTML = `
+      <div style="grid-column:1/-1">
+        <div class="breadcrumb"><a href="/">Ana Sayfa</a><span class="breadcrumb-sep">›</span><a href="/urunler.html">Ürünler</a><span class="breadcrumb-sep">›</span><span>${product.name}</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-10);align-items:start" id="product-detail-grid">
+          <div>
+            <div style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-xl);overflow:hidden;aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:24px">
+              <img id="main-img" src="${imgs[0]||'/images/no-image.png'}" style="width:100%;height:100%;object-fit:contain" alt="${product.name}">
+            </div>
+            ${imgs.length > 1 ? `<div style="display:flex;gap:8px;margin-top:12px">${imgs.map((im,i) => `<img src="${im}" onclick="document.getElementById('main-img').src='${im}'" style="width:60px;height:60px;object-fit:contain;border:2px solid var(--c-border);border-radius:8px;cursor:pointer;padding:4px;background:var(--c-bg)">`).join('')}</div>` : ''}
+          </div>
+          <div>
+            ${product.brand_name ? `<div style="font-size:13px;font-weight:600;color:var(--c-primary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em">${product.brand_name}</div>` : ''}
+            <h1 style="font-size:26px;font-weight:800;line-height:1.2;margin-bottom:var(--space-4)">${product.name}</h1>
+            ${product.sku ? `<p style="font-size:13px;color:var(--c-text-muted);margin-bottom:var(--space-4)">SKU: ${product.sku}</p>` : ''}
+            <div style="margin-bottom:var(--space-5)">${Format.stockBadge(product.stock_status, product.supply_days)}</div>
+
+            <div class="price-box">
+              ${isDealer && product.dealer_cash_price ? `
+                <div class="price-row"><span class="price-label">Perakende Fiyatı</span><span class="price-value crossed">${Format.price(product.base_price)}</span></div>
+                <div class="price-row" style="background:var(--c-success-bg);border-radius:8px;padding:8px 12px;margin:4px 0"><span class="price-label" style="color:var(--c-success)">💰 Nakit / Havale (Bayi)</span><span class="price-value hero">${Format.price(product.dealer_cash_price)}</span></div>
+                ${product.dealer_card_price ? `<div class="price-row"><span class="price-label">💳 Kredi Kartı Tek Çekim</span><span class="price-value" style="color:var(--c-info);font-size:18px">${Format.price(product.dealer_card_price)}</span></div>` : ''}
+              ` : product.is_hidden_price ? `<div class="price-row"><span class="price-label">Fiyat</span><span style="font-size:18px;font-weight:700;color:var(--c-warning)">💰 Fiyat Sorunuz</span></div>` :
+              product.stock_status === 'on_request' ? `<div class="price-row"><span class="price-label">Fiyat</span><span style="font-size:18px;font-weight:700;color:var(--c-warning)">⏱ Teklif İsteyiniz</span></div>` :
+              `<div class="price-row"><span class="price-label">Fiyat</span><span class="price-value hero">${Format.price(product.base_price)}</span></div>`}
+            </div>
+
+            ${isDealer ? `<button onclick="showInstallments(${product.dealer_card_price||product.base_price})" class="btn btn-outline btn-sm" style="margin-top:8px">💳 Taksit Seçenekleri</button>` : ''}
+
+            <div style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
+              ${canBuy ? `<button onclick="addToCartDetail(${product.id})" class="btn btn-primary btn-lg" id="add-cart-btn" style="flex:1">🛒 Sepete Ekle</button>` : `<a href="/teklif.html?product=${product.id}" class="btn btn-accent btn-lg" style="flex:1">📩 Teklif Al / Fiyat Sor</a>`}
+              ${Auth.isDealer() ? `<button onclick="saveToProject(${product.id})" class="btn btn-outline btn-lg">📁 Projeye Kaydet</button>` : ''}
+            </div>
+
+            ${product.short_description ? `<p style="margin-top:var(--space-5);color:var(--c-text-muted);font-size:14px;line-height:1.7">${product.short_description}</p>` : ''}
+          </div>
+        </div>
+
+        ${product.description ? `<div class="card mt-8"><div class="card-body"><h3 style="font-weight:700;margin-bottom:var(--space-4)">Ürün Açıklaması</h3><p style="color:var(--c-text-muted);line-height:1.8;white-space:pre-wrap">${product.description}</p></div></div>` : ''}
+
+        ${crossSells?.length ? `
+          <div class="cross-sell-section mt-8">
+            <h3 style="font-weight:700;margin-bottom:var(--space-4)">🔗 Bunlar da Gerekebilir</h3>
+            <div class="cross-sell-grid">
+              ${crossSells.map(cs => `<div class="product-card"><div class="product-card-image"><a href="/urunler.html?slug=${cs.slug}"><img src="${(Array.isArray(cs.images)?cs.images:[])[0]||'/images/no-image.png'}" alt="${cs.name}" style="padding:8px"></a></div><div class="product-card-body"><div class="product-card-name"><a href="/urunler.html?slug=${cs.slug}" style="color:var(--c-text);text-decoration:none">${cs.name}</a></div><div class="price-retail">${Format.price(cs.base_price)||'Fiyat Sorunuz'}</div></div><div class="product-card-actions"><a href="/urunler.html?slug=${cs.slug}" class="btn btn-outline btn-sm btn-full">İncele</a></div></div>`).join('')}
+            </div>
+          </div>` : ''}
+      </div>`;
+
+    document.title = `${product.name} | Klima Kombi Merkezi`;
+  } catch(e) {
+    document.querySelector('.products-layout').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px"><p>Ürün yüklenemedi: ${e.message}</p><a href="/urunler.html" class="btn btn-primary mt-4">Tüm Ürünlere Dön</a></div>`;
+  }
+}
+
+async function addToCartDetail(id) {
+  const btn = document.getElementById('add-cart-btn');
+  btn.disabled = true; btn.textContent = 'Ekleniyor...';
+  try { await Cart.add(id); Toast.success('Sepete eklendi!'); btn.textContent = '✓ Sepette'; }
+  catch(e) { Toast.error(e.message); btn.disabled=false; btn.textContent='🛒 Sepete Ekle'; }
+}
+
+function saveToProject(productId) {
+  window.location.href = `/bayi.html?action=add-to-project&product=${productId}`;
+}
+
+if (!viewSlug) {
+  loadFilters();
+  loadProducts();
+}
+</script>
+</body>
+</html>

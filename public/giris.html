@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Giriş Yap | Klima Kombi Merkezi</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.auth-page { min-height: 100vh; background: linear-gradient(135deg, #f0f4ff, #e8f0fe); display: flex; align-items: center; justify-content: center; padding: var(--space-6); }
+.auth-card { background: var(--c-surface); border-radius: var(--r-xl); box-shadow: var(--shadow-xl); width: 100%; max-width: 480px; overflow: hidden; }
+.auth-header { background: linear-gradient(135deg, #1a56db, #1344b8); color: #fff; padding: var(--space-8); text-align: center; }
+.auth-header.dealer { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.auth-header h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+.auth-header p { opacity: 0.85; font-size: 14px; }
+.auth-body { padding: var(--space-8); }
+.auth-tabs { display: flex; border-bottom: 2px solid var(--c-border); margin-bottom: var(--space-6); }
+.auth-tab { flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: var(--c-text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+.auth-tab.active { color: var(--c-primary); border-bottom-color: var(--c-primary); }
+.dealer-badge { display: inline-flex; align-items: center; gap: 6px; background: #fffbeb; border: 1px solid #f59e0b; color: #92400e; padding: 8px 14px; border-radius: var(--r-md); font-size: 13px; margin-bottom: var(--space-5); width: 100%; }
+</style>
+</head>
+<body>
+<div class="auth-page">
+  <div>
+    <a href="/" style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:var(--space-6);text-decoration:none">
+      <span style="font-size:28px">🔥</span>
+      <span style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--c-primary)">Klima Kombi Merkezi</span>
+    </a>
+    <div class="auth-card">
+      <div class="auth-header" id="auth-header">
+        <h1 id="auth-title">Giriş Yap</h1>
+        <p id="auth-subtitle">Hesabınıza erişin</p>
+      </div>
+      <div class="auth-body">
+        <div id="dealer-info" style="display:none">
+          <div class="dealer-badge">🏢 <strong>Bayi / Kurumsal Giriş</strong> — İskontolu fiyatlar ve proje yönetimi için</div>
+        </div>
+
+        <div class="auth-tabs">
+          <div class="auth-tab active" onclick="switchTab('login')" id="tab-login">Giriş Yap</div>
+          <div class="auth-tab" onclick="switchTab('register')" id="tab-register">Üye Ol</div>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <form id="login-form">
+          <div class="form-group">
+            <label class="form-label">E-posta <span class="required">*</span></label>
+            <input type="email" class="form-input" id="login-email" placeholder="ornek@email.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Şifre <span class="required">*</span></label>
+            <input type="password" class="form-input" id="login-password" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg" id="login-btn">Giriş Yap</button>
+          <div id="login-error" class="alert alert-error mt-4" style="display:none"></div>
+        </form>
+
+        <!-- REGISTER FORM -->
+        <form id="register-form" style="display:none">
+          <div id="name-field" class="form-group">
+            <label class="form-label">Ad Soyad <span class="required">*</span></label>
+            <input type="text" class="form-input" id="reg-name" placeholder="Ad Soyad" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-posta <span class="required">*</span></label>
+            <input type="email" class="form-input" id="reg-email" placeholder="ornek@email.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefon</label>
+            <input type="tel" class="form-input" id="reg-phone" placeholder="+90 5XX XXX XX XX">
+          </div>
+          <div id="company-fields" style="display:none">
+            <div class="form-group">
+              <label class="form-label">Firma Adı <span class="required">*</span></label>
+              <input type="text" class="form-input" id="reg-company" placeholder="Firma Adı">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Vergi Numarası</label>
+              <input type="text" class="form-input" id="reg-tax" placeholder="Vergi / TC Kimlik No">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Şifre <span class="required">*</span></label>
+            <input type="password" class="form-input" id="reg-password" placeholder="En az 6 karakter" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg" id="register-btn">Üye Ol</button>
+          <div id="register-error" class="alert alert-error mt-4" style="display:none"></div>
+        </form>
+
+        <div style="text-align:center;margin-top:var(--space-5)">
+          <a href="/" style="font-size:13px;color:var(--c-text-muted)">← Ana sayfaya dön</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+let isDealerMode = new URLSearchParams(location.search).get('mode') === 'dealer';
+let currentRole = isDealerMode ? 'dealer' : 'customer';
+
+if (isDealerMode) {
+  document.getElementById('auth-header').classList.add('dealer');
+  document.getElementById('auth-title').textContent = 'Bayi Girişi';
+  document.getElementById('auth-subtitle').textContent = 'Kurumsal hesabınıza erişin';
+  document.getElementById('dealer-info').style.display = 'block';
+  document.getElementById('company-fields').style.display = 'block';
+}
+
+function switchTab(tab) {
+  document.getElementById('login-form').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('register-form').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+}
+
+document.getElementById('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true;
+  try {
+    const data = await API.post('/auth/login', {
+      email: document.getElementById('login-email').value,
+      password: document.getElementById('login-password').value
+    });
+    localStorage.setItem('kkm_token', data.token);
+    localStorage.setItem('kkm_user', JSON.stringify(data.user));
+    const redirect = new URLSearchParams(location.search).get('redirect') || (data.user.role === 'dealer' ? '/bayi.html' : data.user.role === 'admin' ? '/admin.html' : data.user.role === 'employee' ? '/employee.html' : '/');
+    window.location.href = redirect;
+  } catch(err) {
+    document.getElementById('login-error').textContent = err.message;
+    document.getElementById('login-error').style.display = 'block';
+    btn.textContent = 'Giriş Yap'; btn.disabled = false;
+  }
+});
+
+document.getElementById('register-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('register-btn');
+  btn.textContent = 'Kaydediliyor...'; btn.disabled = true;
+  try {
+    const data = await API.post('/auth/register', {
+      name: document.getElementById('reg-name').value,
+      email: document.getElementById('reg-email').value,
+      phone: document.getElementById('reg-phone').value,
+      company_name: document.getElementById('reg-company').value || undefined,
+      tax_number: document.getElementById('reg-tax').value || undefined,
+      password: document.getElementById('reg-password').value,
+      role: currentRole
+    });
+    localStorage.setItem('kkm_token', data.token);
+    localStorage.setItem('kkm_user', JSON.stringify(data.user));
+    window.location.href = data.user.role === 'dealer' ? '/bayi.html' : '/';
+  } catch(err) {
+    document.getElementById('register-error').textContent = err.message;
+    document.getElementById('register-error').style.display = 'block';
+    btn.textContent = 'Üye Ol'; btn.disabled = false;
+  }
+});
+
+// Redirect if already logged in
+if (Auth.isLoggedIn()) {
+  const u = Auth.getUser();
+  window.location.href = u.role === 'dealer' ? '/bayi.html' : u.role === 'admin' ? '/admin.html' : '/';
+}
+</script>
+</body>
+</html>

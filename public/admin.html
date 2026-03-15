@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel | Klima Kombi Merkezi</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.user-dropdown{display:none;position:absolute;right:0;top:calc(100% + 8px);background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);min-width:200px;z-index:200;overflow:hidden}
+.user-dropdown.open{display:block}
+.dropdown-item{display:flex;align-items:center;gap:var(--space-2);padding:10px 16px;font-size:14px;color:var(--c-text);cursor:pointer;transition:background var(--t-fast);border:none;background:none;width:100%;text-align:left;text-decoration:none}
+.dropdown-item:hover{background:var(--c-bg)}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+        <span style="font-size:24px">🔥</span>
+        <div><div style="font-weight:700;font-size:14px">Klima Kombi Merkezi</div><div style="font-size:11px;color:var(--c-error);font-weight:600">Admin Paneli</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">Genel</div>
+      <button class="sidebar-item active" onclick="showSection('dashboard')" data-section="dashboard"><span class="icon">📊</span> Dashboard</button>
+      <button class="sidebar-item" onclick="showSection('orders')" data-section="orders"><span class="icon">🧾</span> Siparişler <span class="sidebar-badge" id="orders-badge" style="display:none">!</span></button>
+      <button class="sidebar-item" onclick="showSection('discount-requests')" data-section="discount-requests"><span class="icon">💰</span> İskonto Talepleri <span class="sidebar-badge" id="disc-badge" style="display:none">!</span></button>
+      <button class="sidebar-item" onclick="showSection('quote-requests')" data-section="quote-requests"><span class="icon">📬</span> Teklif Talepleri <span class="sidebar-badge" id="quote-badge" style="display:none">!</span></button>
+      <button class="sidebar-item" onclick="showSection('price-requests')" data-section="price-requests"><span class="icon">💬</span> Fiyat Talepleri</button>
+
+      <div class="sidebar-section">Katalog</div>
+      <button class="sidebar-item" onclick="showSection('products')" data-section="products"><span class="icon">📦</span> Ürünler</button>
+      <button class="sidebar-item" onclick="showSection('categories')" data-section="categories"><span class="icon">🏷️</span> Kategoriler</button>
+      <button class="sidebar-item" onclick="showSection('brands')" data-section="brands"><span class="icon">🏢</span> Markalar</button>
+
+      <div class="sidebar-section">Kullanıcılar</div>
+      <button class="sidebar-item" onclick="showSection('users')" data-section="users"><span class="icon">👥</span> Tüm Kullanıcılar</button>
+      <button class="sidebar-item" onclick="showSection('dealers')" data-section="dealers"><span class="icon">🤝</span> Bayiler</button>
+      <button class="sidebar-item" onclick="showSection('dealer-projects')" data-section="dealer-projects"><span class="icon">📁</span> Bayi Projeleri</button>
+
+      <div class="sidebar-section">Araçlar</div>
+      <button class="sidebar-item" onclick="showSection('tools-admin')" data-section="tools-admin"><span class="icon">🔧</span> Mühendislik Verileri</button>
+      <button class="sidebar-item" onclick="showSection('settings')" data-section="settings"><span class="icon">⚙️</span> Site Ayarları</button>
+
+      <hr style="border:none;border-top:1px solid var(--c-border);margin:8px 16px">
+      <button class="sidebar-item" onclick="Auth.logout()" style="color:var(--c-error)"><span class="icon">🚪</span> Çıkış</button>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <!-- DASHBOARD -->
+    <div id="section-dashboard" class="section-view">
+      <div class="page-header"><h1>Dashboard</h1></div>
+      <div class="page-body">
+        <div class="stat-grid" id="stats-grid">
+          <div class="stat-card blue skeleton" style="height:100px"></div>
+          <div class="stat-card green skeleton" style="height:100px"></div>
+          <div class="stat-card orange skeleton" style="height:100px"></div>
+          <div class="stat-card yellow skeleton" style="height:100px"></div>
+        </div>
+        <div style="margin-top:var(--space-8)">
+          <h3 style="font-weight:700;margin-bottom:var(--space-4)">Son Siparişler</h3>
+          <div id="recent-orders"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div id="section-orders" class="section-view" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <h1>Siparişler</h1>
+        <select id="order-status-filter" class="form-select" style="width:220px" onchange="loadOrders()">
+          <option value="">Tüm Statüler</option>
+          <option value="pending_stock_check">Stok Kontrol Bekliyor</option>
+          <option value="payment_link_sent">Ödeme Linki Gönderildi</option>
+          <option value="confirmed">Onaylandı</option>
+          <option value="shipped">Kargoda</option>
+          <option value="delivered">Teslim Edildi</option>
+          <option value="cancelled">İptal</option>
+        </select>
+      </div>
+      <div class="page-body"><div id="orders-table"></div></div>
+    </div>
+
+    <!-- ORDER DETAIL MODAL -->
+    <div class="modal-overlay" id="order-detail-modal">
+      <div class="modal modal-lg">
+        <div class="modal-header"><h3 class="modal-title">Sipariş Detayı</h3><button class="modal-close">✕</button></div>
+        <div class="modal-body" id="order-detail-body"></div>
+      </div>
+    </div>
+
+    <!-- DISCOUNT REQUESTS -->
+    <div id="section-discount-requests" class="section-view" style="display:none">
+      <div class="page-header"><h1>İskonto Talepleri</h1></div>
+      <div class="page-body"><div id="discount-requests-table"></div></div>
+    </div>
+
+    <!-- QUOTE REQUESTS -->
+    <div id="section-quote-requests" class="section-view" style="display:none">
+      <div class="page-header"><h1>Teklif Talepleri</h1></div>
+      <div class="page-body"><div id="quote-requests-table"></div></div>
+    </div>
+
+    <!-- PRICE REQUESTS -->
+    <div id="section-price-requests" class="section-view" style="display:none">
+      <div class="page-header"><h1>Fiyat Talepleri</h1></div>
+      <div class="page-body"><div id="price-requests-table"></div></div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div id="section-products" class="section-view" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <h1>Ürün Yönetimi</h1>
+        <button onclick="openAddProduct()" class="btn btn-primary">+ Ürün Ekle</button>
+      </div>
+      <div class="page-body"><div id="products-admin-table"></div></div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div id="section-categories" class="section-view" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <h1>Kategoriler</h1>
+        <button onclick="openAddCategory()" class="btn btn-primary">+ Kategori Ekle</button>
+      </div>
+      <div class="page-body"><div id="categories-table"></div></div>
+    </div>
+
+    <!-- BRANDS -->
+    <div id="section-brands" class="section-view" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <h1>Markalar</h1>
+        <button onclick="openAddBrand()" class="btn btn-primary">+ Marka Ekle</button>
+      </div>
+      <div class="page-body"><div id="brands-table"></div></div>
+    </div>
+
+    <!-- USERS -->
+    <div id="section-users" class="section-view" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <h1>Kullanıcılar</h1>
+        <button onclick="openAddUser()" class="btn btn-primary">+ Kullanıcı Ekle</button>
+      </div>
+      <div class="page-body">
+        <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)">
+          <input type="text" class="form-input" id="user-search" placeholder="Ad, e-posta veya firma ara..." oninput="loadUsers()" style="max-width:320px">
+          <select class="form-select" id="user-role-filter" onchange="loadUsers()"><option value="">Tüm Roller</option><option value="customer">Müşteri</option><option value="dealer">Bayi</option><option value="employee">Çalışan</option><option value="admin">Admin</option></select>
+        </div>
+        <div id="users-table"></div>
+      </div>
+    </div>
+
+    <!-- DEALERS -->
+    <div id="section-dealers" class="section-view" style="display:none">
+      <div class="page-header"><h1>Bayi Yönetimi</h1></div>
+      <div class="page-body"><div id="dealers-table"></div></div>
+    </div>
+
+    <!-- DEALER PROJECTS (admin view) -->
+    <div id="section-dealer-projects" class="section-view" style="display:none">
+      <div class="page-header"><h1>Bayi Projeleri</h1></div>
+      <div class="page-body"><div id="dealer-projects-table"></div></div>
+    </div>
+
+    <!-- TOOLS ADMIN -->
+    <div id="section-tools-admin" class="section-view" style="display:none">
+      <div class="page-header"><h1>Mühendislik Verileri</h1></div>
+      <div class="page-body">
+        <div class="tabs" id="tools-tabs">
+          <button class="tab active" data-tab="tab-boiler" onclick="switchToolTab('boiler')">Kazan Modelleri</button>
+          <button class="tab" data-tab="tab-combi" onclick="switchToolTab('combi')">Kombi Modelleri</button>
+          <button class="tab" data-tab="tab-ac" onclick="switchToolTab('ac')">Klima Üniteleri</button>
+        </div>
+        <div id="tools-content">
+          <div class="alert alert-info">Mühendislik araçları için ürün bazlı kapasite verileri ekleyin. Her ürün için m² aralığı ve kapasite değerlerini belirtin.</div>
+          <form id="boiler-form" class="card" style="max-width:520px"><div class="card-body">
+            <h4 style="margin-bottom:var(--space-4)">Kazan Modeli Ekle</h4>
+            <div class="form-group"><label class="form-label">Ürün ID</label><input type="number" class="form-input" id="b-product-id"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-3)">
+              <div class="form-group"><label class="form-label">kW</label><input type="number" class="form-input" id="b-kw" step="0.1"></div>
+              <div class="form-group"><label class="form-label">Min m²</label><input type="number" class="form-input" id="b-min"></div>
+              <div class="form-group"><label class="form-label">Max m²</label><input type="number" class="form-input" id="b-max"></div>
+            </div>
+            <button type="button" onclick="addBoilerModel()" class="btn btn-primary">Ekle</button>
+          </div></form>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="section-settings" class="section-view" style="display:none">
+      <div class="page-header"><h1>Site Ayarları</h1></div>
+      <div class="page-body">
+        <div class="card" style="max-width:540px"><div class="card-body">
+          <form id="settings-form">
+            <div class="form-group"><label class="form-label">Site Adı</label><input type="text" class="form-input" name="site_name"></div>
+            <div class="form-group"><label class="form-label">Telefon</label><input type="text" class="form-input" name="site_phone"></div>
+            <div class="form-group"><label class="form-label">E-posta</label><input type="email" class="form-input" name="site_email"></div>
+            <div class="form-group"><label class="form-label">Adres</label><textarea class="form-textarea" name="site_address" rows="2"></textarea></div>
+            <div class="form-group"><label class="form-label">Yüksek Tutarlı Sipariş Eşiği (₺)</label><input type="number" class="form-input" name="high_value_order_threshold"></div>
+            <div class="form-group"><label class="form-label">KDV Oranı (%)</label><input type="number" class="form-input" name="tax_rate"></div>
+            <button type="submit" class="btn btn-primary">Kaydet</button>
+          </form>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title" id="user-modal-title">Kullanıcı</h3><button class="modal-close">✕</button></div>
+    <div class="modal-body">
+      <form id="user-form">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+          <div class="form-group"><label class="form-label">Ad Soyad</label><input type="text" class="form-input" id="u-name" required></div>
+          <div class="form-group"><label class="form-label">E-posta</label><input type="email" class="form-input" id="u-email" required></div>
+          <div class="form-group"><label class="form-label">Rol</label><select class="form-select" id="u-role" onchange="toggleDealerFields()"><option value="customer">Müşteri</option><option value="dealer">Bayi</option><option value="employee">Çalışan</option><option value="admin">Admin</option></select></div>
+          <div class="form-group"><label class="form-label">Şifre</label><input type="text" class="form-input" id="u-password" placeholder="Boş = değiştirme"></div>
+        </div>
+        <div id="dealer-extra-fields" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+            <div class="form-group"><label class="form-label">Firma</label><input type="text" class="form-input" id="u-company"></div>
+            <div class="form-group"><label class="form-label">Vergi No</label><input type="text" class="form-input" id="u-tax"></div>
+            <div class="form-group"><label class="form-label">Bayi Kodu</label><input type="text" class="form-input" id="u-dealer-code"></div>
+            <div class="form-group"><label class="form-label">İskonto Oranı (%)</label><input type="number" class="form-input" id="u-discount" min="0" max="100" value="0"></div>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Telefon</label><input type="tel" class="form-input" id="u-phone"></div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('user-modal')" class="btn btn-ghost">İptal</button>
+      <button onclick="saveUser()" class="btn btn-primary">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="product-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h3 class="modal-title" id="product-modal-title">Ürün</h3><button class="modal-close">✕</button></div>
+    <div class="modal-body">
+      <form id="product-form">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+          <div class="form-group"><label class="form-label">Ürün Adı <span class="required">*</span></label><input type="text" class="form-input" id="p-name" required></div>
+          <div class="form-group"><label class="form-label">SKU</label><input type="text" class="form-input" id="p-sku"></div>
+          <div class="form-group"><label class="form-label">Kategori</label><select class="form-select" id="p-category"><option value="">Seçin...</option></select></div>
+          <div class="form-group"><label class="form-label">Marka</label><select class="form-select" id="p-brand"><option value="">Seçin...</option></select></div>
+          <div class="form-group"><label class="form-label">Perakende Fiyatı (₺)</label><input type="number" class="form-input" id="p-price" step="0.01"></div>
+          <div class="form-group"><label class="form-label">Bayi Nakit Fiyatı (₺)</label><input type="number" class="form-input" id="p-dealer-cash" step="0.01"></div>
+          <div class="form-group"><label class="form-label">Bayi K.Kartı Fiyatı (₺)</label><input type="number" class="form-input" id="p-dealer-card" step="0.01"></div>
+          <div class="form-group"><label class="form-label">Stok Durumu</label><select class="form-select" id="p-stock-status"><option value="in_stock">Stokta Var</option><option value="out_of_stock">Stok Yok</option><option value="on_request">Tedarik/Teklif</option><option value="price_on_request">Fiyat Sorunuz</option></select></div>
+          <div class="form-group"><label class="form-label">Stok Miktarı</label><input type="number" class="form-input" id="p-qty" value="0"></div>
+          <div class="form-group"><label class="form-label">Tedarik Süresi (gün)</label><input type="number" class="form-input" id="p-supply" value="0"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Kısa Açıklama</label><textarea class="form-textarea" id="p-short-desc" rows="2"></textarea></div>
+        <div class="form-group"><label class="form-label">Açıklama</label><textarea class="form-textarea" id="p-desc" rows="4"></textarea></div>
+        <div class="form-group"><label class="form-label">Resimler (URL, birden fazla için virgülle ayırın)</label><input type="text" class="form-input" id="p-images" placeholder="https://..."></div>
+        <div style="display:flex;gap:var(--space-5)">
+          <label class="filter-option"><input type="checkbox" id="p-hidden-price"> Fiyatı Gizle</label>
+          <label class="filter-option"><input type="checkbox" id="p-opportunity"> Fırsat Ürünü</label>
+          <label class="filter-option"><input type="checkbox" id="p-bundle"> Bileşenli Paket</label>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('product-modal')" class="btn btn-ghost">İptal</button>
+      <button onclick="saveProduct()" class="btn btn-primary" id="product-save-btn">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="order-status-modal">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title">Sipariş Durumu Güncelle</h3><button class="modal-close">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Yeni Durum</label>
+        <select class="form-select" id="new-order-status">
+          <option value="pending_stock_check">Stok Kontrol Bekliyor</option>
+          <option value="payment_link_sent">Ödeme Linki Gönderildi</option>
+          <option value="project_discount_set">Proje İskontosu Tanımlandı</option>
+          <option value="confirmed">Onaylandı</option>
+          <option value="processing">Hazırlanıyor</option>
+          <option value="shipped">Kargoya Verildi</option>
+          <option value="delivered">Teslim Edildi</option>
+          <option value="cancelled">İptal Edildi</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Ödeme Linki (varsa)</label><input type="url" class="form-input" id="status-payment-link" placeholder="https://..."></div>
+      <div class="form-group"><label class="form-label">Yönetici Notu (müşteriye gönderilir)</label><textarea class="form-textarea" id="status-admin-note" rows="3"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('order-status-modal')" class="btn btn-ghost">İptal</button>
+      <button onclick="updateOrderStatus()" class="btn btn-primary">Güncelle</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="discount-review-modal">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title">İskonto Talebini Değerlendir</h3><button class="modal-close">✕</button></div>
+    <div class="modal-body">
+      <div id="discount-review-info" class="alert alert-info mb-4"></div>
+      <div class="form-group"><label class="form-label">Onaylanan İskonto (%)</label><input type="number" class="form-input" id="approved-rate"></div>
+      <div class="form-group"><label class="form-label">Yönetici Notu</label><textarea class="form-textarea" id="review-note" rows="3"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('discount-review-modal')" class="btn btn-ghost">Kapat</button>
+      <button onclick="reviewDiscount('rejected')" class="btn btn-danger">Reddet</button>
+      <button onclick="reviewDiscount('approved')" class="btn btn-success">Onayla</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+if (!Auth.isAdmin() && !Auth.isEmployee()) window.location.href = '/giris.html';
+
+let editingOrderUuid = null;
+let editingDiscountId = null;
+let editingUserId = null;
+let editingProductId = null;
+
+function showSection(name) {
+  document.querySelectorAll('.section-view').forEach(el => el.style.display='none');
+  document.getElementById(`section-${name}`).style.display='block';
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.toggle('active', el.dataset.section === name));
+  const loaders = { dashboard: loadDashboard, orders: loadOrders, 'discount-requests': loadDiscountRequests, 'quote-requests': loadQuoteRequests, 'price-requests': loadPriceRequests, products: loadAdminProducts, categories: loadCategories, brands: loadBrands, users: loadUsers, dealers: () => loadUsers('dealer'), 'dealer-projects': loadDealerProjects, settings: loadSettings };
+  loaders[name]?.();
+}
+
+// ===== DASHBOARD =====
+async function loadDashboard() {
+  try {
+    const stats = await API.get('/admin/stats');
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-card blue"><span class="stat-icon">🧾</span><div class="stat-label">Toplam Sipariş</div><div class="stat-value">${stats.orders.total}</div><div class="stat-sub">Bugün: ${stats.orders.today}</div></div>
+      <div class="stat-card green"><span class="stat-icon">💰</span><div class="stat-label">Toplam Ciro</div><div class="stat-value" style="font-size:20px">${Format.price(stats.revenue.total)}</div><div class="stat-sub">Bugün: ${Format.price(stats.revenue.today)}</div></div>
+      <div class="stat-card yellow"><span class="stat-icon">⏳</span><div class="stat-label">Stok Onayı Bekleyen</div><div class="stat-value">${stats.orders.pending_stock}</div>${stats.orders.pending_stock>0?`<div class="stat-sub" style="color:var(--c-warning)">Acil!</div>`:''}</div>
+      <div class="stat-card orange"><span class="stat-icon">👥</span><div class="stat-label">Aktif Kullanıcılar</div><div class="stat-value">${stats.users.total}</div><div class="stat-sub">Bayi: ${stats.users.dealers}</div></div>
+      <div class="stat-card blue"><span class="stat-icon">📦</span><div class="stat-label">Aktif Ürünler</div><div class="stat-value">${stats.products.total}</div>${stats.products.out_of_stock>0?`<div class="stat-sub" style="color:var(--c-error)">${stats.products.out_of_stock} stok yok</div>`:''}</div>
+      <div class="stat-card yellow"><span class="stat-icon">💬</span><div class="stat-label">Yeni Teklif Talepleri</div><div class="stat-value">${stats.quote_requests.new}</div></div>
+      <div class="stat-card orange"><span class="stat-icon">💰</span><div class="stat-label">Bekleyen İskonto</div><div class="stat-value">${stats.discount_requests.pending}</div></div>
+    `;
+    if (stats.orders.pending_stock>0) { document.getElementById('orders-badge').textContent=stats.orders.pending_stock; document.getElementById('orders-badge').style.display=''; }
+    if (stats.discount_requests.pending>0) { document.getElementById('disc-badge').textContent=stats.discount_requests.pending; document.getElementById('disc-badge').style.display=''; }
+    if (stats.quote_requests.new>0) { document.getElementById('quote-badge').textContent=stats.quote_requests.new; document.getElementById('quote-badge').style.display=''; }
+
+    const orders = await API.get('/orders?limit=5');
+    document.getElementById('recent-orders').innerHTML = `<div class="table-wrap"><table><thead><tr><th>No</th><th>Müşteri</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th></th></tr></thead><tbody>
+      ${orders.slice(0,5).map(o => `<tr><td><code>${o.uuid.slice(0,8)}</code></td><td>${o.user_name||'-'} ${o.user_role==='dealer'?'<span class="badge badge-yellow">Bayi</span>':''}</td><td>${Format.price(o.total_amount)}</td><td>${Format.statusBadge(o.status)}</td><td>${Format.date(o.created_at)}</td><td><button onclick="viewOrder('${o.uuid}')" class="btn btn-outline btn-sm">Detay</button></td></tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) { console.error(e); }
+}
+
+// ===== ORDERS =====
+async function loadOrders() {
+  const status = document.getElementById('order-status-filter')?.value || '';
+  const qs = status ? `?status=${status}` : '';
+  try {
+    const orders = await API.get(`/orders${qs}`);
+    document.getElementById('orders-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Sipariş No</th><th>Müşteri</th><th>Ödeme</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead><tbody>
+      ${orders.map(o => `<tr>
+        <td><code>${o.uuid.slice(0,8)}</code></td>
+        <td>${o.user_name||'-'} <br><span class="text-sm text-muted">${o.user_email||''}</span> ${o.user_role==='dealer'?'<span class="badge badge-yellow">Bayi</span>':''}</td>
+        <td>${{'credit_card':'💳','bank_transfer':'🏦','cash':'💵'}[o.payment_method]||'?'} ${o.payment_method}</td>
+        <td><strong>${Format.price(o.total_amount)}</strong></td>
+        <td>${Format.statusBadge(o.status)}</td>
+        <td>${Format.date(o.created_at)}</td>
+        <td style="display:flex;gap:4px"><button onclick="viewOrder('${o.uuid}')" class="btn btn-outline btn-sm">Detay</button><button onclick="openStatusModal('${o.uuid}')" class="btn btn-primary btn-sm">Durum</button></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) { document.getElementById('orders-table').innerHTML=`<p class="text-muted">${e.message}</p>`; }
+}
+
+async function viewOrder(uuid) {
+  editingOrderUuid = uuid;
+  openModal('order-detail-modal');
+  document.getElementById('order-detail-body').innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
+  try {
+    const o = await API.get(`/orders/${uuid}`);
+    document.getElementById('order-detail-body').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-5)">
+        <div><strong>Müşteri:</strong> ${o.user_name} (${o.user_email})<br><strong>Rol:</strong> ${o.user_role}<br>${o.phone?`<strong>Tel:</strong> ${o.phone}`:''}${o.company_name?`<br><strong>Firma:</strong> ${o.company_name}`:''}</div>
+        <div><strong>Ödeme:</strong> ${o.payment_method}<br><strong>Durum:</strong> ${Format.statusBadge(o.status)}<br>${o.payment_link?`<strong>Ödeme Linki:</strong> <a href="${o.payment_link}" target="_blank">Aç</a>`:''}</div>
+      </div>
+      <div class="table-wrap mb-4"><table><thead><tr><th>Ürün</th><th>Miktar</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>
+        ${(o.items||[]).map(i => `<tr><td>${i.product_name} ${i.product_sku?`<span class="text-sm text-muted">(${i.product_sku})</span>`:''}</td><td>${i.quantity}</td><td>${Format.price(i.unit_price)}</td><td>${Format.price(i.total_price)}</td></tr>`).join('')}
+      </tbody></table></div>
+      <div style="text-align:right;font-size:16px"><strong>Ara Toplam: ${Format.price(o.subtotal)}</strong><br>KDV: ${Format.price(o.tax_amount)}<br><strong style="font-size:20px">Toplam: ${Format.price(o.total_amount)}</strong></div>
+      ${o.notes?.length?`<hr class="divider"><strong>Notlar:</strong><div>${o.notes.map(n=>`<div style="padding:8px 0;border-bottom:1px solid var(--c-border)"><span class="badge ${n.is_internal?'badge-yellow':'badge-gray'}">${n.author_name||'-'}</span> ${n.note} <span class="text-sm text-muted">${Format.date(n.created_at)}</span></div>`).join('')}</div>`:''}
+      <div style="margin-top:var(--space-4)"><button onclick="openStatusModal('${uuid}');closeModal('order-detail-modal')" class="btn btn-primary">Durumu Güncelle</button></div>`;
+  } catch(e) { document.getElementById('order-detail-body').innerHTML=e.message; }
+}
+
+function openStatusModal(uuid) { editingOrderUuid=uuid; openModal('order-status-modal'); }
+async function updateOrderStatus() {
+  try {
+    await API.put(`/orders/${editingOrderUuid}/status`, {
+      status: document.getElementById('new-order-status').value,
+      payment_link: document.getElementById('status-payment-link').value || null,
+      admin_note: document.getElementById('status-admin-note').value || null
+    });
+    closeModal('order-status-modal'); Toast.success('Sipariş durumu güncellendi!'); loadOrders();
+  } catch(e) { Toast.error(e.message); }
+}
+
+// ===== DISCOUNT REQUESTS =====
+async function loadDiscountRequests() {
+  try {
+    const requests = await API.get('/dealer/discount-requests');
+    document.getElementById('discount-requests-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Bayi</th><th>Proje</th><th>Talep Oranı</th><th>Gerekçe</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead><tbody>
+      ${requests.map(r => `<tr>
+        <td><strong>${r.dealer_name}</strong><br><span class="text-sm text-muted">${r.company_name||''}</span></td>
+        <td>${r.project_name}</td>
+        <td><strong>%${r.requested_rate}</strong></td>
+        <td>${r.reason||'-'}</td>
+        <td>${Format.statusBadge(r.status)}</td>
+        <td>${Format.date(r.created_at)}</td>
+        <td>${r.status==='pending'?`<button onclick="openDiscountReview(${r.id},'${r.dealer_name}','${r.project_name}',${r.requested_rate})" class="btn btn-primary btn-sm">Değerlendir</button>`:'<span class="text-muted">Tamamlandı</span>'}</td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) { document.getElementById('discount-requests-table').innerHTML=`<p class="text-muted">${e.message}</p>`; }
+}
+
+function openDiscountReview(id, dealer, project, rate) {
+  editingDiscountId = id;
+  document.getElementById('discount-review-info').textContent = `${dealer} - "${project}" için %${rate} iskonto talep etti.`;
+  document.getElementById('approved-rate').value = rate;
+  openModal('discount-review-modal');
+}
+async function reviewDiscount(status) {
+  try {
+    await API.post(`/dealer/discount-requests/${editingDiscountId}/review`, { status, approved_rate: parseFloat(document.getElementById('approved-rate').value), admin_note: document.getElementById('review-note').value });
+    closeModal('discount-review-modal'); Toast.success(`Talep ${status==='approved'?'onaylandı':'reddedildi'}!`); loadDiscountRequests();
+  } catch(e) { Toast.error(e.message); }
+}
+
+// ===== QUOTE REQUESTS =====
+async function loadQuoteRequests() {
+  try {
+    const requests = await API.get('/quotes');
+    document.getElementById('quote-requests-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ad/Firma</th><th>E-posta</th><th>Mesaj</th><th>Dosyalar</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead><tbody>
+      ${requests.map(r => `<tr>
+        <td><strong>${r.name}</strong>${r.company?`<br><span class="text-sm text-muted">${r.company}</span>`:''}</td>
+        <td>${r.email}<br>${r.phone||''}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.message}</td>
+        <td>${r.files?.length?`${r.files.length} dosya`:'-'}</td>
+        <td>${Format.statusBadge(r.status)}</td>
+        <td>${Format.date(r.created_at)}</td>
+        <td><select onchange="updateQuoteStatus('${r.uuid}',this.value)" class="form-select" style="width:130px">
+          <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
+          <option value="in_review" ${r.status==='in_review'?'selected':''}>İncelemede</option>
+          <option value="replied" ${r.status==='replied'?'selected':''}>Yanıtlandı</option>
+          <option value="closed" ${r.status==='closed'?'selected':''}>Kapalı</option>
+        </select></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) { document.getElementById('quote-requests-table').innerHTML=`<p class="text-muted">${e.message}</p>`; }
+}
+async function updateQuoteStatus(uuid, status) {
+  try { await API.put(`/quotes/${uuid}/status`,{status}); Toast.success('Durum güncellendi'); } catch(e) { Toast.error(e.message); }
+}
+
+// ===== PRICE REQUESTS =====
+async function loadPriceRequests() {
+  try {
+    const requests = await API.get('/admin/price-requests');
+    document.getElementById('price-requests-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Ad</th><th>İletişim</th><th>Mesaj</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead><tbody>
+      ${requests.map(r => `<tr>
+        <td><a href="/urunler.html?slug=${r.product_slug}">${r.product_name}</a></td>
+        <td>${r.name}</td>
+        <td>${r.email}<br>${r.phone||''}</td>
+        <td>${r.message||'-'}</td>
+        <td>${Format.statusBadge(r.status)}</td>
+        <td>${Format.date(r.created_at)}</td>
+        <td><select onchange="API.put('/admin/price-requests/${r.id}/status',{status:this.value})" class="form-select" style="width:130px">
+          <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
+          <option value="in_review" ${r.status==='in_review'?'selected':''}>İncelemede</option>
+          <option value="replied" ${r.status==='replied'?'selected':''}>Yanıtlandı</option>
+          <option value="closed" ${r.status==='closed'?'selected':''}>Kapalı</option>
+        </select></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) {}
+}
+
+// ===== PRODUCTS =====
+async function loadAdminProducts() {
+  try {
+    const { products } = await API.get('/products?limit=50');
+    document.getElementById('products-admin-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ad</th><th>SKU</th><th>Stok</th><th>Perakende</th><th>Bayi</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>
+      ${products.map(p => `<tr>
+        <td><strong>${p.name}</strong>${p.is_opportunity?'<span class="badge badge-green ml-2">Fırsat</span>':''}</td>
+        <td>${p.sku||'-'}</td>
+        <td>${p.stock_quantity}</td>
+        <td>${p.base_price?Format.price(p.base_price):'-'}</td>
+        <td>${p.dealer_cash_price?Format.price(p.dealer_cash_price):'-'}</td>
+        <td>${Format.stockBadge(p.stock_status,p.supply_days)}</td>
+        <td style="display:flex;gap:4px"><button onclick="openEditProduct(${JSON.stringify(p).replace(/'/g,'\\'')})" class="btn btn-outline btn-sm">Düzenle</button><button onclick="deleteProduct(${p.id})" class="btn btn-danger btn-sm">Sil</button></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) {}
+}
+
+let categories = [], brands = [];
+async function openAddProduct() {
+  editingProductId = null;
+  document.getElementById('product-modal-title').textContent='Yeni Ürün';
+  document.getElementById('product-form').reset();
+  await loadCatBrandSelects();
+  openModal('product-modal');
+}
+async function openEditProduct(p) {
+  editingProductId = p.id;
+  document.getElementById('product-modal-title').textContent='Ürün Düzenle';
+  await loadCatBrandSelects();
+  document.getElementById('p-name').value=p.name||'';
+  document.getElementById('p-sku').value=p.sku||'';
+  document.getElementById('p-category').value=p.category_id||'';
+  document.getElementById('p-brand').value=p.brand_id||'';
+  document.getElementById('p-price').value=p.base_price||0;
+  document.getElementById('p-dealer-cash').value=p.dealer_cash_price||0;
+  document.getElementById('p-dealer-card').value=p.dealer_card_price||0;
+  document.getElementById('p-stock-status').value=p.stock_status||'in_stock';
+  document.getElementById('p-qty').value=p.stock_quantity||0;
+  document.getElementById('p-supply').value=p.supply_days||0;
+  document.getElementById('p-short-desc').value=p.short_description||'';
+  document.getElementById('p-desc').value=p.description||'';
+  document.getElementById('p-images').value=(Array.isArray(p.images)?p.images:[]).join(',');
+  document.getElementById('p-hidden-price').checked=!!p.is_hidden_price;
+  document.getElementById('p-opportunity').checked=!!p.is_opportunity;
+  document.getElementById('p-bundle').checked=!!p.is_bundle;
+  openModal('product-modal');
+}
+async function loadCatBrandSelects() {
+  [categories, brands] = await Promise.all([API.get('/admin/categories'), API.get('/admin/brands')]);
+  document.getElementById('p-category').innerHTML='<option value="">Seçin...</option>'+categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('p-brand').innerHTML='<option value="">Seçin...</option>'+brands.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+}
+async function saveProduct() {
+  const payload = { name:document.getElementById('p-name').value, sku:document.getElementById('p-sku').value, category_id:document.getElementById('p-category').value||null, brand_id:document.getElementById('p-brand').value||null, base_price:parseFloat(document.getElementById('p-price').value)||0, dealer_cash_price:parseFloat(document.getElementById('p-dealer-cash').value)||0, dealer_card_price:parseFloat(document.getElementById('p-dealer-card').value)||0, stock_status:document.getElementById('p-stock-status').value, stock_quantity:parseInt(document.getElementById('p-qty').value)||0, supply_days:parseInt(document.getElementById('p-supply').value)||0, short_description:document.getElementById('p-short-desc').value, description:document.getElementById('p-desc').value, images:document.getElementById('p-images').value.split(',').map(s=>s.trim()).filter(Boolean), is_hidden_price:document.getElementById('p-hidden-price').checked, is_opportunity:document.getElementById('p-opportunity').checked, is_bundle:document.getElementById('p-bundle').checked };
+  try {
+    if (editingProductId) await API.put(`/products/${editingProductId}`, payload);
+    else await API.post('/products', payload);
+    closeModal('product-modal'); Toast.success('Ürün kaydedildi!'); loadAdminProducts();
+  } catch(e) { Toast.error(e.message); }
+}
+async function deleteProduct(id) {
+  if (!confirm('Bu ürünü silmek istiyor musunuz?')) return;
+  try { await API.delete(`/products/${id}`); Toast.success('Ürün silindi'); loadAdminProducts(); } catch(e) { Toast.error(e.message); }
+}
+
+// ===== CATEGORIES / BRANDS =====
+async function loadCategories() {
+  try {
+    const cats = await API.get('/admin/categories');
+    document.getElementById('categories-table').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Ad</th><th>Slug</th><th>Üst Kategori</th><th>Sıra</th></tr></thead><tbody>${cats.map(c=>`<tr><td><strong>${c.name}</strong></td><td><code>${c.slug}</code></td><td>${cats.find(x=>x.id===c.parent_id)?.name||'-'}</td><td>${c.sort_order}</td></tr>`).join('')}</tbody></table></div>`;
+  } catch {}
+}
+async function openAddCategory() {
+  const name = prompt('Kategori adı:'); if (!name) return;
+  try { await API.post('/admin/categories',{name}); loadCategories(); Toast.success('Kategori eklendi'); } catch(e) { Toast.error(e.message); }
+}
+async function loadBrands() {
+  try {
+    const bs = await API.get('/admin/brands');
+    document.getElementById('brands-table').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Ad</th><th>Slug</th></tr></thead><tbody>${bs.map(b=>`<tr><td><strong>${b.name}</strong></td><td><code>${b.slug}</code></td></tr>`).join('')}</tbody></table></div>`;
+  } catch {}
+}
+async function openAddBrand() {
+  const name = prompt('Marka adı:'); if (!name) return;
+  try { await API.post('/admin/brands',{name}); loadBrands(); Toast.success('Marka eklendi'); } catch(e) { Toast.error(e.message); }
+}
+
+// ===== USERS =====
+async function loadUsers(roleOverride) {
+  const role = roleOverride || document.getElementById('user-role-filter')?.value || '';
+  const search = document.getElementById('user-search')?.value || '';
+  const qs = new URLSearchParams({ limit: 50 });
+  if (role) qs.set('role', role);
+  if (search) qs.set('search', search);
+  try {
+    const { users } = await API.get(`/admin/users?${qs}`);
+    const tbl = document.getElementById(roleOverride === 'dealer' ? 'dealers-table' : 'users-table');
+    tbl.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ad</th><th>E-posta</th><th>Rol</th><th>Firma</th>${roleOverride==='dealer'?'<th>Bayi Kodu</th><th>İskonto</th>':''}<th>Tarih</th><th>İşlem</th></tr></thead><tbody>
+      ${users.map(u => `<tr>
+        <td><strong>${u.name}</strong></td>
+        <td>${u.email}</td>
+        <td>${Format.statusBadge(u.role)}</td>
+        <td>${u.company_name||'-'}</td>
+        ${roleOverride==='dealer'?`<td><code>${u.dealer_code||'-'}</code></td><td>${u.discount_rate>0?`<strong style="color:var(--c-success)">%${u.discount_rate}</strong>`:'-'}</td>`:''}
+        <td>${Format.date(u.created_at)}</td>
+        <td><button onclick="openEditUser(${JSON.stringify(u).replace(/'/g,'\\'')})" class="btn btn-outline btn-sm">Düzenle</button></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) {}
+}
+
+function openAddUser() { editingUserId=null; document.getElementById('user-modal-title').textContent='Yeni Kullanıcı'; document.getElementById('user-form').reset(); toggleDealerFields(); openModal('user-modal'); }
+function openEditUser(u) {
+  editingUserId=u.id;
+  document.getElementById('user-modal-title').textContent='Kullanıcı Düzenle';
+  document.getElementById('u-name').value=u.name||''; document.getElementById('u-email').value=u.email||''; document.getElementById('u-role').value=u.role||'customer'; document.getElementById('u-company').value=u.company_name||''; document.getElementById('u-tax').value=u.tax_number||''; document.getElementById('u-dealer-code').value=u.dealer_code||''; document.getElementById('u-discount').value=u.discount_rate||0; document.getElementById('u-phone').value=u.phone||'';
+  toggleDealerFields(); openModal('user-modal');
+}
+function toggleDealerFields() { const role=document.getElementById('u-role').value; document.getElementById('dealer-extra-fields').style.display=['dealer'].includes(role)?'':'none'; }
+
+async function saveUser() {
+  const payload = { name:document.getElementById('u-name').value, email:document.getElementById('u-email').value, role:document.getElementById('u-role').value, company_name:document.getElementById('u-company').value, tax_number:document.getElementById('u-tax').value, dealer_code:document.getElementById('u-dealer-code').value, discount_rate:parseFloat(document.getElementById('u-discount').value)||0, phone:document.getElementById('u-phone').value, is_active:1 };
+  const pw = document.getElementById('u-password').value;
+  if (pw) payload.new_password = pw;
+  try {
+    if (editingUserId) await API.put(`/admin/users/${editingUserId}`, payload);
+    else await API.post('/admin/users', payload);
+    closeModal('user-modal'); Toast.success('Kullanıcı kaydedildi!'); loadUsers();
+  } catch(e) { Toast.error(e.message); }
+}
+
+// ===== DEALER PROJECTS =====
+async function loadDealerProjects() {
+  try {
+    const projs = await API.get('/dealer/projects');
+    document.getElementById('dealer-projects-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Proje</th><th>Bayi</th><th>Firma</th><th>Durum</th><th>Ek İskonto</th><th>Tarih</th></tr></thead><tbody>
+      ${projs.map(p=>`<tr><td><strong>${p.project_name}</strong><br><span class="text-sm text-muted">${p.customer_name||''}</span></td><td>${p.dealer_name}</td><td>${p.company_name||'-'}</td><td>${Format.statusBadge(p.status)}</td><td>${p.extra_discount_rate>0?`<span class="badge badge-green">%${p.extra_discount_rate}</span>`:'-'}</td><td>${Format.date(p.created_at)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  } catch {}
+}
+
+// ===== SETTINGS =====
+async function loadSettings() {
+  try {
+    const s = await API.get('/admin/settings');
+    Object.entries(s).forEach(([k,v]) => { const el = document.querySelector(`[name="${k}"]`); if(el) el.value=v; });
+  } catch {}
+}
+document.getElementById('settings-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const payload = {};
+  ['site_name','site_phone','site_email','site_address','high_value_order_threshold','tax_rate'].forEach(k => { const el=document.querySelector(`[name="${k}"]`); if(el) payload[k]=el.value; });
+  try { await API.put('/admin/settings', payload); Toast.success('Ayarlar kaydedildi!'); } catch(e) { Toast.error(e.message); }
+});
+
+// ===== TOOLS ADMIN =====
+function switchToolTab(t) {
+  document.getElementById('boiler-form').style.display = t==='boiler'?'':'none';
+}
+async function addBoilerModel() {
+  try {
+    await API.post('/tools/boiler-models', { product_id:parseInt(document.getElementById('b-product-id').value), power_kw:parseFloat(document.getElementById('b-kw').value), min_area:parseFloat(document.getElementById('b-min').value), max_area:parseFloat(document.getElementById('b-max').value) });
+    Toast.success('Kazan modeli eklendi!');
+  } catch(e) { Toast.error(e.message); }
+}
+
+// Init
+loadDashboard();
+</script>
+</body>
+</html>

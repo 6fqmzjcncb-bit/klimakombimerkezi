@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sepetim | Klima Kombi Merkezi</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="dealer-mode-bar" id="dealer-mode-bar"></div>
+
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-inner">
+      <a href="/" class="nav-logo">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--c-primary),#1741b0);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🔥</div>
+        <div><div class="nav-logo-text">Klima Kombi Merkezi</div></div>
+      </a>
+      <div class="nav-actions">
+        <a href="/urunler.html" class="nav-btn">Alışverişe Devam Et</a>
+        <div id="nav-auth-area"></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding:var(--space-10) 0;min-height:70vh">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-6)">
+    <h1>🛒 Sepetim</h1>
+    <button onclick="clearCart()" class="btn btn-ghost btn-sm" id="clear-btn" style="display:none">Sepeti Temizle</button>
+  </div>
+
+  <div id="cart-empty" style="display:none;text-align:center;padding:var(--space-10) 0">
+    <div style="font-size:64px;margin-bottom:var(--space-4)">🛍️</div>
+    <h3 style="margin-bottom:var(--space-2)">Sepetiniz şu an boş</h3>
+    <p class="text-muted mb-4">Geniş ürün yelpazemizden ihtiyacınız olan ürünleri bulabilirsiniz.</p>
+    <a href="/urunler.html" class="btn btn-primary btn-lg">Ürünleri İncele</a>
+  </div>
+
+  <div id="cart-content" style="display:none;grid-template-columns:2fr 1fr;gap:var(--space-8);align-items:start">
+    <!-- Items -->
+    <div class="card">
+      <div class="card-header">Sepetteki Ürünler</div>
+      <div id="cart-items" style="display:flex;flex-direction:column"></div>
+    </div>
+    
+    <!-- Summary -->
+    <div>
+      <div class="card mb-4" id="checkout-summary">
+        <div class="card-header">Sipariş Özeti</div>
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-3)"><span class="text-muted">Ara Toplam</span><span id="c-subtotal" style="font-weight:600">0 TL</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-3)"><span class="text-muted">KDV (%20)</span><span id="c-tax" style="font-weight:600">0 TL</span></div>
+          <hr class="divider">
+          <div style="display:flex;justify-content:space-between;font-size:18px"><span style="font-weight:700">Genel Toplam</span><strong id="c-total" style="color:var(--c-primary)">0 TL</strong></div>
+          <button onclick="proceedToCheckout()" class="btn btn-primary btn-full btn-lg mt-4">Alışverişi Tamamla</button>
+          <button onclick="Auth.isDealer()?saveCartToProject():(window.location.href='/giris.html?redirect=/sepet.html')" class="btn btn-outline btn-full mt-2" id="save-proj-btn" style="display:none">🏢 Sepeti Projeye Kaydet</button>
+        </div>
+      </div>
+      
+      <!-- Checkout Form (hidden initially) -->
+      <div class="card" id="checkout-form-container" style="display:none">
+        <div class="card-header bg-primary text-white">Teslimat ve Ödeme</div>
+        <div class="card-body">
+          <form id="checkout-form">
+            <h4 class="mb-4">Kişisel / Fatura Bilgileri</h4>
+            <div class="form-group"><label class="form-label">Ad Soyad *</label><input type="text" id="co-name" class="form-input" required></div>
+            <div class="form-group"><label class="form-label">E-posta *</label><input type="email" id="co-email" class="form-input" required></div>
+            <div class="form-group"><label class="form-label">Telefon *</label><input type="tel" id="co-phone" class="form-input" required></div>
+            <div class="form-group"><label class="form-label">Firma (Opsiyonel)</label><input type="text" id="co-company" class="form-input"></div>
+            
+            <h4 class="mt-8 mb-4">Teslimat Adresi</h4>
+            <div class="form-group"><label class="form-label">Açık Adres *</label><textarea id="co-address" class="form-textarea" rows="2" required></textarea></div>
+            
+            <h4 class="mt-8 mb-4">Ödeme Yöntemi</h4>
+            <div class="form-group">
+              <select id="co-payment" class="form-select" required>
+                <option value="credit_card">💳 Kredi Kartı</option>
+                <option value="bank_transfer">🏦 Havale / EFT</option>
+              </select>
+            </div>
+            
+            <hr class="divider">
+            <button type="submit" class="btn btn-primary btn-full btn-lg" id="submit-order">Siparişi Onayla</button>
+            <button type="button" class="btn btn-ghost btn-full mt-2" onclick="cancelCheckout()">Vazgeç</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+async function loadCartPage() {
+  try {
+    const cart = await Cart.get();
+    if (!cart?.items?.length) {
+      document.getElementById('cart-empty').style.display='block';
+      document.getElementById('cart-content').style.display='none';
+      document.getElementById('clear-btn').style.display='none';
+      return;
+    }
+    
+    document.getElementById('cart-empty').style.display='none';
+    document.getElementById('cart-content').style.display='grid';
+    document.getElementById('clear-btn').style.display='inline-flex';
+    if(Auth.isDealer()) document.getElementById('save-proj-btn').style.display='inline-flex';
+    
+    document.getElementById('cart-items').innerHTML = cart.items.map(i => `
+      <div style="display:flex;align-items:center;padding:var(--space-4);border-bottom:1px solid var(--c-border);gap:var(--space-4)">
+        <img src="${(Array.isArray(i.product.images)?i.product.images:[])[0]||'/images/no-image.png'}" style="width:80px;height:80px;object-fit:contain;border:1px solid var(--c-border);border-radius:var(--r-md);padding:4px">
+        <div style="flex:1">
+          <a href="/urunler.html?slug=${i.product.slug}" style="font-weight:600;color:var(--c-text);text-decoration:none">${i.product.name}</a>
+          <div style="color:var(--c-text-muted);font-size:13px;margin-top:4px">${Format.price(i.unit_price)} x ${i.quantity} = <strong>${Format.price(i.total_price)}</strong></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button onclick="updateQty(${i.id},${i.quantity-1})" class="btn btn-outline btn-sm" style="padding:4px 10px">-</button>
+          <span style="font-weight:600;width:24px;text-align:center">${i.quantity}</span>
+          <button onclick="updateQty(${i.id},${i.quantity+1})" class="btn btn-outline btn-sm" style="padding:4px 10px">+</button>
+        </div>
+        <button onclick="removeItem(${i.id})" class="btn btn-ghost" style="color:var(--c-error)">✕</button>
+      </div>`).join('');
+      
+    document.getElementById('c-subtotal').textContent = Format.price(cart.subtotal);
+    document.getElementById('c-tax').textContent = Format.price(cart.tax_amount);
+    document.getElementById('c-total').textContent = Format.price(cart.total_amount);
+  } catch(e) { Toast.error(e.message); }
+}
+
+async function updateQty(id, qty) {
+  if (qty < 1) { removeItem(id); return; }
+  try { await Cart.update(id, qty); await Cart.updateBadge(); loadCartPage(); } catch(e) { Toast.error(e.message); }
+}
+
+async function removeItem(id) {
+  try { await Cart.remove(id); await Cart.updateBadge(); loadCartPage(); } catch(e) { Toast.error(e.message); }
+}
+
+async function clearCart() {
+  if(!confirm('Sepeti temizlemek istiyor musunuz?')) return;
+  try { await Cart.clear(); await Cart.updateBadge(); loadCartPage(); } catch(e) { Toast.error(e.message); }
+}
+
+function proceedToCheckout() {
+  document.getElementById('checkout-summary').style.display='none';
+  document.getElementById('checkout-form-container').style.display='block';
+  
+  if (Auth.isLoggedIn()) {
+    const u = Auth.getUser();
+    document.getElementById('co-name').value = u.name || '';
+    document.getElementById('co-email').value = u.email || '';
+    document.getElementById('co-phone').value = u.phone || '';
+    document.getElementById('co-company').value = u.company_name || '';
+    document.getElementById('co-address').value = u.address || '';
+  }
+}
+
+function cancelCheckout() {
+  document.getElementById('checkout-form-container').style.display='none';
+  document.getElementById('checkout-summary').style.display='block';
+}
+
+document.getElementById('checkout-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-order');
+  btn.disabled=true; btn.textContent='Onaylanıyor...';
+  
+  try {
+    const payload = {
+      user_name: document.getElementById('co-name').value,
+      user_email: document.getElementById('co-email').value,
+      phone: document.getElementById('co-phone').value,
+      company_name: document.getElementById('co-company').value,
+      shipping_address: document.getElementById('co-address').value,
+      billing_address: document.getElementById('co-address').value,
+      payment_method: document.getElementById('co-payment').value
+    };
+    
+    // Attempt checkout
+    // Use auth token if logged in, otherwise use session-id
+    const r = await fetch('/api/orders/checkout', {
+      method: 'POST',
+      headers: { ...Cart.headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    
+    await Cart.updateBadge();
+    document.getElementById('cart-content').innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:var(--space-10) 0">
+        <div style="font-size:64px;margin-bottom:var(--space-4)">✅</div>
+        <h2 style="margin-bottom:var(--space-2)">Siparişiniz Alındı!</h2>
+        <p class="text-muted mb-4">Sipariş numaranız: <strong>${d.order.uuid}</strong></p>
+        <div class="alert alert-info" style="display:inline-block;text-align:left">
+          ${d.order.status==='pending_stock_check' ? 'Satın aldığınız ürünler stok onayına (özel durumlara) tabidir. Stok teyidi sonrası sizinle iletişime geçeceğiz.' : 
+           d.order.payment_method==='credit_card' && d.order.payment_link ? `Ödeme linkiniz hazırlandı. Link: <br><a href="${d.order.payment_link}" target="_blank">${d.order.payment_link}</a>` :
+           'Siparişiniz işleme alındı.'}
+        </div>
+        <div class="mt-8">
+          <a href="${Auth.isDealer()?'/bayi.html#orders':Auth.isLoggedIn()?'/hesabim.html':'/'}" class="btn btn-primary">Siparişlerime Git / Ana Sayfa</a>
+        </div>
+      </div>
+    `;
+  } catch(e) {
+    Toast.error(e.message);
+    btn.disabled=false; btn.textContent='Siparişi Onayla';
+  }
+});
+
+function saveCartToProject() {
+  window.location.href='/bayi.html?action=add-to-project&from_cart=1';
+}
+
+loadCartPage();
+</script>
+</body>
+</html>
