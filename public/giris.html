@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Giriş Yap | Klima Kombi Merkezi</title>
-<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/style.css?v=3">
 <style>
 .auth-page { min-height: 100vh; background: linear-gradient(135deg, #f0f4ff, #e8f0fe); display: flex; align-items: center; justify-content: center; padding: var(--space-6); }
 .auth-card { background: var(--c-surface); border-radius: var(--r-xl); box-shadow: var(--shadow-xl); width: 100%; max-width: 480px; overflow: hidden; }
@@ -95,7 +95,7 @@
   </div>
 </div>
 
-<script src="/js/app.js"></script>
+<script src="/js/app.js?v=3"></script>
 <script>
 let isDealerMode = new URLSearchParams(location.search).get('mode') === 'dealer';
 let currentRole = isDealerMode ? 'dealer' : 'customer';
