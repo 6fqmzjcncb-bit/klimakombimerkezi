@@ -398,23 +398,23 @@ async function loadSingleProduct(slug) {
 
             <div style="margin-bottom:16px">${Format.stockBadge(product.stock_status, product.supply_days)}</div>
 
-            <div class="price-box">
+            <div class="price-box" style="padding:16px; border:1px solid var(--c-border); background:var(--c-surface); border-radius:var(--r-lg); margin-bottom:16px;">
               ${isDealer && product.dealer_cash_price ? `
-                <div class="price-row">
-                  <span class="price-label">Perakende Fiyatı</span>
-                  <span class="price-value crossed">${Format.price(product.base_price)}</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed var(--c-border);">
+                  <span style="font-size:13px;color:var(--c-text-muted);">Perakende Fiyatı</span>
+                  <span style="font-size:15px;text-decoration:line-through;color:var(--c-text-subtle);">${Format.price(product.base_price)}</span>
                 </div>
-                <div class="price-row" style="background:var(--c-success-bg);border-radius:8px;padding:8px 12px;margin:4px 0">
-                  <span class="price-label" style="color:var(--c-success)">💰 Nakit / Havale (Bayi)</span>
-                  <span class="price-dealer-cash" style="font-size:24px">${Format.price(product.dealer_cash_price)}</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--c-border);">
+                  <span style="font-weight:700;color:var(--c-success);">💰 Nakit (Bayi)</span>
+                  <span style="font-size:20px;font-weight:800;color:var(--c-success);">${Format.price(product.dealer_cash_price)}</span>
                 </div>
-                ${product.dealer_card_price ? `<div class="price-row"><span class="price-label">💳 Kredi Kartı Tek Çekim</span><span class="price-value" style="color:var(--c-info);font-size:18px">${Format.price(product.dealer_card_price)}</span></div>` : ''}
+                ${product.dealer_card_price ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;"><span style="font-size:13px;color:var(--c-text-muted);">💳 Kredi Kartı Tek Çekim</span><span style="font-size:16px;font-weight:700;color:var(--c-info);">${Format.price(product.dealer_card_price)}</span></div>` : ''}
               ` : product.is_hidden_price ? `
-                <div class="price-row"><span class="price-label">Fiyat</span><span style="font-size:17px;font-weight:700;color:var(--c-warning)">💰 Fiyat Sorunuz</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:14px;color:var(--c-text-muted);">Fiyat</span><span style="font-size:16px;font-weight:700;color:var(--c-warning);">💰 Fiyat Sorunuz</span></div>
               ` : product.stock_status === 'on_request' ? `
-                <div class="price-row"><span class="price-label">Fiyat</span><span style="font-size:17px;font-weight:700;color:var(--c-warning)">⏱ Teklif İsteyiniz</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:14px;color:var(--c-text-muted);">Fiyat</span><span style="font-size:16px;font-weight:700;color:var(--c-warning);">⏱ Teklif İsteyiniz</span></div>
               ` : `
-                <div class="price-row"><span class="price-label">Fiyat</span><span class="price-retail" style="font-size:24px">${Format.price(product.base_price)}</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:14px;color:var(--c-text-muted);">Fiyat</span><span style="font-size:22px;font-weight:800;color:var(--c-primary);">${Format.price(product.base_price)}</span></div>
               `}
             </div>
 
