@@ -523,7 +523,7 @@ function renderProductCard(p) {
   return `
     <div class="product-card">
       <div class="product-card-image">
-        <a href="/urunler.html?slug=${p.slug}"><img src="${img}" alt="${p.name}" loading="lazy" onerror="this.src='/images/no-image.png'"></a>
+        <a href="/urunler.html?slug=${p.slug}"><img src="${img}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='/images/no-image.png'"></a>
         ${p.is_opportunity ? '<span class="product-card-badge opportunity">🔥 Fırsat</span>' : ''}
         ${p.stock_status === 'out_of_stock' ? '<span class="product-card-badge" style="background:var(--c-text-muted)">Stok Yok</span>' : ''}
       </div>

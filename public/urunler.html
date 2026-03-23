@@ -239,7 +239,7 @@ function renderCard(p) {
   return `
     <div class="product-card">
       <div class="product-card-image">
-        <a href="/urunler.html?slug=${p.slug}"><img src="${img||'/images/no-image.png'}" alt="${p.name}" loading="lazy" onerror="this.src='/images/no-image.png'"></a>
+        <a href="/urunler.html?slug=${p.slug}"><img src="${img||'/images/no-image.png'}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='/images/no-image.png'"></a>
         ${p.is_opportunity?'<span class="product-card-badge opportunity">Fırsat</span>':''}
         ${p.stock_status==='out_of_stock'?'<span class="product-card-badge" style="background:var(--c-error)">Stok Yok</span>':''}
       </div>
@@ -265,7 +265,7 @@ function renderListItem(p) {
   const price = isDealer && p.dealer_cash_price ? p.dealer_cash_price : p.base_price;
   return `
     <div class="product-list-item">
-      <img class="product-list-img" src="${imgs[0]||'/images/no-image.png'}" alt="${p.name}" onerror="this.src='/images/no-image.png'">
+      <img class="product-list-img" src="${imgs[0]||'/images/no-image.png'}" alt="${p.name}" onerror="this.onerror=null;this.src='/images/no-image.png'">
       <div style="flex:1">
         <div style="font-size:12px;color:var(--c-primary);font-weight:600">${p.brand_name||''}</div>
         <h3 style="font-size:15px;font-weight:700;margin:4px 0">${p.name}</h3>
@@ -385,8 +385,8 @@ async function loadSingleProduct(slug) {
         <div id="product-detail-grid">
           <!-- LEFT: Image -->
           <div class="product-detail-img-wrap">
-            <img id="main-img" class="product-detail-img-main" src="${imgs[0]||'/images/no-image.png'}" alt="${product.name}" onerror="this.src='/images/no-image.png'">
-            ${imgs.length > 1 ? `<div class="product-detail-thumbs">${imgs.map(im => `<img class="product-detail-thumb" src="${im}" onclick="document.getElementById('main-img').src='${im}'" onerror="this.src='/images/no-image.png'">`).join('')}</div>` : ''}
+            <img id="main-img" class="product-detail-img-main" src="${imgs[0]||'/images/no-image.png'}" alt="${product.name}" onerror="this.onerror=null;this.src='/images/no-image.png'">
+            ${imgs.length > 1 ? `<div class="product-detail-thumbs">${imgs.map(im => `<img class="product-detail-thumb" src="${im}" onclick="document.getElementById('main-img').src='${im}'" onerror="this.onerror=null;this.src='/images/no-image.png'">`).join('')}</div>` : ''}
           </div>
 
           <!-- RIGHT: Info -->
@@ -434,7 +434,7 @@ async function loadSingleProduct(slug) {
           <div class="cross-sell-section">
             <h3 style="font-weight:700;margin-bottom:16px">🔗 Bunlar da Gerekebilir</h3>
             <div class="cross-sell-grid">
-              ${crossSells.map(cs => `<div class="product-card"><div class="product-card-image"><a href="/urunler.html?slug=${cs.slug}"><img src="${(Array.isArray(cs.images)?cs.images:[])[0]||'/images/no-image.png'}" alt="${cs.name}" style="padding:8px" onerror="this.src='/images/no-image.png'"></a></div><div class="product-card-body"><div class="product-card-name"><a href="/urunler.html?slug=${cs.slug}" style="color:var(--c-text);text-decoration:none">${cs.name}</a></div><div class="price-retail" style="margin-top:8px">${cs.base_price ? Format.price(cs.base_price) : 'Fiyat Sorunuz'}</div></div><div class="product-card-actions"><a href="/urunler.html?slug=${cs.slug}" class="btn btn-outline btn-sm btn-full">İncele</a></div></div>`).join('')}
+              ${crossSells.map(cs => `<div class="product-card"><div class="product-card-image"><a href="/urunler.html?slug=${cs.slug}"><img src="${(Array.isArray(cs.images)?cs.images:[])[0]||'/images/no-image.png'}" alt="${cs.name}" style="padding:8px" onerror="this.onerror=null;this.src='/images/no-image.png'"></a></div><div class="product-card-body"><div class="product-card-name"><a href="/urunler.html?slug=${cs.slug}" style="color:var(--c-text);text-decoration:none">${cs.name}</a></div><div class="price-retail" style="margin-top:8px">${cs.base_price ? Format.price(cs.base_price) : 'Fiyat Sorunuz'}</div></div><div class="product-card-actions"><a href="/urunler.html?slug=${cs.slug}" class="btn btn-outline btn-sm btn-full">İncele</a></div></div>`).join('')}
             </div>
           </div>` : ''}
       </div>`;
