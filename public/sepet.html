@@ -144,17 +144,21 @@ async function clearCart() {
 }
 
 function proceedToCheckout() {
+  if (!Auth.isLoggedIn()) {
+    Toast.error('Sipariş verebilmek için lütfen giriş yapın veya üye olun.');
+    setTimeout(() => { window.location.href = '/giris.html?returnTo=/sepet.html'; }, 2000);
+    return;
+  }
+  
   document.getElementById('checkout-summary').style.display='none';
   document.getElementById('checkout-form-container').style.display='block';
   
-  if (Auth.isLoggedIn()) {
-    const u = Auth.getUser();
-    document.getElementById('co-name').value = u.name || '';
-    document.getElementById('co-email').value = u.email || '';
-    document.getElementById('co-phone').value = u.phone || '';
-    document.getElementById('co-company').value = u.company_name || '';
-    document.getElementById('co-address').value = u.address || '';
-  }
+  const u = Auth.getUser();
+  document.getElementById('co-name').value = u.name || '';
+  document.getElementById('co-email').value = u.email || '';
+  document.getElementById('co-phone').value = u.phone || '';
+  document.getElementById('co-company').value = u.company_name || '';
+  document.getElementById('co-address').value = u.address || '';
 }
 
 function cancelCheckout() {
@@ -179,8 +183,8 @@ document.getElementById('checkout-form').addEventListener('submit', async e => {
     };
     
     // Attempt checkout
-    // Use auth token if logged in, otherwise use session-id
-    const r = await fetch('/api/orders/checkout', {
+    // Use auth token explicitly
+    const r = await fetch('/api/orders', {
       method: 'POST',
       headers: { ...Cart.headers(), 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

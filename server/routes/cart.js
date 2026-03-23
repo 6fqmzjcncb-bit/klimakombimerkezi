@@ -16,12 +16,35 @@ router.get('/', optionalAuth, (req, res) => {
     WHERE ci.cart_id = ?
   `).all(cart.id);
   const isDealer = req.user?.role === 'dealer';
-  const parsed = items.map(i => ({
-    ...i,
-    images: tryParse(i.images, []),
-    effective_price: isDealer ? i.dealer_cash_price : i.base_price
-  }));
-  res.json({ cart_id: cart.id, items: parsed });
+  let subtotal = 0;
+  
+  const parsed = items.map(i => {
+    const effective_price = isDealer && i.dealer_cash_price ? i.dealer_cash_price : i.base_price;
+    const item_total = effective_price * i.quantity;
+    subtotal += item_total;
+    
+    return {
+      id: i.id,
+      cart_id: i.cart_id,
+      quantity: i.quantity,
+      unit_price: effective_price,
+      total_price: item_total,
+      product: {
+        id: i.product_id,
+        name: i.name,
+        slug: i.slug,
+        sku: i.sku,
+        images: tryParse(i.images, []),
+        stock_status: i.stock_status,
+        stock_quantity: i.stock_quantity
+      }
+    };
+  });
+  
+  const tax_amount = subtotal * 0.20;
+  const total_amount = subtotal + tax_amount;
+  
+  res.json({ cart_id: cart.id, items: parsed, subtotal, tax_amount, total_amount });
 });
 
 
