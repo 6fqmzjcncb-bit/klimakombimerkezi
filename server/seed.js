@@ -99,7 +99,7 @@ try {
     45000.00, 39500.00, 41000.00, 'in_stock', 15, 0,
     '24 kW ısıtma kapasiteli, yüksek verimli tam yoğuşmalı kombi.',
     '<p>Buderus Logamax serisi, 24 kW kapasitesi ile 120-150 m2 evler için mükemmel çözümdür. A sınıfı enerji verimliliği sağlar.</p>',
-    JSON.stringify(['https://st2.myideasoft.com/idea/cb/83/myassets/products/841/buderus-logamax-plus-gb062-24-kw-tam-yogusmali-kombi.jpg']), 0, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 0, 0, 0
   );
 
   insertProduct.run(
@@ -108,7 +108,7 @@ try {
     38000.00, 31000.00, 32500.00, 'in_stock', 25, 0,
     'ErP yönetmeliğine uygun 28 kW kapasiteli E.C.A kombi.',
     '<p>Yüksek kapasiteli, sessiz çalışan 28 kW kombi. Büyük daireler ve çift banyolu evler için ideal.</p>',
-    JSON.stringify(['https://st.myideasoft.com/idea/cb/83/myassets/products/688/eca-proteus-premix-24-kw-yogusmali-kombi.jpg']), 1, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 1, 0, 0
   );
 
   insertProduct.run(
@@ -117,7 +117,7 @@ try {
     42000.00, 36000.00, 37500.00, 'out_of_stock', 0, 3,
     'Kompakt tasarımı ile dar alanlar için yüksek verimli kombi.',
     '<p>Bosch teknolojisiyle üretilmiş, fısıltı sessizliğinde çalışan yoğuşmalı kombi.</p>',
-    JSON.stringify(['https://st2.myideasoft.com/idea/cb/83/myassets/products/665/bosch-condens-2200-i-w-24-25-kw-tam-yogusmali-kombi.jpg']), 0, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 0, 0, 0
   );
 
   insertProduct.run(
@@ -126,7 +126,7 @@ try {
     48000.00, 42000.00, 43500.00, 'in_stock', 8, 0,
     'Alman teknolojisi, dayanıklı paslanmaz çelik eşanjörlü.',
     '<p>Viessmann kalitesiyle uzun ömürlü, akıllı Wi-Fi bağlantısı opsiyonlu kombi.</p>',
-    JSON.stringify(['https://st2.myideasoft.com/idea/cb/83/myassets/products/847/viessmann-vitodens-050-w-yogusmali-kombi.jpg']), 0, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 0, 0, 0
   );
 
 
@@ -137,7 +137,7 @@ try {
     32000.00, 26000.00, 27500.00, 'in_stock', 40, 0,
     'Sınırlı stok fırsatıyla sessiz, ekonomik Sensira Inverter serisi.',
     '<p>A++ enerji verimliliği, R32 soğutucu akışkan, titanyum apatit koku giderici filtre.</p>',
-    JSON.stringify(['https://st2.myideasoft.com/idea/cb/83/myassets/products/834/daikin-sensira-ftxc35c-12000-btu-inverter-klima.jpg']), 1, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 1, 0, 0
   );
 
   insertProduct.run(
@@ -146,7 +146,7 @@ try {
     35000.00, 29000.00, 30500.00, 'in_stock', 12, 0,
     'Yüksek performans ve sessizlik bir arada.',
     '<p>Japon mühendisliği, kendi kendini temizleme fonksiyonu ve jet hava akımı teknolojisi.</p>',
-    JSON.stringify(['https://st1.myideasoft.com/idea/cb/83/myassets/products/700/mitsubishi-heavy-srk35zsp-w-12000-btu-inverter-klima.jpg']), 0, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 0, 0, 0
   );
 
   insertProduct.run(
@@ -155,7 +155,7 @@ try {
     42000.00, 34500.00, 36000.00, 'on_request', 0, 5,
     'Büyük salonlar için geniş kapasiteli Inverter klima.',
     '<p>Gree Fairy serisi, dahili Wi-Fi modülü ve 7 kademeli fan hızı ile üstün konfor sunar.</p>',
-    JSON.stringify(['https://www.iklimplus.com.tr/wp-content/uploads/2020/06/gree-fairy-serisi-klimalar.jpg']), 0, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Gree+Klima']), 0, 0, 0
   );
 
 
@@ -166,7 +166,7 @@ try {
     0, 0, 0, 'on_request', 0, 15,
     'Merkezi ısıtma sistemleri için teknolojili tam yoğuşmalı çelik kazan.',
     '<p>Büyük apartmanlar, oteller ve iş merkezleri için geliştirilmiş, paslanmaz çelikten üretilen uzun ömürlü kazan. İstenirse kaskad bağlanabilir.</p>',
-    JSON.stringify(['https://st3.myideasoft.com/idea/cb/83/myassets/products/930/viessmann-vitocrossal-200-cm2.jpg']), 0, 1, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 0, 1, 0
   );
 
   insertProduct.run(
@@ -175,7 +175,7 @@ try {
     0, 0, 0, 'on_request', 0, 30,
     'Alüminyum döküm eşanjörlü, yüksek kapasiteli yer tipi kazan.',
     '<p>Sanayi tesisleri ve büyük siteler için tasarlanmış kompakt ve yüksek güçlü kazan sistemi.</p>',
-    JSON.stringify(['https://www.borenerji.com/wp-content/uploads/2019/07/buderus-logano-plus-gb312-yer-tipi-yogusmali-kazan-1.jpg']), 0, 1, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Kazan']), 0, 1, 0
   );
 
   insertProduct.run(
@@ -184,7 +184,7 @@ try {
     115000.00, 95000.00, 98000.00, 'in_stock', 3, 0,
     'Kaskad sistemler için modüler 115 kW kapasiteli duvar tipi kazan.',
     '<p>Kaskad panel üzerinden 15 cihaza kadar paralel çalışma imkanı. Paslanmaz çelik eşanjör.</p>',
-    JSON.stringify(['https://st2.myideasoft.com/idea/cb/83/myassets/products/843/baymak-lectus.jpg']), 0, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 0, 0, 0
   );
 
 
@@ -195,7 +195,7 @@ try {
     0, 0, 0, 'on_request', 0, 20,
     'Villalar ve küçük ticari binalar için kompakt dış ünite.',
     '<p>VRV IV teknolojisi: değişken soğutucu akışkan sıcaklığı, montaj kolaylığı, ince tasarım.</p>',
-    JSON.stringify(['https://daikin-p.ru/images/joomgallery/originals/vrv_13/vrv_iv-s_compact_79/daikin_vrv_iv-s_compact_20200318_1478546123.jpg']), 0, 1, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Daikin+VRF']), 0, 1, 0
   );
 
 
@@ -206,7 +206,7 @@ try {
     1800.00, 1200.00, 1300.00, 'in_stock', 120, 0,
     'Hassas sıcaklık kontrolü sağlayan kablosuz dijital oda termostatı.',
     '<p>0.5 derece hassasiyet, pil azaldı uyarısı, günlük programlama özellikleri.</p>',
-    JSON.stringify(['https://st2.myideasoft.com/idea/cb/83/myassets/products/377/eca-ert-176.jpg']), 0, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 0, 0, 0
   );
 
   insertProduct.run(
@@ -215,7 +215,7 @@ try {
     450.00, 300.00, 320.00, 'in_stock', 500, 0,
     'Radyatör bazlı sıcaklık kontrolü.',
     '<p>Doğalgaz tasarrufu sağlayan sıvı sensörlü termostatik radyatör valfi.</p>',
-    JSON.stringify(['https://st.myideasoft.com/idea/cb/83/myassets/products/769/danfoss-ras-c-termostatik-vana.jpg']), 0, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 0, 0, 0
   );
 
   insertProduct.run(
@@ -224,7 +224,7 @@ try {
     2500.00, 1900.00, 2000.00, 'in_stock', 150, 0,
     '1.2 mm saç kalınlığı ile uzun ömürlü beyaz panel radyatör.',
     '<p>TS EN 442 standartlarında üretilmiş 10 yıl garantili ısı yayan panel petek.</p>',
-    JSON.stringify(['https://st2.myideasoft.com/idea/cb/83/myassets/products/390/eca-panel-radyator.jpg']), 0, 0, 0
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 0, 0, 0
   );
 
 
@@ -235,7 +235,7 @@ try {
     49000.00, 42000.00, 43500.00, 'in_stock', 10, 0,
     'Kombi + Termostat + Vana bir arada avantajlı başlangıç paketi.',
     '<p>Evinize tam set çözüm: Buderus GB122i 24 kW Kombi, E.C.A Kablosuz Termostat ve 4 adet Danfoss Vana içeren tasarruf paketi.</p>',
-    JSON.stringify(['https://st1.myideasoft.com/idea/cb/83/myassets/products/841/buderus-logamax-plus-gb062-24-kw-tam-yogusmali-kombi.jpg']), 1, 0, 1
+    JSON.stringify(['https://placehold.co/800x800/f8fafc/1e3a8a.png?text=Klima+Kombi']), 1, 0, 1
   );
 
   // Set Bundle Components
