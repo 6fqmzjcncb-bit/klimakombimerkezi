@@ -146,6 +146,13 @@ a:hover { color: var(--c-primary-dark); }
 .nav-btn.nav-btn-primary { background: linear-gradient(135deg, var(--c-primary), #1e3a8a); color: #fff; border: none; }
 .nav-btn.nav-btn-primary:hover { box-shadow: 0 4px 12px rgba(29,78,216,0.3); transform: translateY(-1px); }
 
+/* Dropdowns */
+.user-dropdown { position: absolute; right: 0; top: 100%; margin-top: 8px; min-width: 220px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); box-shadow: var(--shadow-xl); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all var(--t-fast); display: flex; flex-direction: column; z-index: 1000; overflow: hidden; }
+.user-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+.dropdown-item { text-align: left; padding: 12px 16px; font-size: 14px; font-weight: 500; color: var(--c-text); background: transparent; border: none; border-bottom: 1px solid var(--c-bg); cursor: pointer; text-decoration: none; display: flex; align-items: center; transition: all var(--t-fast); }
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:hover { background: var(--c-bg); color: var(--c-primary); padding-left: 20px; }
+
 /* Category Nav */
 .category-nav { background: var(--c-surface); border-bottom: 1px solid var(--c-border); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
 .category-nav::-webkit-scrollbar { display: none; }
@@ -186,6 +193,8 @@ a:hover { color: var(--c-primary-dark); }
 .price-dealer-cash::before { content: '💰'; font-size: 14px; }
 .price-dealer-card { font-size: 14px; font-weight: 600; color: var(--c-info); margin-top: 4px; }
 .price-on-request { font-size: 14px; font-weight: 700; color: var(--c-warning); }
+.price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.price-label { font-size: 14px; color: var(--c-text-muted); font-weight: 600; }
 .product-card-actions { padding: var(--space-3) var(--space-4); border-top: 1px solid var(--c-border); background: var(--c-bg); display: flex; gap: var(--space-2); }
 
 /* Badges */

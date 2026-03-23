@@ -405,7 +405,7 @@ async function loadSingleProduct(slug) {
                 </div>
                 <div class="price-row" style="background:var(--c-success-bg);border-radius:8px;padding:8px 12px;margin:4px 0">
                   <span class="price-label" style="color:var(--c-success)">💰 Nakit / Havale (Bayi)</span>
-                  <span class="price-value hero">${Format.price(product.dealer_cash_price)}</span>
+                  <span class="price-dealer-cash" style="font-size:24px">${Format.price(product.dealer_cash_price)}</span>
                 </div>
                 ${product.dealer_card_price ? `<div class="price-row"><span class="price-label">💳 Kredi Kartı Tek Çekim</span><span class="price-value" style="color:var(--c-info);font-size:18px">${Format.price(product.dealer_card_price)}</span></div>` : ''}
               ` : product.is_hidden_price ? `
@@ -413,7 +413,7 @@ async function loadSingleProduct(slug) {
               ` : product.stock_status === 'on_request' ? `
                 <div class="price-row"><span class="price-label">Fiyat</span><span style="font-size:17px;font-weight:700;color:var(--c-warning)">⏱ Teklif İsteyiniz</span></div>
               ` : `
-                <div class="price-row"><span class="price-label">Fiyat</span><span class="price-value hero">${Format.price(product.base_price)}</span></div>
+                <div class="price-row"><span class="price-label">Fiyat</span><span class="price-retail" style="font-size:24px">${Format.price(product.base_price)}</span></div>
               `}
             </div>
 
@@ -460,6 +460,34 @@ function saveToProject(productId) {
 if (!viewSlug) {
   loadFilters();
   loadProducts();
+}
+</script>
+<div class="modal-overlay" id="installment-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">💳 Taksit Seçenekleri</h3>
+      <button class="modal-close" onclick="closeModal('installment-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <table id="installment-table" class="table-wrap" style="width:100%">
+        <thead><tr><th>Taksit</th><th>Aylık Tutar</th><th>Toplam Tutar</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p style="color:var(--c-text-muted);font-size:12px;margin-top:16px">* Taksit oranları banka şartlarına göre değişiklik gösterebilir.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function showInstallments(price) {
+  const tbody = document.querySelector('#installment-table tbody');
+  tbody.innerHTML = `<tr><td>Tek Çekim</td><td style="font-weight:700">${Format.price(price)}</td><td style="font-weight:700">${Format.price(price)}</td></tr>`;
+  const rates = { 2: 1.05, 3: 1.08, 6: 1.15, 9: 1.25, 12: 1.35 };
+  for (const [m, r] of Object.entries(rates)) {
+    const t = price * r;
+    tbody.innerHTML += `<tr><td>${m} Taksit</td><td>${Format.price(t/m)}</td><td>${Format.price(t)}</td></tr>`;
+  }
+  openModal('installment-modal');
 }
 </script>
 </body>
