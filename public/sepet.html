@@ -215,8 +215,37 @@ document.getElementById('checkout-form').addEventListener('submit', async e => {
   }
 });
 
-function saveCartToProject() {
-  window.location.href='/bayi.html?action=add-to-project&from_cart=1';
+async function saveCartToProject() {
+  const pname = prompt('Yeni Proje Adı Girin:');
+  if (!pname) return;
+  
+  try {
+    const cart = await API.get('/cart');
+    if (!cart?.items?.length) return Toast.error('Sepetiniz boş');
+
+    const items = cart.items.map(i => ({ 
+      product_id: i.product.id, 
+      label: i.product.name, 
+      quantity: i.quantity, 
+      unit_price: i.unit_price 
+    }));
+    
+    const token = Auth.getToken();
+    const r = await fetch('/api/dealer/projects', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_name: pname, items })
+    });
+    
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Proje oluşturulamadı');
+    
+    try { await API.delete('/cart/clear'); } catch(e) {}
+    Cart.currentCount = 0;
+    Cart.updateBadge();
+    
+    window.location.href = `/bayi.html?action=view-project&uuid=${d.uuid}`;
+  } catch(e) { Toast.error(e.message); }
 }
 
 loadCartPage();

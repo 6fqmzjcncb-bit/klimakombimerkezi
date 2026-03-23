@@ -34,9 +34,7 @@
       <button class="sidebar-item" onclick="showSection('cart-project')" data-section="cart-project"><span class="icon">🛒</span> Sepetim</button>
 
       <div class="sidebar-section">Projeler</div>
-      <button class="sidebar-item" onclick="showSection('projects')" data-section="projects"><span class="icon">📁</span> Projelerim</button>
-      <button class="sidebar-item" onclick="showSection('new-project')" data-section="new-project"><span class="icon">➕</span> Yeni Proje</button>
-      <button class="sidebar-item" onclick="showSection('pdf-quote')" data-section="pdf-quote"><span class="icon">📄</span> PDF Teklif</button>
+      <button class="sidebar-item" onclick="showSection('projects')" data-section="projects"><span class="icon">📁</span> Projeler ve Teklifler</button>
 
       <div class="sidebar-section">Talepler</div>
       <button class="sidebar-item" onclick="showSection('quote-form')" data-section="quote-form"><span class="icon">📬</span> Teklif İste</button>
@@ -130,36 +128,7 @@
       </div>
     </div>
 
-    <!-- PDF QUOTE -->
-    <div id="section-pdf-quote" class="section-view" style="display:none">
-      <div class="page-header"><h1>PDF Teklif Oluştur</h1></div>
-      <div class="page-body">
-        <div class="card" style="max-width:680px">
-          <div class="card-body">
-            <div class="alert alert-info mb-4">Projenizi seçin, kâr marjınızı belirleyin ve PDF'i indirin. Manuel ek kalemler (montaj, işçilik) ekleyebilirsiniz.</div>
-            <div class="form-group">
-              <label class="form-label">Proje Seç <span class="required">*</span></label>
-              <select class="form-select" id="pdf-project-select"><option value="">Proje seçin...</option></select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Genel Kâr Marjı (%)</label>
-              <input type="number" class="form-input" id="pdf-margin" placeholder="0" min="0" max="200" value="0">
-              <div class="form-hint">Tüm kalemlere uygulanacak genel marj. 0 bırakırsanız kalem bazlı marj kullanılır.</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Firma Logosu (opsiyonel)</label>
-              <input type="file" class="form-input" id="pdf-logo" accept="image/*">
-            </div>
-            <hr class="divider">
-            <h4 style="font-weight:700;margin-bottom:var(--space-4)">Manuel Ek Kalemler</h4>
-            <div id="pdf-extra-items"></div>
-            <button type="button" onclick="addPdfExtraItem()" class="btn btn-ghost btn-sm mt-2">+ Kalem Ekle (Montaj, Borulama...)</button>
-            <hr class="divider">
-            <button onclick="generatePdf()" class="btn btn-primary btn-lg" id="pdf-generate-btn">📄 PDF İndir</button>
-          </div>
-        </div>
-      </div>
-    </div>
+
 
     <!-- ORDERS -->
     <div id="section-orders" class="section-view" style="display:none">
@@ -324,8 +293,7 @@ async function loadProjects() {
         <td>${p.items?.length||0}</td>
         <td>${Format.date(p.created_at)}</td>
         <td style="display:flex;gap:4px">
-          <button onclick="viewProject('${p.uuid}')" class="btn btn-outline btn-sm">Detay</button>
-          <button onclick="openPdfForProject('${p.uuid}')" class="btn btn-ghost btn-sm">📄 PDF</button>
+          <button onclick="viewProject('${p.uuid}')" class="btn btn-outline btn-sm">Detay / Teklif Oluştur</button>
         </td>
       </tr>`).join('')}
     </tbody></table></div>`;
@@ -387,11 +355,14 @@ async function viewProject(uuid) {
 
         <div>
           <div class="card mb-4">
-            <div class="card-body" style="display:flex;flex-direction:column;gap:var(--space-3)">
-              <button onclick="openPdfForProject('${uuid}')" class="btn btn-primary btn-full">📄 PDF Teklif Oluştur</button>
-              ${project.status !== 'pending_discount' && project.status !== 'discount_approved' ? `<button onclick="openDiscountModal('${uuid}')" class="btn btn-outline btn-full">💰 Ek İskonto Talep Et</button>` : ''}
-            </div>
-          </div>
+             <div class="card-header"><strong>📄 PDF Teklif İşlemleri</strong></div>
+             <div class="card-body" style="display:flex;flex-direction:column;gap:var(--space-3)">
+               <div class="form-group mb-0"><label class="text-sm">Genel Kâr Marjı (%)</label><input type="number" id="proj-pdf-margin" class="form-input" placeholder="0" value="0"></div>
+               <div class="form-group mb-2"><label class="text-sm">Firma Logosu (Opsiyonel)</label><input type="file" id="proj-pdf-logo" class="form-input" accept="image/*"></div>
+               <button onclick="generatePdfForProject('${uuid}')" id="btn-gen-pdf" class="btn btn-primary btn-full">📄 PDF Teklif İndir</button>
+               ${project.status !== 'pending_discount' && project.status !== 'discount_approved' ? `<button onclick="openDiscountModal('${uuid}')" class="btn btn-outline btn-full mt-2">💰 Ek İskonto Talep Et</button>` : ''}
+             </div>
+           </div>
 
           ${discount_requests?.length ? `
             <div class="card">
@@ -472,41 +443,13 @@ document.getElementById('new-project-form').addEventListener('submit', async e =
 });
 
 // ---- PDF ----
-async function loadProjectsForPdf() {
-  try {
-    const projects = await API.get('/dealer/projects');
-    const sel = document.getElementById('pdf-project-select');
-    sel.innerHTML = '<option value="">Proje seçin...</option>' + projects.map(p => `<option value="${p.uuid}">${p.project_name} (${p.items?.length||0} kalem)</option>`).join('');
-  } catch {}
-}
-
-let pdfExtraItems = [];
-function addPdfExtraItem() {
-  const id = Date.now();
-  pdfExtraItems.push({ id, label:'', unit_price:0, quantity:1 });
-  renderPdfExtras();
-}
-function renderPdfExtras() {
-  document.getElementById('pdf-extra-items').innerHTML = pdfExtraItems.map(i => `
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <input type="text" class="form-input" style="flex:2" placeholder="Kalem adı" oninput="updatePdfExtra(${i.id},'label',this.value)">
-      <input type="number" class="form-input" style="flex:1" placeholder="Fiyat" oninput="updatePdfExtra(${i.id},'unit_price',parseFloat(this.value)||0)">
-      <input type="number" class="form-input" style="width:70px" placeholder="Adet" value="1" oninput="updatePdfExtra(${i.id},'quantity',parseInt(this.value)||1)">
-      <button onclick="removePdfExtra(${i.id})" class="btn btn-danger btn-sm">✕</button>
-    </div>`).join('');
-}
-function updatePdfExtra(id, key, val) { const i = pdfExtraItems.find(x=>x.id===id); if(i) i[key]=val; }
-function removePdfExtra(id) { pdfExtraItems = pdfExtraItems.filter(x=>x.id!==id); renderPdfExtras(); }
-
-async function generatePdf() {
-  const uuid = document.getElementById('pdf-project-select').value;
-  if (!uuid) { Toast.error('Lütfen proje seçin'); return; }
-  const btn = document.getElementById('pdf-generate-btn');
+async function generatePdfForProject(uuid) {
+  const btn = document.getElementById('btn-gen-pdf');
   btn.disabled=true; btn.textContent='Hazırlanıyor...';
   try {
     const formData = new FormData();
-    formData.append('margin_rate_override', document.getElementById('pdf-margin').value);
-    const logo = document.getElementById('pdf-logo').files[0];
+    formData.append('margin_rate_override', document.getElementById('proj-pdf-margin').value);
+    const logo = document.getElementById('proj-pdf-logo').files[0];
     if (logo) formData.append('logo', logo);
 
     const token = Auth.getToken();
@@ -525,12 +468,7 @@ async function generatePdf() {
       Toast.success('PDF indirildi!');
     }
   } catch(err) { Toast.error(err.message); }
-  btn.disabled=false; btn.textContent='📄 PDF İndir';
-}
-
-function openPdfForProject(uuid) {
-  showSection('pdf-quote');
-  setTimeout(() => { document.getElementById('pdf-project-select').value = uuid; }, 300);
+  btn.disabled=false; btn.textContent='📄 PDF Teklif İndir';
 }
 
 // ---- DISCOUNT ----
@@ -637,8 +575,14 @@ document.getElementById('quote-request-form').addEventListener('submit', async e
 showSection('dashboard');
 
 // Handle URL params
-const urlAction = new URLSearchParams(location.search).get('action');
-if (urlAction === 'add-to-project') showSection('new-project');
+const urlParams = new URLSearchParams(location.search);
+const urlAction = urlParams.get('action');
+if (urlAction === 'view-project') {
+  const uuid = urlParams.get('uuid');
+  if (uuid) viewProject(uuid);
+} else if (urlAction === 'new-project') {
+  showSection('new-project');
+}
 </script>
 </body>
 </html>

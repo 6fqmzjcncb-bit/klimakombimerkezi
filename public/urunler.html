@@ -375,6 +375,7 @@ async function loadSingleProduct(slug) {
   document.querySelector('.products-layout').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px"><div class="spinner" style="margin:0 auto"></div></div>';
   try {
     const { product, crossSells, installmentPlans } = await fetch(`/api/products/${slug}`, { headers: Auth.headers() }).then(r => r.json());
+    window.currentProduct = product;
     const isDealer = Auth.isDealer();
     const canBuy = !product.is_hidden_price && product.stock_status !== 'on_request' && product.stock_status !== 'price_on_request' && product.stock_status !== 'out_of_stock';
     const imgs = Array.isArray(product.images) ? product.images : [];
@@ -453,8 +454,33 @@ async function addToCartDetail(id) {
   catch(e) { Toast.error(e.message); btn.disabled=false; btn.textContent='🛒 Sepete Ekle'; }
 }
 
-function saveToProject(productId) {
-  window.location.href = `/bayi.html?action=add-to-project&product=${productId}`;
+async function saveToProject(productId) {
+  const p = window.currentProduct;
+  if (!p || p.id !== productId) return Toast.error('Ürün bilgisi alınamadı');
+  
+  const pname = prompt('Yeni Proje Adı Girin:');
+  if (!pname) return;
+
+  try {
+    const items = [{
+      product_id: p.id,
+      label: p.name,
+      quantity: 1,
+      unit_price: p.dealer_cash_price || p.base_price
+    }];
+    
+    const token = Auth.getToken();
+    const r = await fetch('/api/dealer/projects', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_name: pname, items })
+    });
+    
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Proje oluşturulamadı');
+    
+    window.location.href = `/bayi.html?action=view-project&uuid=${d.uuid}`;
+  } catch(e) { Toast.error(e.message); }
 }
 
 if (!viewSlug) {
