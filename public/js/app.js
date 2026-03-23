@@ -222,9 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (banner) {
       banner.classList.add('active');
       const u = Auth.getUser();
-      banner.innerHTML = `🏢 <strong>${u.company_name || u.name}</strong> olarak giriş yaptınız — Bayi Modu Aktif | İndirim Oranı: <strong>%${u.discount_rate}</strong> &nbsp;|&nbsp; <a href="/bayi.html" style="color:#fbbf24">Bayi Paneli →</a>`;
+      banner.innerHTML = `🏢 <strong>${u.company_name || u.name}</strong> olarak giriş yaptınız &nbsp;—&nbsp; <strong style="color:#4ade80">✓ Bayi Modu Aktif</strong> &nbsp;|&nbsp; <span style="font-size:12px;opacity:0.85">İskontolu fiyatlar geçerlidir</span> &nbsp;|&nbsp; <a href="/bayi.html" style="color:#fbbf24;font-weight:700">Bayi Paneli →</a>`;
     }
   }
+
 
   // Update nav auth state
   const user = Auth.getUser();

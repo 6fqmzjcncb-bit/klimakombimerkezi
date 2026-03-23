@@ -16,8 +16,30 @@ try {
       console.log('🔄 İlk veri tohumlaması başlıyor...');
   }
   
-  // Clear existing
-  db.exec('DELETE FROM order_items; DELETE FROM orders; DELETE FROM dealer_project_items; DELETE FROM dealer_projects; DELETE FROM product_cross_sells; DELETE FROM products; DELETE FROM categories; DELETE FROM brands; DELETE FROM users; DELETE FROM settings;');
+  // Clear existing data (disable FK checks to allow deletes in any order)
+  db.exec(`
+    PRAGMA foreign_keys = OFF;
+    DELETE FROM discount_requests;
+    DELETE FROM dealer_project_items;
+    DELETE FROM dealer_projects;
+    DELETE FROM order_notes;
+    DELETE FROM order_items;
+    DELETE FROM orders;
+    DELETE FROM cart_items;
+    DELETE FROM carts;
+    DELETE FROM product_cross_sells;
+    DELETE FROM product_bundles;
+    DELETE FROM boiler_models;
+    DELETE FROM combi_models;
+    DELETE FROM quote_requests;
+    DELETE FROM notifications;
+    DELETE FROM products;
+    DELETE FROM categories;
+    DELETE FROM brands;
+    DELETE FROM users;
+    DELETE FROM settings;
+    PRAGMA foreign_keys = ON;
+  `);
 
   // Insert Settings
   const insertSetting = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)');

@@ -25,8 +25,31 @@
 .page-btn:hover:not(.active) { background: var(--c-bg); }
 .product-list-item { display: flex; gap: var(--space-4); padding: var(--space-4); border-bottom: 1px solid var(--c-border); align-items: flex-start; }
 .product-list-img { width: 120px; height: 120px; object-fit: contain; background: var(--c-bg); border-radius: var(--r-md); flex-shrink: 0; padding: 6px; }
-@media(max-width:768px){ .products-layout{grid-template-columns:1fr} .filter-panel{display:none} }
+
+/* ---- Product Detail specific ---- */
+#product-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+.price-box { background: var(--c-bg); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: 16px; margin: 12px 0; }
+.price-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--c-border); }
+.price-row:last-child { border-bottom: none; }
+.price-label { font-size: 13px; color: var(--c-text-muted); font-weight: 500; }
+.price-value { font-size: 18px; font-weight: 800; color: var(--c-secondary); }
+.price-value.crossed { font-size: 14px; font-weight: 400; text-decoration: line-through; color: var(--c-text-subtle); }
+.price-value.hero { font-size: 26px; font-weight: 900; color: var(--c-primary); }
+.cross-sell-section { margin-top: 48px; }
+.cross-sell-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.product-detail-img-wrap { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xl); padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.product-detail-img-main { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: var(--r-lg); }
+.product-detail-thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+.product-detail-thumb { width: 64px; height: 64px; object-fit: contain; border: 2px solid var(--c-border); border-radius: var(--r-md); cursor: pointer; padding: 4px; background: var(--c-bg); transition: border-color 0.2s; }
+.product-detail-thumb:hover { border-color: var(--c-primary); }
+
+@media(max-width: 768px) {
+  .products-layout { grid-template-columns: 1fr; }
+  .filter-panel { display: none; }
+  #product-detail-grid { grid-template-columns: 1fr !important; gap: 24px; }
+}
 </style>
+
 </head>
 <body>
 
@@ -359,50 +382,63 @@ async function loadSingleProduct(slug) {
     document.querySelector('.products-layout').innerHTML = `
       <div style="grid-column:1/-1">
         <div class="breadcrumb"><a href="/">Ana Sayfa</a><span class="breadcrumb-sep">›</span><a href="/urunler.html">Ürünler</a><span class="breadcrumb-sep">›</span><span>${product.name}</span></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-10);align-items:start" id="product-detail-grid">
-          <div>
-            <div style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-xl);overflow:hidden;aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:24px">
-              <img id="main-img" src="${imgs[0]||'/images/no-image.png'}" style="width:100%;height:100%;object-fit:contain" alt="${product.name}">
-            </div>
-            ${imgs.length > 1 ? `<div style="display:flex;gap:8px;margin-top:12px">${imgs.map((im,i) => `<img src="${im}" onclick="document.getElementById('main-img').src='${im}'" style="width:60px;height:60px;object-fit:contain;border:2px solid var(--c-border);border-radius:8px;cursor:pointer;padding:4px;background:var(--c-bg)">`).join('')}</div>` : ''}
+        <div id="product-detail-grid">
+          <!-- LEFT: Image -->
+          <div class="product-detail-img-wrap">
+            <img id="main-img" class="product-detail-img-main" src="${imgs[0]||'/images/no-image.png'}" alt="${product.name}" onerror="this.src='/images/no-image.png'">
+            ${imgs.length > 1 ? `<div class="product-detail-thumbs">${imgs.map(im => `<img class="product-detail-thumb" src="${im}" onclick="document.getElementById('main-img').src='${im}'" onerror="this.src='/images/no-image.png'">`).join('')}</div>` : ''}
           </div>
+
+          <!-- RIGHT: Info -->
           <div>
-            ${product.brand_name ? `<div style="font-size:13px;font-weight:600;color:var(--c-primary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em">${product.brand_name}</div>` : ''}
-            <h1 style="font-size:26px;font-weight:800;line-height:1.2;margin-bottom:var(--space-4)">${product.name}</h1>
-            ${product.sku ? `<p style="font-size:13px;color:var(--c-text-muted);margin-bottom:var(--space-4)">SKU: ${product.sku}</p>` : ''}
-            <div style="margin-bottom:var(--space-5)">${Format.stockBadge(product.stock_status, product.supply_days)}</div>
+            ${product.brand_name ? `<div style="font-size:12px;font-weight:700;color:var(--c-primary);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px">${product.brand_name}</div>` : ''}
+            <h1 style="font-size:24px;font-weight:800;line-height:1.3;margin-bottom:12px">${product.name}</h1>
+            ${product.sku ? `<p style="font-size:13px;color:var(--c-text-muted);margin-bottom:14px">SKU: ${product.sku}</p>` : ''}
+
+            <div style="margin-bottom:16px">${Format.stockBadge(product.stock_status, product.supply_days)}</div>
 
             <div class="price-box">
               ${isDealer && product.dealer_cash_price ? `
-                <div class="price-row"><span class="price-label">Perakende Fiyatı</span><span class="price-value crossed">${Format.price(product.base_price)}</span></div>
-                <div class="price-row" style="background:var(--c-success-bg);border-radius:8px;padding:8px 12px;margin:4px 0"><span class="price-label" style="color:var(--c-success)">💰 Nakit / Havale (Bayi)</span><span class="price-value hero">${Format.price(product.dealer_cash_price)}</span></div>
+                <div class="price-row">
+                  <span class="price-label">Perakende Fiyatı</span>
+                  <span class="price-value crossed">${Format.price(product.base_price)}</span>
+                </div>
+                <div class="price-row" style="background:var(--c-success-bg);border-radius:8px;padding:8px 12px;margin:4px 0">
+                  <span class="price-label" style="color:var(--c-success)">💰 Nakit / Havale (Bayi)</span>
+                  <span class="price-value hero">${Format.price(product.dealer_cash_price)}</span>
+                </div>
                 ${product.dealer_card_price ? `<div class="price-row"><span class="price-label">💳 Kredi Kartı Tek Çekim</span><span class="price-value" style="color:var(--c-info);font-size:18px">${Format.price(product.dealer_card_price)}</span></div>` : ''}
-              ` : product.is_hidden_price ? `<div class="price-row"><span class="price-label">Fiyat</span><span style="font-size:18px;font-weight:700;color:var(--c-warning)">💰 Fiyat Sorunuz</span></div>` :
-              product.stock_status === 'on_request' ? `<div class="price-row"><span class="price-label">Fiyat</span><span style="font-size:18px;font-weight:700;color:var(--c-warning)">⏱ Teklif İsteyiniz</span></div>` :
-              `<div class="price-row"><span class="price-label">Fiyat</span><span class="price-value hero">${Format.price(product.base_price)}</span></div>`}
+              ` : product.is_hidden_price ? `
+                <div class="price-row"><span class="price-label">Fiyat</span><span style="font-size:17px;font-weight:700;color:var(--c-warning)">💰 Fiyat Sorunuz</span></div>
+              ` : product.stock_status === 'on_request' ? `
+                <div class="price-row"><span class="price-label">Fiyat</span><span style="font-size:17px;font-weight:700;color:var(--c-warning)">⏱ Teklif İsteyiniz</span></div>
+              ` : `
+                <div class="price-row"><span class="price-label">Fiyat</span><span class="price-value hero">${Format.price(product.base_price)}</span></div>
+              `}
             </div>
 
-            ${isDealer ? `<button onclick="showInstallments(${product.dealer_card_price||product.base_price})" class="btn btn-outline btn-sm" style="margin-top:8px">💳 Taksit Seçenekleri</button>` : ''}
+            ${isDealer ? `<button onclick="showInstallments(${product.dealer_card_price||product.base_price})" class="btn btn-outline btn-sm" style="margin-top:8px;margin-bottom:16px">💳 Taksit Seçenekleri</button>` : ''}
 
-            <div style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
+            <div style="display:flex;gap:12px;margin-top:${isDealer?'0':'16px'}">
               ${canBuy ? `<button onclick="addToCartDetail(${product.id})" class="btn btn-primary btn-lg" id="add-cart-btn" style="flex:1">🛒 Sepete Ekle</button>` : `<a href="/teklif.html?product=${product.id}" class="btn btn-accent btn-lg" style="flex:1">📩 Teklif Al / Fiyat Sor</a>`}
               ${Auth.isDealer() ? `<button onclick="saveToProject(${product.id})" class="btn btn-outline btn-lg">📁 Projeye Kaydet</button>` : ''}
             </div>
 
-            ${product.short_description ? `<p style="margin-top:var(--space-5);color:var(--c-text-muted);font-size:14px;line-height:1.7">${product.short_description}</p>` : ''}
+            ${product.short_description ? `<p style="margin-top:16px;color:var(--c-text-muted);font-size:14px;line-height:1.7">${product.short_description}</p>` : ''}
           </div>
         </div>
 
-        ${product.description ? `<div class="card mt-8"><div class="card-body"><h3 style="font-weight:700;margin-bottom:var(--space-4)">Ürün Açıklaması</h3><p style="color:var(--c-text-muted);line-height:1.8;white-space:pre-wrap">${product.description}</p></div></div>` : ''}
+        ${product.description ? `<div class="card mt-8"><div class="card-body"><h3 style="font-weight:700;margin-bottom:16px">Ürün Açıklaması</h3><div style="color:var(--c-text-muted);line-height:1.8">${product.description}</div></div></div>` : ''}
 
         ${crossSells?.length ? `
-          <div class="cross-sell-section mt-8">
-            <h3 style="font-weight:700;margin-bottom:var(--space-4)">🔗 Bunlar da Gerekebilir</h3>
+          <div class="cross-sell-section">
+            <h3 style="font-weight:700;margin-bottom:16px">🔗 Bunlar da Gerekebilir</h3>
             <div class="cross-sell-grid">
-              ${crossSells.map(cs => `<div class="product-card"><div class="product-card-image"><a href="/urunler.html?slug=${cs.slug}"><img src="${(Array.isArray(cs.images)?cs.images:[])[0]||'/images/no-image.png'}" alt="${cs.name}" style="padding:8px"></a></div><div class="product-card-body"><div class="product-card-name"><a href="/urunler.html?slug=${cs.slug}" style="color:var(--c-text);text-decoration:none">${cs.name}</a></div><div class="price-retail">${Format.price(cs.base_price)||'Fiyat Sorunuz'}</div></div><div class="product-card-actions"><a href="/urunler.html?slug=${cs.slug}" class="btn btn-outline btn-sm btn-full">İncele</a></div></div>`).join('')}
+              ${crossSells.map(cs => `<div class="product-card"><div class="product-card-image"><a href="/urunler.html?slug=${cs.slug}"><img src="${(Array.isArray(cs.images)?cs.images:[])[0]||'/images/no-image.png'}" alt="${cs.name}" style="padding:8px" onerror="this.src='/images/no-image.png'"></a></div><div class="product-card-body"><div class="product-card-name"><a href="/urunler.html?slug=${cs.slug}" style="color:var(--c-text);text-decoration:none">${cs.name}</a></div><div class="price-retail" style="margin-top:8px">${cs.base_price ? Format.price(cs.base_price) : 'Fiyat Sorunuz'}</div></div><div class="product-card-actions"><a href="/urunler.html?slug=${cs.slug}" class="btn btn-outline btn-sm btn-full">İncele</a></div></div>`).join('')}
             </div>
           </div>` : ''}
       </div>`;
+
 
     document.title = `${product.name} | Klima Kombi Merkezi`;
   } catch(e) {
