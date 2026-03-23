@@ -255,7 +255,105 @@ try {
   insertUser.run('u-employee', 'Proje Mühendisi', 'calisan@klimakombimerkezi.com', bcrypt.hashSync('Calisan123!', salt), 'employee');
   insertUser.run('u-customer', 'Ahmet Yılmaz', 'ahmet@gmail.com', bcrypt.hashSync('Ahmet123!', salt), 'customer');
 
+  // Get user IDs
+  const adminUser  = db.prepare('SELECT id FROM users WHERE uuid=?').get('u-admin');
+  const dealerUser = db.prepare('SELECT id FROM users WHERE uuid=?').get('u-dealer');
+  const custUser   = db.prepare('SELECT id FROM users WHERE uuid=?').get('u-customer');
+
+  // ----- SAMPLE CART & ORDER FOR CUSTOMER -----
+  // Cart
+  const cartR = db.prepare('INSERT INTO carts (user_id, session_id) VALUES (?, ?)').run(custUser.id, 's-ahmet-01');
+  const cartId = cartR.lastInsertRowid;
+  const ecaProduct = pRows.find(p => p.slug === 'eca-proteus-premix-28kw');
+  const thermostatProduct = pRows.find(p => p.slug === 'eca-ert-176-kablosuz');
+  if (ecaProduct) db.prepare('INSERT INTO cart_items (cart_id, product_id, quantity, unit_price) VALUES (?,?,?,?)').run(cartId, ecaProduct.id, 1, 38000);
+  if (thermostatProduct) db.prepare('INSERT INTO cart_items (cart_id, product_id, quantity, unit_price) VALUES (?,?,?,?)').run(cartId, thermostatProduct.id, 2, 1800);
+
+  // Order 1 (completed / delivered)
+  const ord1Uuid = 'ord-ahmet-001';
+  const subtotal1 = 38000 + (1800 * 2);
+  const tax1 = subtotal1 * 0.20;
+  const total1 = subtotal1 + tax1;
+  db.prepare(`INSERT INTO orders (uuid, user_id, status, payment_method, payment_status, subtotal, discount_amount, tax_amount, total_amount, shipping_address, billing_address) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(ord1Uuid, custUser.id, 'delivered', 'credit_card', 'paid', subtotal1, 0, tax1, total1,
+      JSON.stringify({name:'Ahmet Yılmaz',address:'Kadıköy, İstanbul',phone:'+90 555 123 4567'}),
+      JSON.stringify({name:'Ahmet Yılmaz',address:'Kadıköy, İstanbul',phone:'+90 555 123 4567'}));
+  const ord1 = db.prepare('SELECT id FROM orders WHERE uuid=?').get(ord1Uuid);
+  db.prepare('INSERT INTO order_items (order_id, product_id, product_name, product_sku, quantity, unit_price, total_price) VALUES (?,?,?,?,?,?,?)').run(ord1.id, ecaProduct?.id, 'E.C.A. Proteus Premix 28 kW Tam Yoğuşmalı Kombi', 'ECA-PRO-28', 1, 38000, 38000);
+  db.prepare('INSERT INTO order_items (order_id, product_id, product_name, product_sku, quantity, unit_price, total_price) VALUES (?,?,?,?,?,?,?)').run(ord1.id, thermostatProduct?.id, 'E.C.A. Ert-176 Kablosuz Oda Termostatı', 'ECA-ERT176', 2, 1800, 3600);
+
+  // Order 2 (pending stock check - high value)
+  const budProduct = pRows.find(p => p.slug === 'buderus-gb122i-24kw');
+  if (budProduct) {
+    const ord2Uuid = 'ord-ahmet-002';
+    const subtotal2 = 45000;
+    const tax2 = subtotal2 * 0.20;
+    const total2 = subtotal2 + tax2;
+    db.prepare(`INSERT INTO orders (uuid, user_id, status, payment_method, payment_status, subtotal, discount_amount, tax_amount, total_amount, shipping_address, billing_address) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(ord2Uuid, custUser.id, 'pending_stock_check', 'bank_transfer', 'unpaid', subtotal2, 0, tax2, total2,
+        JSON.stringify({name:'Ahmet Yılmaz',address:'Kadıköy, İstanbul',phone:'+90 555 123 4567'}),
+        JSON.stringify({name:'Ahmet Yılmaz',address:'Kadıköy, İstanbul',phone:'+90 555 123 4567'}));
+    const ord2 = db.prepare('SELECT id FROM orders WHERE uuid=?').get(ord2Uuid);
+    db.prepare('INSERT INTO order_items (order_id, product_id, product_name, product_sku, quantity, unit_price, total_price) VALUES (?,?,?,?,?,?,?)').run(ord2.id, budProduct.id, 'Buderus Logamax Plus GB122i 24 kW Tam Yoğuşmalı Kombi', 'BUD-GB122-24', 1, 45000, 45000);
+  }
+
+  // ----- SAMPLE DEALER PROJECT -----
+  const projUuid = 'dp-bayi-001';
+  db.prepare(`INSERT INTO dealer_projects (uuid, dealer_id, project_name, customer_name, description, status, extra_discount_rate) VALUES (?,?,?,?,?,?,?)`)
+    .run(projUuid, dealerUser.id, 'Fenerbahçe Mahallesi Apartman Projesi', 'Bayraktar İnşaat A.Ş.',
+      'Kadıköy Fenerbahçe Mah. 12 daireli apartman ısıtma ve klima sistemi kurulumu. Toplam hesaplanan ısı kaybı 280 kW.',
+      'discount_approved', 5);
+  const projRow = db.prepare('SELECT id FROM dealer_projects WHERE uuid=?').get(projUuid);
+  const insertProjItem = db.prepare('INSERT INTO dealer_project_items (project_id, product_id, label, quantity, unit_price, margin_rate, is_manual) VALUES (?,?,?,?,?,?,?)');
+  if (boilerId1) insertProjItem.run(projRow.id, boilerId1, 'Viessmann Vitocrossal 200 CM2 87 kW Yoğuşmalı Kazan', 4, 0, 15, 0);
+  if (budProduct) insertProjItem.run(projRow.id, budProduct.id, 'Buderus GB122i 24 kW Kombi (ortak alan)', 2, 39500, 12, 0);
+  insertProjItem.run(projRow.id, null, 'Merkezi Enerji Odası Kurulum ve Montaj', 1, 45000, 0, 1);
+  insertProjItem.run(projRow.id, null, 'Boru Tesisat ve İzolasyon (12 daire)', 12, 8500, 0, 1);
+
+  // 2nd dealer project (pending discount)
+  const proj2Uuid = 'dp-bayi-002';
+  db.prepare(`INSERT INTO dealer_projects (uuid, dealer_id, project_name, customer_name, description, status, extra_discount_requested) VALUES (?,?,?,?,?,?,?)`)
+    .run(proj2Uuid, dealerUser.id, 'Bağcılar Ticaret Merkezi VRF Projesi', 'Güven Gayrimenkul Ltd.',
+      'Bağcılar 6 katlı ofis binası için VRV/VRF klima sistemi. Rekabetçi teklif nedeniyle ek iskonto talebi.',
+      'pending_discount', 8);
+  const proj2Row = db.prepare('SELECT id FROM dealer_projects WHERE uuid=?').get(proj2Uuid);
+  const daiVrfProduct = pRows.find(p => p.slug === 'daikin-vrv-iv-5hp');
+  if (daiVrfProduct) {
+    db.prepare('INSERT INTO dealer_project_items (project_id, product_id, label, quantity, unit_price, margin_rate, is_manual) VALUES (?,?,?,?,?,?,?)').run(proj2Row.id, daiVrfProduct.id, 'Daikin VRV IV+ S Dış Ünite 5HP', 3, 185000, 10, 0);
+  }
+  db.prepare('INSERT INTO dealer_project_items (project_id, product_id, label, quantity, unit_price, margin_rate, is_manual) VALUES (?,?,?,?,?,?,?)').run(proj2Row.id, null, 'Sistem Tasarımı ve Mühendislik', 1, 25000, 0, 1);
+  // Discount request for project 2
+  db.prepare('INSERT INTO discount_requests (project_id, dealer_id, requested_rate, reason, status) VALUES (?,?,?,?,?)').run(proj2Row.id, dealerUser.id, 8, 'Müşteri 3 firma teklifi kıyaslıyor. Rakip firmalar benzer sistemi %8 daha düşüğe teklif verdiğini söylüyor. Projeyi almak için rekabetçi fiyat şart.', 'pending');
+
+  // ----- QUOTE REQUEST -----
+  const quoteUuid = 'qr-001';
+  db.prepare('INSERT INTO quote_requests (uuid, user_id, name, email, phone, company, message, status) VALUES (?,?,?,?,?,?,?,?)')
+    .run(quoteUuid, custUser.id, 'Ahmet Yılmaz', 'ahmet@gmail.com', '+90 555 123 4567', null,
+      '200 m² ticari ofisim için klima ve ısıtma sistemi kurulumu hakkında teknik teklif ve fiyat bilgisi almak istiyorum. VRF sistemi veya multi split klima konusunda yönlendirme yapabilir misiniz?',
+      'in_review');
+
+  // ----- NOTIFICATIONS -----
+  const insertNotif = db.prepare('INSERT INTO notifications (user_id, title, message, type, is_read, link) VALUES (?,?,?,?,?,?)');
+  // Admin notifs
+  insertNotif.run(adminUser.id, 'Yüksek Tutarlı Sipariş', 'Sipariş #ord-ahmet-002 stok onayı bekliyor (54.000 ₺)', 'warning', 0, '/admin.html#orders');
+  insertNotif.run(adminUser.id, 'Yeni Teklif Talebi', 'Ahmet Yılmaz tarafından yeni bir teklif formu gönderildi.', 'info', 0, '/admin.html#quotes');
+  insertNotif.run(adminUser.id, 'Ek İskonto Talebi', 'Örnek Tesisat Ltd - Bağcılar Ticaret Merkezi projesi için %8 ek iskonto talep etti.', 'warning', 0, '/admin.html#discount-requests');
+  // Dealer notifs
+  insertNotif.run(dealerUser.id, 'Ek İskonto Onaylandı', 'Fenerbahçe Mah. Apartman projesi için talep ettiğiniz %5 ek iskonto onaylandı!', 'success', 0, '/bayi.html');
+  insertNotif.run(dealerUser.id, 'Yeni Ürün: Baymak Kaskad Kazan', 'Baymak Lectus 115 kW modeli stokta yerini aldı. Avantajlı bayi fiyatını inceleyin.', 'info', 1, '/urunler.html?category=kazan');
+  // Customer notifs
+  insertNotif.run(custUser.id, 'Siparişiniz Teslim Edildi', '#ord-ahmet-001 numaralı siparişiniz teslim edildi. İyi günler!', 'success', 0, null);
+  insertNotif.run(custUser.id, 'Stok Onayı Bekleniyor', '#ord-ahmet-002 numaralı siparişiniz stok kontrolünden geçiyor. En kısa sürede haberdar edileceksiniz.', 'warning', 0, null);
+
   console.log('✅ Veritabanı başarıyla tohumlandı (Seeded).');
+  console.log('--- TEST KULLANICILARI ---');
+  console.log('1. Admin: admin@klimakombimerkezi.com (Şifre: Admin123!)');
+  console.log('2. Bayi: bayi@klimakombimerkezi.com (Şifre: Bayi123!)');
+  console.log('3. Çalışan: calisan@klimakombimerkezi.com (Şifre: Calisan123!)');
+  console.log('4. Müşteri: ahmet@gmail.com (Şifre: Ahmet123!)');
+  console.log('--- ÖRNEK VERİLER ---');
+  console.log('- 2 müşteri siparişi, 2 bayi projesi, 1 teklif talebi, bildirimler eklendi!');
+
   console.log('--- TEST KULLANICILARI ---');
   console.log('1. Admin: admin@klimakombimerkezi.com (Şifre: Admin123!)');
   console.log('2. Bayi: bayi@klimakombimerkezi.com (Şifre: Bayi123!)');

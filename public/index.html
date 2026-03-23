@@ -3,26 +3,153 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Klima Kombi Merkezi - Türkiye'nin lider ısıtma ve soğutma sistemleri platformu. Bayi ve bireysel satış.">
+<meta name="description" content="Klima Kombi Merkezi - Türkiye'nin lider ısıtma ve soğutma sistemleri platformu. Buderus, Viessmann, Daikin ve daha fazlası. Bayi ve bireysel satış.">
 <title>Klima Kombi Merkezi | Ana Sayfa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <link rel="manifest" href="/manifest.json">
 <style>
-.hero-image { background: rgba(255,255,255,0.08); border-radius: var(--r-xl); padding: var(--space-8); text-align: center; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); }
-.hero-image .icon-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
-.hero-icon-card { background: rgba(255,255,255,0.12); border-radius: var(--r-lg); padding: var(--space-5) var(--space-3); font-size: 32px; transition: transform var(--t-fast); }
-.hero-icon-card:hover { transform: scale(1.05); }
-.hero-icon-card p { font-size: 11px; margin-top: 6px; opacity: 0.8; }
-.features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-5); margin-top: var(--space-10); }
-.feature-card { background: var(--c-surface); border-radius: var(--r-lg); padding: var(--space-6); text-align: center; border: 1px solid var(--c-border); transition: all var(--t-normal); }
-.feature-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.feature-icon { font-size: 36px; margin-bottom: var(--space-3); }
-.feature-card h3 { font-size: 15px; font-weight: 700; margin-bottom: var(--space-2); }
-.feature-card p { font-size: 13px; color: var(--c-text-muted); line-height: 1.5; }
+/* ---- Hero ---- */
+.hero {
+  background: linear-gradient(145deg, #060e2a 0%, #0d1f5c 50%, #1a3a8f 100%);
+  padding: 80px 0 70px; position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 80% 40%, rgba(59,130,246,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 35% at 20% 70%, rgba(245,158,11,0.12) 0%, transparent 70%);
+}
+.hero-particles { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+.hero-particles span {
+  position: absolute; background: rgba(255,255,255,0.4);
+  border-radius: 50%; animation: floatUp linear infinite;
+}
+@keyframes floatUp {
+  0%   { transform: translateY(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { transform: translateY(-100vh); opacity: 0; }
+}
+.hero-content {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: 1.1fr 0.9fr;
+  gap: 64px; align-items: center;
+}
+.hero h1 {
+  font-size: 56px; font-weight: 900; color: #fff;
+  margin-bottom: 16px; letter-spacing: -2px; line-height: 1.05;
+}
+.hero h1 .highlight {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b, #fcd34d);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-subtitle {
+  font-size: 17px; color: rgba(255,255,255,0.75);
+  margin-bottom: 32px; line-height: 1.65; max-width: 500px;
+}
+.hero-cta { display: flex; gap: 16px; margin-bottom: 40px; }
+.hero-trust { display: flex; gap: 24px; flex-wrap: wrap; }
+.hero-trust-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85);
+}
+.hero-stat-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.hero-stat-card {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px; padding: 22px; transition: all 0.3s;
+  animation: heroCardIn 0.6s ease both;
+}
+.hero-stat-card:hover { background: rgba(255,255,255,0.14); transform: translateY(-3px); }
+.hero-stat-card:nth-child(2) { animation-delay: 0.15s; }
+.hero-stat-card:nth-child(3) { animation-delay: 0.3s; }
+.hero-stat-card:nth-child(4) { animation-delay: 0.45s; }
+@keyframes heroCardIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.hero-stat-card .s-icon { font-size: 32px; margin-bottom: 10px; }
+.hero-stat-card .s-value { font-size: 22px; font-weight: 900; color: #fff; line-height: 1; }
+.hero-stat-card .s-label { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 4px; font-weight: 500; }
+
+/* ---- Brand Strip ---- */
+.brands-strip {
+  background: var(--c-surface); border-bottom: 1px solid var(--c-border);
+  padding: 16px 0; overflow: hidden;
+}
+.brands-track { display: flex; gap: 16px; align-items: center; animation: brandScroll 30s linear infinite; }
+.brands-track:hover { animation-play-state: paused; }
+@keyframes brandScroll { 0% { transform:translateX(0); } 100% { transform:translateX(-50%); } }
+.brand-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 20px; background: var(--c-bg);
+  border-radius: 100px; border: 1px solid var(--c-border);
+  font-size: 14px; font-weight: 700; color: var(--c-text-muted); flex-shrink: 0;
+  transition: all 0.2s; cursor: default;
+}
+.brand-pill:hover { border-color: var(--c-primary); color: var(--c-primary); background: var(--c-primary-light); }
+
+/* ---- Category Cards ---- */
+.cat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px; }
+.cat-card {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 22px 12px; background: var(--c-surface);
+  border: 1px solid var(--c-border); border-radius: 16px;
+  text-decoration: none; color: var(--c-text); transition: all 0.25s; text-align: center;
+}
+.cat-card:hover { border-color: var(--c-primary); background: var(--c-primary-light); transform: translateY(-4px); box-shadow: 0 10px 20px rgba(29,78,216,0.1); color: var(--c-primary); }
+.cat-card:hover .cat-icon { transform: scale(1.15); }
+.cat-icon { font-size: 36px; transition: transform 0.25s; }
+.cat-card span { font-size: 13px; font-weight: 700; }
+
+/* ---- Features ---- */
+.features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-5); }
+.feature-card {
+  background: var(--c-surface); border-radius: var(--r-xl); padding: 28px 24px;
+  border: 1px solid var(--c-border); transition: all 0.25s;
+  position: relative; overflow: hidden;
+}
+.feature-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(135deg, var(--c-primary), #1741b0);
+  transform: scaleX(0); transform-origin: left; transition: transform 0.3s;
+}
+.feature-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+.feature-card:hover::before { transform: scaleX(1); }
+.feature-icon { font-size: 38px; margin-bottom: 16px; }
+.feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.feature-card p { font-size: 13px; color: var(--c-text-muted); line-height: 1.6; }
+
+/* ---- Steps Section ---- */
+.steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; position: relative; }
+.steps-grid::before { content:''; position:absolute; top:30px; left:12.5%; right:12.5%; height:2px; background: linear-gradient(90deg, var(--c-primary), var(--c-accent)); opacity:0.3; }
+.step-card { text-align: center; padding: 0 16px; }
+.step-num { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--c-primary), #1e3a8a); color: #fff; font-size: 22px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 8px 20px rgba(29,78,216,0.3); }
+.step-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.step-card p { font-size: 13px; color: var(--c-text-muted); line-height: 1.5; }
+
+/* ---- User Dropdown ---- */
 .user-dropdown { display: none; position: absolute; right: 0; top: calc(100% + 8px); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); box-shadow: var(--shadow-lg); min-width: 200px; z-index: 200; overflow: hidden; }
 .user-dropdown.open { display: block; }
 .dropdown-item { display: flex; align-items: center; gap: var(--space-2); padding: 10px 16px; font-size: 14px; color: var(--c-text); cursor: pointer; transition: background var(--t-fast); border: none; background: none; width: 100%; text-align: left; text-decoration: none; }
 .dropdown-item:hover { background: var(--c-bg); }
+
+@media (max-width: 1024px) {
+  .hero h1 { font-size: 44px; }
+  .steps-grid { grid-template-columns: 1fr 1fr; }
+  .steps-grid::before { display:none; }
+}
+@media (max-width: 900px) {
+  .hero-content { grid-template-columns: 1fr; text-align: center; }
+  .hero-subtitle { margin: 0 auto 32px; }
+  .hero-cta, .hero-trust { justify-content: center; }
+  .hero h1 { font-size: 40px; letter-spacing: -1px; }
+}
+@media (max-width: 600px) {
+  .steps-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 34px; }
+}
 </style>
 </head>
 <body>
@@ -35,17 +162,17 @@
   <div class="container">
     <div class="navbar-inner">
       <a href="/" class="nav-logo">
-        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--c-primary),#1741b0);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🔥</div>
+        <div style="width:38px;height:38px;background:linear-gradient(135deg,#1d4ed8,#1e3a8a);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:21px;box-shadow:0 4px 14px rgba(29,78,216,0.35)">🔥</div>
         <div>
           <div class="nav-logo-text">Klima Kombi Merkezi</div>
-          <div class="nav-logo-sub">Isıtma & Soğutma Sistemleri</div>
+          <div class="nav-logo-sub">Isıtma &amp; Soğutma Sistemleri</div>
         </div>
       </a>
 
       <div class="nav-search">
         <span class="nav-search-icon">🔍</span>
-        <input type="text" id="search-input" placeholder="Ürün, marka veya model ara..." autocomplete="off">
-        <div id="search-results" class="search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);z-index:200;max-height:400px;overflow-y:auto;margin-top:4px;"></div>
+        <input type="text" id="search-input" placeholder="Kombi, klima, kazan, marka ara..." autocomplete="off">
+        <div id="search-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);z-index:200;max-height:420px;overflow-y:auto;margin-top:6px;"></div>
       </div>
 
       <div class="nav-actions">
@@ -70,37 +197,126 @@
 
 <!-- HERO -->
 <section class="hero">
+  <div class="hero-particles" id="hero-particles"></div>
   <div class="container">
     <div class="hero-content">
       <div>
-        <h1>Isı ve Konforun<br><span>Tek Adresi</span></h1>
-        <p>Kombi, klima, kazan ve aksesuarlarda Türkiye'nin en kapsamlı ürün yelpazesi. Bireysel ve kurumsal alımlar için özel çözümler.</p>
-        <div class="hero-buttons">
-          <a href="/urunler.html" class="btn btn-accent btn-lg">Ürünleri Keşfet</a>
-          <a href="/araclar.html" class="btn btn-outline-white btn-lg">🔧 Seçim Sihirbazı</a>
+        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:100px;padding:6px 16px;margin-bottom:20px">
+          <span style="font-size:15px">🏆</span>
+          <span style="font-size:13px;font-weight:700;color:#fbbf24">Türkiye'nin Önde Gelen Isıtma Platformu</span>
         </div>
-        <div class="hero-badges">
-          <span class="hero-badge">✓ Garantili Ürünler</span>
-          <span class="hero-badge">✓ Hızlı Teslimat</span>
-          <span class="hero-badge">✓ Teknik Destek</span>
+        <h1>Isı ve Konforun<br><span class="highlight">Tek Adresi</span></h1>
+        <p class="hero-subtitle">Kombi, klima, kazan ve aksesuarlarda geniş ürün yelpazesi. Bireysel alıcılar ve yetkili bayiler için ayrı özel çözümler.</p>
+        <div class="hero-cta">
+          <a href="/urunler.html" class="btn btn-accent btn-lg" style="font-size:16px;padding:15px 30px">🛒 Ürünleri Keşfet</a>
+          <a href="/araclar.html" class="btn btn-outline-white btn-lg" style="font-size:16px;padding:15px 30px">🔧 Seçim Sihirbazı</a>
+        </div>
+        <div class="hero-trust">
+          <div class="hero-trust-item"><span style="color:#4ade80">✓</span> Yetkilendirilmiş Distribütör</div>
+          <div class="hero-trust-item"><span style="color:#4ade80">✓</span> Aynı Gün Kargo</div>
+          <div class="hero-trust-item"><span style="color:#4ade80">✓</span> Resmi Garanti</div>
+          <div class="hero-trust-item"><span style="color:#4ade80">✓</span> Teknik Destek</div>
         </div>
       </div>
-      <div class="hero-image">
-        <div class="icon-grid">
-          <div class="hero-icon-card">🔥<p>Kombi</p></div>
-          <div class="hero-icon-card">❄️<p>Klima</p></div>
-          <div class="hero-icon-card">⚙️<p>Kazan</p></div>
-          <div class="hero-icon-card">🌡️<p>Termostat</p></div>
-          <div class="hero-icon-card">🔩<p>Aksesuar</p></div>
-          <div class="hero-icon-card">🛠️<p>Montaj</p></div>
+      <div>
+        <div class="hero-stat-cards">
+          <div class="hero-stat-card">
+            <div class="s-icon">🔥</div>
+            <div class="s-value">500+</div>
+            <div class="s-label">Ürün Çeşidi</div>
+          </div>
+          <div class="hero-stat-card">
+            <div class="s-icon">🏢</div>
+            <div class="s-value">250+</div>
+            <div class="s-label">Yetkili Bayi</div>
+          </div>
+          <div class="hero-stat-card">
+            <div class="s-icon">🚚</div>
+            <div class="s-value">24 Saat</div>
+            <div class="s-label">Hızlı Teslimat</div>
+          </div>
+          <div class="hero-stat-card">
+            <div class="s-icon">⭐</div>
+            <div class="s-value">4.8/5</div>
+            <div class="s-label">Müşteri Puanı</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- DUAL LOGIN SECTION -->
-<section style="background:linear-gradient(135deg,#f8fafc,#e8f0fe);padding:var(--space-10) 0;">
+<!-- BRAND STRIP -->
+<div class="brands-strip">
+  <div class="container" style="overflow:hidden">
+    <div class="brands-track" id="brands-track">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORIES -->
+<section style="padding:64px 0 40px;background:var(--c-bg)">
+  <div class="container">
+    <div class="section-header">
+      <h2>Ürün Kategorileri</h2>
+      <p>Isıtma ve soğutmada tüm çözümler tek çatı altında</p>
+    </div>
+    <div class="cat-cards" id="cat-cards"></div>
+  </div>
+</section>
+
+<!-- FEATURED PRODUCTS -->
+<section style="padding:20px 0 64px;background:var(--c-bg)">
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px">
+      <div>
+        <h2 style="font-size:30px;font-weight:800;margin-bottom:6px">Öne Çıkan Ürünler</h2>
+        <p style="color:var(--c-text-muted);font-size:15px">En çok tercih edilen modellerimiz</p>
+      </div>
+      <a href="/urunler.html" class="btn btn-outline desktop-only">Tümünü Gör →</a>
+    </div>
+    <div class="product-grid" id="featured-products"></div>
+    <div style="text-align:center;margin-top:32px">
+      <a href="/urunler.html" class="btn btn-outline btn-lg">Tüm Ürünleri Gör →</a>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section style="padding:56px 0;background:var(--c-surface);border-top:1px solid var(--c-border)">
+  <div class="container">
+    <div class="section-header">
+      <h2>Nasıl Çalışır?</h2>
+      <p>Kolay ve hızlı alışveriş deneyimi</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h4>Ürün Seç</h4>
+        <p>Sihirbazımızla evinize uygun kombi/klima modelini belirleyin</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h4>Sepete Ekle</h4>
+        <p>Fiyat/ödeme yöntemini seçin, kredi kartı taksit seçeneklerini inceleyin</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h4>Siparişi Onayla</h4>
+        <p>Güvenli ödeme ve hızlı kargo! Stok onayı gereken ürünler için sizi arayız.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <h4>Teslim Al</h4>
+        <p>Montaj ve teknik destek hizmeti için ekibimizle irtibat kurabilirsiniz</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LOGIN CARDS -->
+<section id="login-section-wrapper" style="background:linear-gradient(135deg,#f8fafc,#e8f0fe);padding:64px 0;">
   <div class="container">
     <div class="section-header">
       <h2>Size Özel Deneyim</h2>
@@ -117,106 +333,62 @@
         <div class="login-card-icon">🏢</div>
         <h3>Bayi / Kurumsal</h3>
         <p>İskontolu fiyatlar, proje yönetimi ve PDF teklif oluşturma</p>
-        <div style="margin-top:var(--space-5)"><span class="btn btn-warning" style="width:100%;justify-content:center;background:#f59e0b;color:#fff">Bayi Girişi</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- FEATURED PRODUCTS -->
-<section style="padding:var(--space-12) 0;background:var(--c-surface)">
-  <div class="container">
-    <div class="section-header">
-      <h2>Öne Çıkan Ürünler</h2>
-      <p>En çok tercih edilen ürünlerimizi keşfedin</p>
-    </div>
-    <div class="product-grid" id="featured-products">
-      <!-- loaded by JS -->
-    </div>
-    <div style="text-align:center;margin-top:var(--space-8)">
-      <a href="/urunler.html" class="btn btn-outline btn-lg">Tüm Ürünleri Gör →</a>
-    </div>
-  </div>
-</section>
-
-<!-- FEATURES -->
-<section style="padding:var(--space-12) 0;background:var(--c-bg)">
-  <div class="container">
-    <div class="section-header">
-      <h2>Neden Klima Kombi Merkezi?</h2>
-    </div>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">🏷️</div>
-        <h3>Rekabetçi Fiyatlar</h3>
-        <p>Doğrudan ithalatçı fiyatlarından avantajlı fiyatlarla alışveriş yapın</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔧</div>
-        <h3>Uzman Seçim Sihirbazı</h3>
-        <p>Evinize en uygun kombi, kazan veya klima sistem kombinasyonunu hesaplayın</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🏢</div>
-        <h3>Bayi Ağı</h3>
-        <p>Kurumsal bayiler için özel iskontolar, proje kaydı ve PDF teklif sistemi</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🚚</div>
-        <h3>Hızlı Teslimat</h3>
-        <p>Depoda bulunan ürünler aynı gün veya ertesi gün kargo ile kapınızda</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📋</div>
-        <h3>Garanti & Servis</h3>
-        <p>Tüm ürünler resmi garantili, yetkili servis ağıyla desteklenmektedir</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">💬</div>
-        <h3>Teknik Destek</h3>
-        <p>Uzman ekibimiz satış öncesi ve sonrası teknik sorularınızı yanıtlar</p>
+        <div style="margin-top:var(--space-5)"><span class="btn" style="width:100%;justify-content:center;background:#f59e0b;color:#fff">Bayi Girişi</span></div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- OPPORTUNITY CORNER -->
-<section style="padding:var(--space-10) 0;background:var(--c-surface)">
+<section style="padding:56px 0;background:var(--c-bg)">
   <div class="container">
-    <div class="section-divider">
-      <h3>🎯 Fırsat Köşesi</h3>
-    </div>
-    <div class="opportunity-banner">
-      <div style="font-size:60px">🎉</div>
-      <div>
-        <h3 style="font-size:24px;font-weight:800;margin-bottom:var(--space-2)">Stok Fırsatları</h3>
-        <p style="opacity:0.9;margin-bottom:var(--space-4)">Seri sonu ve sınırlı stoklu sıfır ürünleri özel fiyatlarla keşfedin</p>
-        <a href="/urunler.html?opportunity=1" class="btn btn-lg" style="background:#fff;color:var(--c-success)">Fırsatları Gör →</a>
+    <div class="opportunity-banner" style="background:linear-gradient(135deg,#fff1f2,#fffbeb);border:2px dashed #fca5a5;border-radius:16px;padding:32px;display:flex;align-items:center;gap:32px;flex-wrap:wrap">
+      <div style="font-size:64px">🎯</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:800;color:#dc2626;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">⚡ Sınırlı Süre</div>
+        <h3 style="font-size:26px;font-weight:800;margin-bottom:8px">Fırsat Köşesi</h3>
+        <p style="opacity:0.8;margin-bottom:16px;font-size:15px">Seri sonu ve stok fazlası sıfır ürünler — stokla sınırlı özel fiyatlar!</p>
+        <a href="/urunler.html?opportunity=1" class="btn btn-primary btn-lg">Fırsatları Gör →</a>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ENGINEERING TOOLS -->
-<section style="padding:var(--space-10) 0;background:linear-gradient(135deg,#1a56db,#0f2a8a);color:#fff">
+<section style="padding:56px 0;background:linear-gradient(135deg,#1a56db,#0f2a8a);color:#fff">
   <div class="container">
     <div class="section-header" style="color:#fff">
       <h2 style="color:#fff">Mühendislik Araçları</h2>
       <p style="color:rgba(255,255,255,0.8)">Projenize uygun sistemi otomatik hesaplayın</p>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-5)">
-      <a href="/araclar.html#kombi" class="card" style="border:none;background:rgba(255,255,255,0.12);backdrop-filter:blur(10px);padding:var(--space-6);display:flex;gap:var(--space-4);align-items:flex-start;border:1px solid rgba(255,255,255,0.2);text-decoration:none;transition:transform 0.2s">
-        <span style="font-size:36px">🔥</span>
-        <div><h4 style="color:#fff;margin-bottom:4px;font-size:16px">Kombi Seçim Sihirbazı</h4><p style="color:rgba(255,255,255,0.75);font-size:13px">Oda sayısı ve m²'ye göre uygun kombi modelini bulun</p></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px">
+      <a href="/araclar.html#kombi" class="eng-tool-card" style="display:flex;gap:16px;align-items:flex-start;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);padding:24px;border-radius:16px;border:1px solid rgba(255,255,255,0.15);text-decoration:none;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.18)';this.style.transform='translateY(-3px)'" onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.transform=''">
+        <span style="font-size:38px">🔥</span>
+        <div><h4 style="color:#fff;margin-bottom:6px;font-size:16px">Kombi Seçim Sihirbazı</h4><p style="color:rgba(255,255,255,0.75);font-size:13px">Oda sayısı ve m²'ye göre uygun kombi modelini bulun</p></div>
       </a>
-      <a href="/araclar.html#kazan" class="card" style="border:none;background:rgba(255,255,255,0.12);backdrop-filter:blur(10px);padding:var(--space-6);display:flex;gap:var(--space-4);align-items:flex-start;border:1px solid rgba(255,255,255,0.2);text-decoration:none;transition:transform 0.2s">
-        <span style="font-size:36px">⚙️</span>
-        <div><h4 style="color:#fff;margin-bottom:4px;font-size:16px">Kazan Seçim Programı</h4><p style="color:rgba(255,255,255,0.75);font-size:13px">Bölge ve m²'ye göre gereken kW kapasitesini hesaplayın</p></div>
+      <a href="/araclar.html#kazan" class="eng-tool-card" style="display:flex;gap:16px;align-items:flex-start;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);padding:24px;border-radius:16px;border:1px solid rgba(255,255,255,0.15);text-decoration:none;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.18)';this.style.transform='translateY(-3px)'" onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.transform=''">
+        <span style="font-size:38px">⚙️</span>
+        <div><h4 style="color:#fff;margin-bottom:6px;font-size:16px">Kazan Seçim Programı</h4><p style="color:rgba(255,255,255,0.75);font-size:13px">Bölge ve m²'ye göre gereken kW kapasitesini hesaplayın</p></div>
       </a>
-      <a href="/araclar.html#klima" class="card" style="border:none;background:rgba(255,255,255,0.12);backdrop-filter:blur(10px);padding:var(--space-6);display:flex;gap:var(--space-4);align-items:flex-start;border:1px solid rgba(255,255,255,0.2);text-decoration:none;transition:transform 0.2s">
-        <span style="font-size:36px">❄️</span>
-        <div><h4 style="color:#fff;margin-bottom:4px;font-size:16px">Multi Klima Konfiguratör</h4><p style="color:rgba(255,255,255,0.75);font-size:13px">Odalarınıza en uygun iç ve dış ünite kombinasyonunu bulun</p></div>
+      <a href="/araclar.html#klima" class="eng-tool-card" style="display:flex;gap:16px;align-items:flex-start;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);padding:24px;border-radius:16px;border:1px solid rgba(255,255,255,0.15);text-decoration:none;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.18)';this.style.transform='translateY(-3px)'" onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.transform=''">
+        <span style="font-size:38px">❄️</span>
+        <div><h4 style="color:#fff;margin-bottom:6px;font-size:16px">Multi Klima Konfiguratör</h4><p style="color:rgba(255,255,255,0.75);font-size:13px">Odalarınıza en uygun iç ve dış ünite kombinasyonunu bulun</p></div>
       </a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section style="padding:64px 0;background:var(--c-bg)">
+  <div class="container">
+    <div class="section-header"><h2>Neden Klima Kombi Merkezi?</h2></div>
+    <div class="features-grid">
+      <div class="feature-card"><div class="feature-icon">🏷️</div><h3>Rekabetçi Fiyatlar</h3><p>Doğrudan ithalatçı fiyatlarından avantajlı fiyatlarla alışveriş yapın</p></div>
+      <div class="feature-card"><div class="feature-icon">🔧</div><h3>Uzman Seçim Sihirbazı</h3><p>Evinize en uygun kombi, kazan veya klima sistem kombinasyonunu hesaplayın</p></div>
+      <div class="feature-card"><div class="feature-icon">🏢</div><h3>Bayi Ağı</h3><p>Kurumsal bayiler için özel iskontolar, proje kaydı ve PDF teklif sistemi</p></div>
+      <div class="feature-card"><div class="feature-icon">🚚</div><h3>Hızlı Teslimat</h3><p>Depoda bulunan ürünler aynı gün veya ertesi gün kargo ile kapınızda</p></div>
+      <div class="feature-card"><div class="feature-icon">📋</div><h3>Garanti &amp; Servis</h3><p>Tüm ürünler resmi garantili, yetkili servis ağıyla desteklenmektedir</p></div>
+      <div class="feature-card"><div class="feature-icon">💬</div><h3>Teknik Destek</h3><p>Uzman ekibimiz satış öncesi ve sonrası teknik sorularınızı yanıtlar</p></div>
     </div>
   </div>
 </section>
@@ -226,14 +398,14 @@
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <div style="font-family:var(--font-display);font-size:20px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px">
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;margin-bottom:12px">
           <span style="font-size:28px">🔥</span> Klima Kombi Merkezi
         </div>
         <p>Türkiye'nin lider ısıtma ve soğutma sistemleri platformu. Bireysel ve kurumsal müşterilere hizmet.</p>
-        <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4)">
+        <div style="display:flex;gap:12px;margin-top:16px">
           <a href="#" style="color:#94a3b8;font-size:20px">📘</a>
           <a href="#" style="color:#94a3b8;font-size:20px">📸</a>
-          <a href="#" style="color:#94a3b8;font-size:20px">📺</a>
+          <a href="https://wa.me/905320000000" style="color:#94a3b8;font-size:20px">💬</a>
         </div>
       </div>
       <div class="footer-col">
@@ -242,7 +414,7 @@
           <li><a href="/urunler.html?category=kombi">Kombiler</a></li>
           <li><a href="/urunler.html?category=kazan">Kazanlar</a></li>
           <li><a href="/urunler.html?category=klima">Klimalar</a></li>
-          <li><a href="/urunler.html?category=termostat">Termostatlar</a></li>
+          <li><a href="/urunler.html?category=vrf-sistemleri">VRF Sistemleri</a></li>
           <li><a href="/urunler.html?opportunity=1">Fırsat Ürünleri</a></li>
         </ul>
       </div>
@@ -259,12 +431,12 @@
         <h4>İletişim</h4>
         <div class="footer-contact-item">📞 <a href="tel:+902120000000" style="color:#94a3b8">+90 212 000 0000</a></div>
         <div class="footer-contact-item">✉️ <a href="mailto:info@klimakombimerkezi.com" style="color:#94a3b8">info@klimakombimerkezi.com</a></div>
-        <div class="footer-contact-item">📍 İstanbul, Türkiye</div>
+        <div class="footer-contact-item" style="margin-top:8px">📍 İstanbul, Türkiye</div>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2024 Klima Kombi Merkezi. Tüm hakları saklıdır.</p>
-      <div style="display:flex;gap:var(--space-4)">
+      <p>© 2025 Klima Kombi Merkezi. Tüm hakları saklıdır.</p>
+      <div style="display:flex;gap:16px">
         <a href="#" style="color:#94a3b8;font-size:13px">Gizlilik Politikası</a>
         <a href="#" style="color:#94a3b8;font-size:13px">KVKK</a>
         <a href="#" style="color:#94a3b8;font-size:13px">İade Koşulları</a>
@@ -275,18 +447,51 @@
 
 <script src="/js/app.js"></script>
 <script>
-// Load categories for nav
+// ---- Hero particles ----
+(function() {
+  const c = document.getElementById('hero-particles');
+  for (let i = 0; i < 35; i++) {
+    const s = document.createElement('span');
+    const size = Math.random() * 3 + 1;
+    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;width:${size}px;height:${size}px;animation-duration:${Math.random()*15+8}s;animation-delay:${Math.random()*10}s`;
+    c.appendChild(s);
+  }
+})();
+
+// ---- Category icons map ----
+const CAT_ICONS = { kombi:'🔥', klima:'❄️', kazan:'⚙️', termostat:'🌡️', radyator:'🔩', 'vrf-sistemleri':'🏭', 'paket-sistemler':'📦' };
+
+// ---- Load categories ----
 async function loadCategories() {
   try {
     const cats = await fetch('/api/categories').then(r => r.json());
+    // Nav
     const nav = document.getElementById('category-nav-list');
     cats.slice(0, 10).forEach(c => {
       nav.innerHTML += `<li><a href="/urunler.html?category=${c.slug}">${c.name}</a></li>`;
     });
+    // Cards
+    const cc = document.getElementById('cat-cards');
+    cc.innerHTML = cats.map(c => `
+      <a href="/urunler.html?category=${c.slug}" class="cat-card">
+        <div class="cat-icon">${CAT_ICONS[c.slug] || '📦'}</div>
+        <span>${c.name}</span>
+      </a>
+    `).join('');
   } catch {}
 }
 
-// Load featured products
+// ---- Brand strip ----
+async function loadBrands() {
+  try {
+    const brands = await fetch('/api/brands').then(r => r.json());
+    const track = document.getElementById('brands-track');
+    const items = brands.map(b => `<span class="brand-pill">🏷️ ${b.name}</span>`).join('');
+    track.innerHTML = items + items; // duplicate for seamless loop
+  } catch {}
+}
+
+// ---- Featured products ----
 async function loadFeaturedProducts() {
   try {
     const { products } = await fetch('/api/products?limit=8').then(r => r.json());
@@ -300,29 +505,27 @@ function renderProductCard(p) {
   const images = Array.isArray(p.images) ? p.images : [];
   const img = images[0] || '/images/no-image.png';
   const isDealer = Auth.isDealer();
-
   let priceHtml = '';
   if (p.stock_status === 'price_on_request' || p.is_hidden_price) {
     priceHtml = `<div class="price-on-request">💰 Fiyat Sorunuz</div>`;
   } else if (p.stock_status === 'on_request') {
-    priceHtml = `<div class="price-on-request">⏱ Tedarik: ${p.supply_days || 0} Gün - Teklif İsteyiniz</div>`;
+    priceHtml = `<div class="price-on-request">⏱ Tedarik: ${p.supply_days || 0} Gün</div>`;
   } else if (isDealer && p.dealer_cash_price) {
     priceHtml = `
       <div class="price-retail-crossed">${Format.price(p.base_price)}</div>
       <div class="price-dealer-cash">${Format.price(p.dealer_cash_price)}</div>
-      ${p.dealer_card_price ? `<div class="price-dealer-card">💳 K.Kartı: ${Format.price(p.dealer_card_price)}</div>` : ''}
+      ${p.dealer_card_price ? `<div class="price-dealer-card">💳 ${Format.price(p.dealer_card_price)}</div>` : ''}
     `;
   } else {
     priceHtml = `<div class="price-retail">${Format.price(p.base_price)}</div>`;
   }
-
   const canBuy = !p.is_hidden_price && p.stock_status !== 'on_request' && p.stock_status !== 'price_on_request' && p.stock_status !== 'out_of_stock';
-
   return `
     <div class="product-card">
       <div class="product-card-image">
-        <a href="/urun/${p.slug}.html"><img src="${img}" alt="${p.name}" loading="lazy" onerror="this.src='/images/no-image.png'"></a>
-        ${p.is_opportunity ? '<span class="product-card-badge opportunity">Fırsat</span>' : ''}
+        <a href="/urunler.html?slug=${p.slug}"><img src="${img}" alt="${p.name}" loading="lazy" onerror="this.src='/images/no-image.png'"></a>
+        ${p.is_opportunity ? '<span class="product-card-badge opportunity">🔥 Fırsat</span>' : ''}
+        ${p.stock_status === 'out_of_stock' ? '<span class="product-card-badge" style="background:var(--c-text-muted)">Stok Yok</span>' : ''}
       </div>
       <div class="product-card-body">
         ${p.brand_name ? `<div class="product-card-brand">${p.brand_name}</div>` : ''}
@@ -332,8 +535,8 @@ function renderProductCard(p) {
       <div class="product-card-actions">
         <a href="/urunler.html?slug=${p.slug}" class="btn btn-outline btn-sm" style="flex:1">İncele</a>
         ${canBuy
-          ? `<button class="btn btn-primary btn-sm" onclick="addToCart(${p.id})" style="flex:1">🛒 Sepete Ekle</button>`
-          : `<a href="/teklif.html?product=${p.id}" class="btn btn-warning btn-sm" style="flex:1;background:#f59e0b;color:#fff">📩 Teklif Al</a>`
+          ? `<button class="btn btn-primary btn-sm" onclick="addToCart(${p.id})" style="flex:1">🛒 Sepete</button>`
+          : `<a href="/teklif.html?product=${p.id}" class="btn btn-sm" style="flex:1;background:#f59e0b;color:#fff">📩 Teklif</a>`
         }
       </div>
     </div>
@@ -341,10 +544,8 @@ function renderProductCard(p) {
 }
 
 async function addToCart(productId) {
-  try {
-    await Cart.add(productId);
-    Toast.success('Ürün sepete eklendi!');
-  } catch(e) { Toast.error(e.message); }
+  try { await Cart.add(productId); Toast.success('Ürün sepete eklendi!'); }
+  catch(e) { Toast.error(e.message); }
 }
 
 // Search
@@ -360,23 +561,27 @@ document.getElementById('search-input').addEventListener('input', (e) => {
       if (!products?.length) { dropdown.style.display = 'none'; return; }
       dropdown.innerHTML = products.map(p => `
         <a href="/urunler.html?slug=${p.slug}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--c-border);text-decoration:none;color:var(--c-text);transition:background 0.15s" onmouseover="this.style.background='var(--c-bg)'" onmouseout="this.style.background=''">
-          <img src="${(Array.isArray(p.images)?p.images:[])[0]||'/images/no-image.png'}" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#f8fafc;padding:2px">
-          <div><div style="font-size:13px;font-weight:600">${p.name}</div><div style="font-size:12px;color:var(--c-text-muted)">${p.brand_name||''} ${Format.price(p.base_price)||''}</div></div>
+          <img src="${(Array.isArray(p.images)?p.images:[])[0]||'/images/no-image.png'}" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#f8fafc;padding:3px;border:1px solid var(--c-border)">
+          <div><div style="font-size:13px;font-weight:600">${p.name}</div><div style="font-size:12px;color:var(--c-text-muted)">${p.brand_name||''} ${p.base_price ? Format.price(p.base_price) : ''}</div></div>
         </a>
-      `).join('') + `<a href="/urunler.html?search=${encodeURIComponent(q)}" style="display:block;padding:10px 14px;font-size:13px;color:var(--c-primary);text-align:center">Tüm sonuçları gör →</a>`;
+      `).join('') + `<a href="/urunler.html?search=${encodeURIComponent(q)}" style="display:block;padding:10px 14px;font-size:13px;color:var(--c-primary);text-align:center;font-weight:600">Tüm sonuçları gör →</a>`;
       dropdown.style.display = 'block';
     } catch {}
   }, 300);
 });
-document.addEventListener('click', e => { if (!e.target.closest('.nav-search')) document.getElementById('search-results').style.display='none'; });
+document.addEventListener('click', e => {
+  if (!e.target.closest('.nav-search')) document.getElementById('search-results').style.display='none';
+});
 
+// Init
 loadCategories();
+loadBrands();
 loadFeaturedProducts();
 
 // Hide login section if already logged in
 if (Auth.isLoggedIn()) {
-  const ls = document.getElementById('login-split-section');
-  if (ls) ls.closest('section').style.display = 'none';
+  const wrapper = document.getElementById('login-section-wrapper');
+  if (wrapper) wrapper.style.display = 'none';
 }
 </script>
 </body>
