@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (user) {
       navAuthArea.innerHTML = `
         <div style="position:relative;display:inline-block">
-          <button class="nav-btn" onclick="this.nextElementSibling.classList.toggle('open')" style="gap:8px">
+          <button class="nav-btn" onclick="document.getElementById('user-dropdown').classList.toggle('open'); event.stopPropagation();" style="gap:8px">
             <span style="font-size:18px">👤</span>
             <span class="desktop-only">${user.name.split(' ')[0]}</span>
             <span style="font-size:10px">▼</span>
