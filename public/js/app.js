@@ -28,29 +28,44 @@ const Auth = {
 const API = {
   async get(path) {
     const r = await fetch(`/api${path}`, { headers: Auth.headers() });
-    if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Sunucu hatası'); }
+    if (!r.ok) { 
+        if (r.status === 401) Auth.logout(); 
+        const e = await r.json(); throw new Error(e.error || 'Sunucu hatası'); 
+    }
     return r.json();
   },
   async post(path, data) {
     const r = await fetch(`/api${path}`, { method: 'POST', headers: Auth.headers(), body: JSON.stringify(data) });
-    if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Sunucu hatası'); }
+    if (!r.ok) { 
+        if (r.status === 401) Auth.logout(); 
+        const e = await r.json(); throw new Error(e.error || 'Sunucu hatası'); 
+    }
     return r.json();
   },
   async put(path, data) {
     const r = await fetch(`/api${path}`, { method: 'PUT', headers: Auth.headers(), body: JSON.stringify(data) });
-    if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Sunucu hatası'); }
+    if (!r.ok) { 
+        if (r.status === 401) Auth.logout();
+        const e = await r.json(); throw new Error(e.error || 'Sunucu hatası'); 
+    }
     return r.json();
   },
   async delete(path) {
     const r = await fetch(`/api${path}`, { method: 'DELETE', headers: Auth.headers() });
-    if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Sunucu hatası'); }
+    if (!r.ok) { 
+        if (r.status === 401) Auth.logout();
+        const e = await r.json(); throw new Error(e.error || 'Sunucu hatası'); 
+    }
     return r.json();
   },
   async postForm(path, formData) {
     const t = Auth.getToken();
     const h = t ? { 'Authorization': `Bearer ${t}` } : {};
     const r = await fetch(`/api${path}`, { method: 'POST', headers: h, body: formData });
-    if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Sunucu hatası'); }
+    if (!r.ok) { 
+        if (r.status === 401) Auth.logout();
+        const e = await r.json(); throw new Error(e.error || 'Sunucu hatası'); 
+    }
     return r.json();
   }
 };

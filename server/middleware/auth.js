@@ -22,10 +22,14 @@ function requireAuth(req, res, next) {
   if (!token) return res.status(401).json({ error: 'Giriş yapınız' });
 
   try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { getDb } = require('../database');
+    const user = getDb().prepare('SELECT * FROM users WHERE id = ? AND is_active = 1').get(decoded.id);
+    if (!user) throw new Error('User not found or inactive');
+    req.user = decoded; // Keep the token payload or use full user DB object
     next();
-  } catch {
-    res.status(401).json({ error: 'Geçersiz veya süresi dolmuş oturum' });
+  } catch (err) {
+    res.status(401).json({ error: 'Geçersiz veya süresi dolmuş oturum (Lütfen çıkış yapıp tekrar girin)' });
   }
 }
 
@@ -42,7 +46,12 @@ function requireRole(...roles) {
 function optionalAuth(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '') || req.cookies?.token;
   if (token) {
-    try { req.user = jwt.verify(token, JWT_SECRET); } catch {}
+    try { 
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const { getDb } = require('../database');
+      const user = getDb().prepare('SELECT * FROM users WHERE id = ? AND is_active = 1').get(decoded.id);
+      if (user) req.user = decoded;
+    } catch {}
   }
   next();
 }
