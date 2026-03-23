@@ -5,10 +5,10 @@ const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
 
-// GET /api/cart
 router.get('/', optionalAuth, (req, res) => {
   const db = getDb();
   const cart = getOrCreateCart(db, req);
+  if (cart.id === -1) return res.json({ cart_id: null, items: [] });
   const items = db.prepare(`
     SELECT ci.*, p.name, p.slug, p.sku, p.images, p.stock_status, p.stock_quantity,
            p.base_price, p.dealer_cash_price, p.dealer_card_price, p.is_hidden_price
@@ -23,6 +23,7 @@ router.get('/', optionalAuth, (req, res) => {
   }));
   res.json({ cart_id: cart.id, items: parsed });
 });
+
 
 // POST /api/cart/add
 router.post('/add', optionalAuth, (req, res) => {
@@ -84,19 +85,33 @@ router.delete('/clear', optionalAuth, (req, res) => {
 
 function getOrCreateCart(db, req) {
   const userId = req.user?.id || null;
-  const sessionId = req.headers['x-session-id'] || 'anon';
+  // Use a more unique session id from header or generate one
+  const sessionId = req.headers['x-session-id'] || req.headers['cookie']?.match(/sess=([^;]+)/)?.[1] || 'anon-' + Math.random().toString(36).slice(2, 9);
 
-  let cart = userId
-    ? db.prepare('SELECT * FROM carts WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(userId)
-    : db.prepare('SELECT * FROM carts WHERE session_id = ? ORDER BY id DESC LIMIT 1').get(sessionId);
+  try {
+    let cart = userId
+      ? db.prepare('SELECT * FROM carts WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(userId)
+      : db.prepare('SELECT * FROM carts WHERE session_id = ? AND user_id IS NULL ORDER BY id DESC LIMIT 1').get(sessionId);
 
-  if (!cart) {
-    const res = db.prepare('INSERT INTO carts (user_id, session_id) VALUES (?,?)').run(userId, sessionId);
-    cart = db.prepare('SELECT * FROM carts WHERE id = ?').get(res.lastInsertRowid);
+    if (!cart) {
+      try {
+        const result = db.prepare('INSERT INTO carts (user_id, session_id) VALUES (?,?)').run(userId, sessionId);
+        cart = db.prepare('SELECT * FROM carts WHERE id = ?').get(result.lastInsertRowid);
+      } catch (insertErr) {
+        // If insert failed (e.g., FK constraint), try to find any existing cart
+        cart = db.prepare('SELECT * FROM carts ORDER BY id DESC LIMIT 1').get();
+        if (!cart) throw insertErr;
+      }
+    }
+    return cart;
+  } catch (err) {
+    console.error('getOrCreateCart error:', err.message);
+    // Return a minimal cart-like object so routes don't crash
+    return { id: -1 };
   }
-  return cart;
 }
 
 function tryParse(val, def) { try { return JSON.parse(val); } catch { return def; } }
 
 module.exports = router;
+

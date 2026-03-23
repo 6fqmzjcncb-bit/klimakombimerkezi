@@ -248,7 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             ${user.role === 'dealer' ? `<a class="dropdown-item" href="/bayi.html">🏢 Bayi Paneli</a>` : ''}
             ${Auth.isAdmin() ? `<a class="dropdown-item" href="/admin.html">⚙️ Admin Paneli</a>` : ''}
-            ${Auth.isEmployee() ? `<a class="dropdown-item" href="/employee.html">💼 Çalışan Paneli</a>` : ''}
             <a class="dropdown-item" href="/hesabim.html">👤 Hesabım</a>
             <a class="dropdown-item" href="/hesabim.html#siparisler">📦 Siparişlerim</a>
             <button class="dropdown-item" onclick="Auth.logout()" style="color:var(--c-error)">🚪 Çıkış Yap</button>

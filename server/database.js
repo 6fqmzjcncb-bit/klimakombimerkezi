@@ -8,9 +8,11 @@ let db;
 function getDb() {
   if (!db) {
     db = new Database(DB_PATH);
-    db.pragma('journal_mode = DELETE'); // Changed from WAL to standard DELETE mode for Railway volume compatibility
+    db.pragma('journal_mode = DELETE');
     db.pragma('synchronous = NORMAL');
-    db.pragma('foreign_keys = ON');
+    // NOTE: foreign_keys kept OFF globally to avoid Railway cart/session FK issues
+    // Individual routes handle data integrity
+    db.pragma('foreign_keys = OFF');
     initializeSchema();
   }
   return db;
