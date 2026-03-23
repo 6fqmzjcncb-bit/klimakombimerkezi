@@ -7,55 +7,63 @@ const router = express.Router();
 
 // GET /api/dealer/projects - bayi kendi projelerini görür
 router.get('/projects', requireAuth, requireRole('dealer', 'admin', 'employee'), (req, res) => {
-  const db = getDb();
-  const isDealer = req.user.role === 'dealer';
-  const { status, page = 1, limit = 20 } = req.query;
+  try {
+    const db = getDb();
+    const isDealer = req.user.role === 'dealer';
+    const { status, page = 1, limit = 20 } = req.query;
 
-  let where = isDealer ? ['dp.dealer_id = ?'] : [];
-  let params = isDealer ? [req.user.id] : [];
-  if (status) { where.push('dp.status = ?'); params.push(status); }
+    let where = isDealer ? ['dp.dealer_id = ?'] : [];
+    let params = isDealer ? [req.user.id] : [];
+    if (status) { where.push('dp.status = ?'); params.push(status); }
 
-  const whereClause = where.length ? 'WHERE ' + where.join(' AND ') : '';
-  const offset = (page - 1) * limit;
+    const whereClause = where.length ? 'WHERE ' + where.join(' AND ') : '';
+    const offset = (page - 1) * limit;
 
-  const projects = db.prepare(`
-    SELECT dp.*, u.name as dealer_name, u.company_name, u.email as dealer_email,
-           u.discount_rate as base_discount_rate
-    FROM dealer_projects dp JOIN users u ON dp.dealer_id = u.id
-    ${whereClause} ORDER BY dp.updated_at DESC LIMIT ? OFFSET ?
-  `).all(...params, Number(limit), Number(offset));
+    const projects = db.prepare(`
+      SELECT dp.*, u.name as dealer_name, u.company_name, u.email as dealer_email,
+             u.discount_rate as base_discount_rate
+      FROM dealer_projects dp JOIN users u ON dp.dealer_id = u.id
+      ${whereClause} ORDER BY dp.updated_at DESC LIMIT ? OFFSET ?
+    `).all(...params, Number(limit), Number(offset));
 
-  const withItems = projects.map(p => ({
-    ...p,
-    items: db.prepare('SELECT dpi.*, pr.name as product_name, pr.sku FROM dealer_project_items dpi LEFT JOIN products pr ON dpi.product_id = pr.id WHERE dpi.project_id = ?').all(p.id)
-  }));
-  res.json(withItems);
+    const withItems = projects.map(p => ({
+      ...p,
+      items: db.prepare('SELECT dpi.*, pr.name as product_name, pr.sku FROM dealer_project_items dpi LEFT JOIN products pr ON dpi.product_id = pr.id WHERE dpi.project_id = ?').all(p.id)
+    }));
+    res.json(withItems);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /api/dealer/projects/:uuid
 router.get('/projects/:uuid', requireAuth, requireRole('dealer', 'admin', 'employee'), (req, res) => {
-  const db = getDb();
-  const project = db.prepare(`
-    SELECT dp.*, u.name as dealer_name, u.company_name, u.email as dealer_email,
-           u.discount_rate as base_discount_rate, u.logo_url
-    FROM dealer_projects dp JOIN users u ON dp.dealer_id = u.id
-    WHERE dp.uuid = ?
-  `).get(req.params.uuid);
+  try {
+    const db = getDb();
+    const project = db.prepare(`
+      SELECT dp.*, u.name as dealer_name, u.company_name, u.email as dealer_email,
+             u.discount_rate as base_discount_rate
+      FROM dealer_projects dp JOIN users u ON dp.dealer_id = u.id
+      WHERE dp.uuid = ?
+    `).get(req.params.uuid);
 
-  if (!project) return res.status(404).json({ error: 'Proje bulunamadı' });
-  if (req.user.role === 'dealer' && project.dealer_id !== req.user.id) {
-    return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+    if (!project) return res.status(404).json({ error: 'Proje bulunamadı' });
+    if (req.user.role === 'dealer' && project.dealer_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+    }
+
+    project.items = db.prepare(`
+      SELECT dpi.*, pr.name as product_name, pr.sku, pr.images as product_images
+      FROM dealer_project_items dpi LEFT JOIN products pr ON dpi.product_id = pr.id
+      WHERE dpi.project_id = ?
+    `).all(project.id);
+
+    project.discount_requests = db.prepare('SELECT * FROM discount_requests WHERE project_id = ? ORDER BY created_at DESC').all(project.id);
+
+    res.json(project);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  project.items = db.prepare(`
-    SELECT dpi.*, pr.name as product_name, pr.sku, pr.images as product_images
-    FROM dealer_project_items dpi LEFT JOIN products pr ON dpi.product_id = pr.id
-    WHERE dpi.project_id = ?
-  `).all(project.id);
-
-  project.discount_requests = db.prepare('SELECT * FROM discount_requests WHERE project_id = ? ORDER BY created_at DESC').all(project.id);
-
-  res.json(project);
 });
 
 // POST /api/dealer/projects - yeni proje oluştur (sepetten veya manuel)
@@ -162,15 +170,19 @@ router.post('/discount-requests/:id/review', requireAuth, requireRole('admin'), 
 
 // GET /api/dealer/discount-requests - admin için tüm talepler
 router.get('/discount-requests', requireAuth, requireRole('admin', 'employee'), (req, res) => {
-  const db = getDb();
-  const requests = db.prepare(`
-    SELECT dr.*, u.name as dealer_name, u.company_name, dp.project_name, dp.uuid as project_uuid
-    FROM discount_requests dr
-    JOIN users u ON dr.dealer_id = u.id
-    JOIN dealer_projects dp ON dr.project_id = dp.id
-    ORDER BY dr.created_at DESC
-  `).all();
-  res.json(requests);
+  try {
+    const db = getDb();
+    const requests = db.prepare(`
+      SELECT dr.*, u.name as dealer_name, u.company_name, dp.project_name, dp.uuid as project_uuid
+      FROM discount_requests dr
+      JOIN users u ON dr.dealer_id = u.id
+      JOIN dealer_projects dp ON dr.project_id = dp.id
+      ORDER BY dr.created_at DESC
+    `).all();
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
