@@ -247,7 +247,7 @@ function renderCard(p) {
         ${p.brand_name?`<div class="product-card-brand">${p.brand_name}</div>`:''}
         <a href="/urunler.html?slug=${p.slug}" class="product-card-name" style="color:var(--c-text);text-decoration:none">${p.name}</a>
         <div class="product-card-price">${priceHtml}</div>
-        ${isDealer&&p.dealer_cash_price?`<button onclick="showInstallments(${JSON.stringify(p.dealer_card_price||p.base_price)})" class="btn btn-ghost btn-sm" style="margin-top:4px;font-size:12px">💳 Taksit Seçenekleri</button>`:''}
+        ${p.base_price?`<button onclick="showInstallments(${p.dealer_card_price||p.base_price})" class="btn btn-ghost btn-sm" style="margin-top:4px;font-size:12px">💳 Taksit Seçenekleri</button>`:''}
       </div>
       <div class="product-card-actions">
         <a href="/urunler.html?slug=${p.slug}" class="btn btn-outline btn-sm" style="flex:1">İncele</a>
@@ -418,7 +418,7 @@ async function loadSingleProduct(slug) {
               `}
             </div>
 
-            ${isDealer ? `<button onclick="showInstallments(${product.dealer_card_price||product.base_price})" class="btn btn-outline btn-sm" style="margin-top:8px;margin-bottom:16px">💳 Taksit Seçenekleri</button>` : ''}
+            ${product.base_price && !product.is_hidden_price && product.stock_status !== 'on_request' ? `<button onclick="showInstallments(${product.dealer_card_price||product.base_price})" class="btn btn-outline btn-sm" style="margin-top:8px;margin-bottom:16px">💳 Taksit Seçenekleri</button>` : ''}
 
             <div style="display:flex;gap:12px;margin-top:${isDealer?'0':'16px'}">
               ${canBuy ? `<button onclick="addToCartDetail(${product.id})" class="btn btn-primary btn-lg" id="add-cart-btn" style="flex:1">🛒 Sepete Ekle</button>` : `<a href="/teklif.html?product=${product.id}" class="btn btn-accent btn-lg" style="flex:1">📩 Teklif Al / Fiyat Sor</a>`}
