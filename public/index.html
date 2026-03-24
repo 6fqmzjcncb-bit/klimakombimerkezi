@@ -515,7 +515,10 @@ function renderProductCard(p) {
       ${p.dealer_card_price ? `<div class="price-dealer-card">💳 ${Format.price(p.dealer_card_price)}</div>` : ''}
     `;
   } else {
-    priceHtml = `<div class="price-retail">${Format.price(p.base_price)}</div>`;
+    priceHtml = `
+      <div class="price-retail">${Format.price(p.base_price)}</div>
+      <div class="price-dealer-card">💳 ${Format.price(p.base_price)}</div>
+    `;
   }
   const canBuy = !p.is_hidden_price && p.stock_status !== 'on_request' && p.stock_status !== 'price_on_request' && p.stock_status !== 'out_of_stock';
   return `

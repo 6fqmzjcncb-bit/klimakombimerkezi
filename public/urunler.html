@@ -233,7 +233,10 @@ function renderCard(p) {
   } else if (isDealer && p.dealer_cash_price) {
     priceHtml = `<div class="price-retail-crossed">${Format.price(p.base_price)}</div><div class="price-dealer-cash">${Format.price(p.dealer_cash_price)}</div>${p.dealer_card_price?`<div class="price-dealer-card">💳 ${Format.price(p.dealer_card_price)}</div>`:''}`;
   } else if (p.base_price) {
-    priceHtml = `<div class="price-retail">${Format.price(p.base_price)}</div>`;
+    priceHtml = `
+      <div class="price-retail">${Format.price(p.base_price)}</div>
+      <div class="price-dealer-card">💳 ${Format.price(p.base_price)}</div>
+    `;
   }
 
   return `
@@ -278,6 +281,7 @@ function renderListItem(p) {
       <div style="flex-shrink:0;text-align:right">
         <div style="font-size:20px;font-weight:800;color:${isDealer?'var(--c-success)':'var(--c-text)'}">${price?Format.price(price):'Fiyat Sorunuz'}</div>
         ${isDealer&&p.base_price&&p.dealer_cash_price?`<div style="font-size:12px;text-decoration:line-through;color:var(--c-text-subtle)">${Format.price(p.base_price)}</div>`:''}
+        ${p.dealer_card_price || (!isDealer && p.base_price) ? `<div style="font-size:13px;font-weight:600;color:var(--c-info);margin-top:4px">💳 ${Format.price(p.dealer_card_price || p.base_price)}</div>` : ''}
         <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
           <a href="/urunler.html?slug=${p.slug}" class="btn btn-outline btn-sm">Detay</a>
           ${p.stock_status==='in_stock'?`<button onclick="addToCart(${p.id},this)" class="btn btn-primary btn-sm">🛒 Ekle</button>`:`<a href="/teklif.html?product=${p.id}" class="btn btn-sm" style="background:#f59e0b;color:#fff">📩 Teklif</a>`}
@@ -414,7 +418,14 @@ async function loadSingleProduct(slug) {
               ` : product.stock_status === 'on_request' ? `
                 <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:14px;color:var(--c-text-muted);">Fiyat</span><span style="font-size:16px;font-weight:700;color:var(--c-warning);">⏱ Teklif İsteyiniz</span></div>
               ` : `
-                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:14px;color:var(--c-text-muted);">Fiyat</span><span style="font-size:22px;font-weight:800;color:var(--c-primary);">${Format.price(product.base_price)}</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--c-border);">
+                  <span style="font-weight:700;color:var(--c-primary);">💰 Nakit Fiyat</span>
+                  <span style="font-size:22px;font-weight:800;color:var(--c-primary);">${Format.price(product.base_price)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+                  <span style="font-size:13px;color:var(--c-text-muted);">💳 Kredi Kartı Tek Çekim</span>
+                  <span style="font-size:16px;font-weight:700;color:var(--c-info);">${Format.price(product.base_price)}</span>
+                </div>
               `}
             </div>
 
