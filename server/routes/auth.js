@@ -97,6 +97,44 @@ router.put('/profile', requireAuth, async (req, res) => {
   }
 });
 
+// ===== ADDRESS BOOK =====
+// GET /api/auth/addresses
+router.get('/addresses', requireAuth, (req, res) => {
+  const db = getDb();
+  const addresses = db.prepare('SELECT * FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, id ASC').all(req.user.id);
+  res.json(addresses);
+});
+
+// POST /api/auth/addresses
+router.post('/addresses', requireAuth, (req, res) => {
+  const db = getDb();
+  const { title, name, phone, city, district, address, is_default = 0 } = req.body;
+  if (!name || !city || !address) return res.status(400).json({ error: 'Ad, şehir ve adres gerekli' });
+  if (is_default) db.prepare('UPDATE user_addresses SET is_default=0 WHERE user_id=?').run(req.user.id);
+  const r = db.prepare('INSERT INTO user_addresses (user_id, title, name, phone, city, district, address, is_default) VALUES (?,?,?,?,?,?,?,?)')
+    .run(req.user.id, title || 'Adresim', name, phone || null, city, district || null, address, is_default ? 1 : 0);
+  res.json({ id: r.lastInsertRowid });
+});
+
+// PUT /api/auth/addresses/:id
+router.put('/addresses/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  const addr = db.prepare('SELECT * FROM user_addresses WHERE id=? AND user_id=?').get(req.params.id, req.user.id);
+  if (!addr) return res.status(404).json({ error: 'Adres bulunamadı' });
+  const { title, name, phone, city, district, address, is_default } = req.body;
+  if (is_default) db.prepare('UPDATE user_addresses SET is_default=0 WHERE user_id=?').run(req.user.id);
+  db.prepare('UPDATE user_addresses SET title=?,name=?,phone=?,city=?,district=?,address=?,is_default=? WHERE id=?')
+    .run(title||addr.title, name||addr.name, phone||addr.phone, city||addr.city, district||addr.district, address||addr.address, is_default?1:0, addr.id);
+  res.json({ success: true });
+});
+
+// DELETE /api/auth/addresses/:id
+router.delete('/addresses/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  db.prepare('DELETE FROM user_addresses WHERE id=? AND user_id=?').run(req.params.id, req.user.id);
+  res.json({ success: true });
+});
+
 function safeUser(u) {
   const { password, ...safe } = u;
   return safe;

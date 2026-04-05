@@ -74,6 +74,7 @@ function initializeSchema() {
       category_id INTEGER REFERENCES categories(id),
       brand_id INTEGER REFERENCES brands(id),
       base_price REAL DEFAULT 0.0,
+      cost_price REAL DEFAULT 0.0,
       dealer_cash_price REAL DEFAULT 0.0,
       dealer_card_price REAL DEFAULT 0.0,
       stock_status TEXT DEFAULT 'in_stock',  -- in_stock, out_of_stock, on_request, price_on_request
@@ -331,12 +332,48 @@ function initializeSchema() {
   insertSetting.run('site_address', 'İstanbul, Türkiye');
   insertSetting.run('high_value_order_threshold', '50000');
   insertSetting.run('tax_rate', '20');
-  insertSetting.run('retail_margin', '40');   // Perakende kâr marjı %
-  insertSetting.run('dealer_cash_margin', '15'); // Bayi nakit kâr marjı %
-  insertSetting.run('dealer_card_margin', '20'); // Bayi kredi kartı kâr marjı %
+  insertSetting.run('retail_margin', '40');
+  insertSetting.run('dealer_cash_margin', '15');
+  insertSetting.run('dealer_card_margin', '20');
+  insertSetting.run('site_logo', '');
+  insertSetting.run('whatsapp_number', '');
+  insertSetting.run('site_banner_1', '');
+  insertSetting.run('site_banner_2', '');
+  insertSetting.run('site_banner_3', '');
 
-  // Safe migration: add cost_price if missing
+  // Safe migrations
+  try { db.exec('ALTER TABLE users ADD COLUMN dealer_cash_margin REAL DEFAULT 0'); } catch {}
+  try { db.exec('ALTER TABLE users ADD COLUMN dealer_card_margin REAL DEFAULT 0'); } catch {}
+  try { db.exec('ALTER TABLE dealer_projects ADD COLUMN discount_type TEXT DEFAULT \'percentage\''); } catch {}
+  try { db.exec('ALTER TABLE discount_requests ADD COLUMN discount_type TEXT DEFAULT \'percentage\''); } catch {}
+  try { db.exec('ALTER TABLE discount_requests ADD COLUMN requested_amount REAL DEFAULT 0.0'); } catch {}
   try { db.exec('ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0.0'); } catch {}
+  
+  // Default site settings migration
+  [
+    {key: 'site_logo', val: ''},
+    {key: 'whatsapp_number', val: ''},
+    {key: 'site_banner_1', val: ''},
+    {key: 'site_banner_2', val: ''},
+    {key: 'site_banner_3', val: ''}
+  ].forEach(set => {
+    db.prepare('INSERT OR IGNORE INTO settings (key,value) VALUES (?,?)').run(set.key, set.val);
+  });
+
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS user_addresses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL DEFAULT 'Adresim',
+      name TEXT NOT NULL,
+      phone TEXT,
+      city TEXT NOT NULL,
+      district TEXT,
+      address TEXT NOT NULL,
+      is_default INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+  } catch {}
 }
 
 module.exports = { getDb };

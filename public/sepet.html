@@ -71,7 +71,28 @@
             <div class="form-group"><label class="form-label">Firma (Opsiyonel)</label><input type="text" id="co-company" class="form-input"></div>
             
             <h4 class="mt-8 mb-4">Teslimat Adresi</h4>
-            <div class="form-group"><label class="form-label">Açık Adres *</label><textarea id="co-address" class="form-textarea" rows="2" required></textarea></div>
+            <div id="address-book-container">
+              <!-- Addresses will be loaded here -->
+            </div>
+            
+            <div id="new-address-form" style="display:none;background:var(--c-bg);padding:var(--space-5);border-radius:var(--r-md);margin-top:var(--space-4);border:1px solid var(--c-border)">
+              <h5 style="margin-bottom:var(--space-4)">Yeni Adres Ekle</h5>
+              <div class="form-group"><label class="form-label">Adres Başlığı (Ev, İş vb.) *</label><input type="text" id="new-addr-title" class="form-input"></div>
+              <div class="form-group"><label class="form-label">Ad Soyad *</label><input type="text" id="new-addr-name" class="form-input"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+                <div class="form-group"><label class="form-label">Şehir *</label><input type="text" id="new-addr-city" class="form-input"></div>
+                <div class="form-group"><label class="form-label">İlçe</label><input type="text" id="new-addr-district" class="form-input"></div>
+              </div>
+              <div class="form-group"><label class="form-label">Açık Adres *</label><textarea id="new-addr-desc" class="form-textarea" rows="2"></textarea></div>
+              <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4)">
+                <input type="checkbox" id="new-addr-default" checked>
+                <label for="new-addr-default" style="font-size:14px;cursor:pointer">Varsayılan adres olarak kaydet</label>
+              </div>
+              <div style="display:flex;gap:var(--space-2)">
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveNewAddress()">Kaydet ve Seç</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="toggleNewAddressForm(false)">İptal</button>
+              </div>
+            </div>
             
             <h4 class="mt-8 mb-4">Ödeme Yöntemi</h4>
             <div class="payment-methods">
@@ -189,7 +210,8 @@ async function clearCart() {
   try { await Cart.clear(); await Cart.updateBadge(); loadCartPage(); } catch(e) { Toast.error(e.message); }
 }
 
-function proceedToCheckout() {
+let userAddresses = [];
+async function proceedToCheckout() {
   if (!Auth.isLoggedIn()) {
     Toast.error('Sipariş verebilmek için lütfen giriş yapın veya üye olun.');
     setTimeout(() => { window.location.href = '/giris.html?returnTo=/sepet.html'; }, 2000);
@@ -204,7 +226,88 @@ function proceedToCheckout() {
   document.getElementById('co-email').value = u.email || '';
   document.getElementById('co-phone').value = u.phone || '';
   document.getElementById('co-company').value = u.company_name || '';
-  document.getElementById('co-address').value = u.address || '';
+  
+  await loadAddresses();
+}
+
+async function loadAddresses() {
+  try {
+    const r = await fetch('/api/auth/addresses', { headers: Auth.headers() });
+    userAddresses = await r.json();
+    renderAddresses();
+  } catch(e) { console.error(e); }
+}
+
+function renderAddresses(selectedId = null) {
+  const container = document.getElementById('address-book-container');
+  if (!userAddresses || userAddresses.length === 0) {
+    container.innerHTML = '<div class="alert alert-warning mb-4">Kayıtlı adresiniz bulunmuyor. Lütfen yeni bir adres ekleyin.</div>';
+    toggleNewAddressForm(true);
+    return;
+  }
+  
+  // If no selection, select the default or the first one
+  if (!selectedId && userAddresses.length > 0) {
+    selectedId = userAddresses.find(a => a.is_default)?.id || userAddresses[0].id;
+  }
+
+  container.innerHTML = `
+    <div style="display:grid;gap:var(--space-3);margin-bottom:var(--space-4)">
+      ${userAddresses.map(a => `
+        <label class="address-card ${a.id === selectedId ? 'selected' : ''}" style="display:flex;gap:var(--space-3);padding:var(--space-4);border:2px solid ${a.id === selectedId ? 'var(--c-primary)' : 'var(--c-border)'};border-radius:var(--r-md);cursor:pointer;background:${a.id === selectedId ? 'var(--c-primary-light)' : '#fff'}">
+          <input type="radio" name="checkout_address" value="${a.id}" ${a.id === selectedId ? 'checked' : ''} onchange="renderAddresses(${a.id})" style="margin-top:4px">
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <strong style="color:var(--c-primary)">${a.title}</strong>
+              ${a.is_default ? '<span class="badge badge-green" style="font-size:10px">Varsayılan</span>' : ''}
+            </div>
+            <div style="font-size:14px;font-weight:600">${a.name}</div>
+            <div style="font-size:13px;color:var(--c-text-muted);margin-top:4px">${a.address}</div>
+            <div style="font-size:13px;color:var(--c-text-muted)">${a.city} ${a.district ? '/ ' + a.district : ''}</div>
+          </div>
+        </label>
+      `).join('')}
+    </div>
+    <button type="button" class="btn btn-outline btn-sm mb-4" onclick="toggleNewAddressForm(true)">+ Yeni Adres Ekle</button>
+  `;
+}
+
+function toggleNewAddressForm(show) {
+  document.getElementById('new-address-form').style.display = show ? 'block' : 'none';
+  if(!show && userAddresses.length === 0) {
+    // Cannot hide if no addresses
+    document.getElementById('new-address-form').style.display = 'block';
+  }
+}
+
+async function saveNewAddress() {
+  const title = document.getElementById('new-addr-title').value.trim() || 'Ev Adresi';
+  const name = document.getElementById('new-addr-name').value.trim() || document.getElementById('co-name').value;
+  const city = document.getElementById('new-addr-city').value.trim();
+  const district = document.getElementById('new-addr-district').value.trim();
+  const address = document.getElementById('new-addr-desc').value.trim();
+  const isDefault = document.getElementById('new-addr-default').checked;
+
+  if (!city || !address) { Toast.error('Lütfen şehir ve adres alanlarını doldurun.'); return; }
+
+  try {
+    const payload = { title, name, city, district, address, phone: document.getElementById('co-phone').value, is_default: isDefault };
+    const r = await fetch('/api/auth/addresses', { method: 'POST', headers: { ...Auth.headers(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    
+    Toast.success('Adres eklendi');
+    
+    // Clear form
+    document.getElementById('new-addr-title').value='';
+    document.getElementById('new-addr-city').value='';
+    document.getElementById('new-addr-district').value='';
+    document.getElementById('new-addr-desc').value='';
+    
+    toggleNewAddressForm(false);
+    await loadAddresses(); // reload list and render
+    renderAddresses(d.id); // select newly added
+  } catch(e) { Toast.error(e.message); }
 }
 
 function cancelCheckout() {
@@ -220,14 +323,29 @@ document.getElementById('checkout-form').addEventListener('submit', async e => {
   const instCount = paymentMethod === 'credit_card'
     ? parseInt(document.querySelector('input[name="inst"]:checked')?.value || '1')
     : 1;
+  // Get selected address
+  const selectedAddrId = document.querySelector('input[name="checkout_address"]:checked')?.value;
+  let finalAddressStr = '';
+  
+  if (selectedAddrId) {
+    const addr = userAddresses.find(a => a.id == selectedAddrId);
+    if (addr) finalAddressStr = `${addr.title}: ${addr.address}  ${addr.district || ''}/${addr.city} (${addr.name})`;
+  }
+
+  if (!finalAddressStr) {
+    Toast.error('Lütfen geçerli bir teslimat adresi seçin veya ekleyin.');
+    btn.disabled=false; btn.textContent='Siparişi Onayla';
+    return;
+  }
+
   try {
     const payload = {
       user_name: document.getElementById('co-name').value,
       user_email: document.getElementById('co-email').value,
       phone: document.getElementById('co-phone').value,
       company_name: document.getElementById('co-company').value,
-      shipping_address: document.getElementById('co-address').value,
-      billing_address: document.getElementById('co-address').value,
+      shipping_address: finalAddressStr,
+      billing_address: finalAddressStr,
       payment_method: paymentMethod,
       installment_count: instCount
     };
@@ -237,20 +355,20 @@ document.getElementById('checkout-form').addEventListener('submit', async e => {
       body: JSON.stringify(payload)
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.error);
+    if (!r.ok) throw new Error(d.error || 'Sipariş oluşturulamadı');
     await Cart.updateBadge();
     document.getElementById('cart-content').innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:var(--space-10) 0">
         <div style="font-size:64px;margin-bottom:var(--space-4)">✅</div>
         <h2 style="margin-bottom:var(--space-2)">Siparişiniz Alındı!</h2>
-        <p class="text-muted mb-4">Sipariş numaranız: <strong>${d.order.uuid}</strong></p>
-        <div class="alert alert-info" style="display:inline-block;text-align:left">
-          ${d.order.status==='pending_stock_check' ? 'Stok onayı sonrası sizinle iletişime geçeceğiz.' :
-           d.order.payment_method==='credit_card' && d.order.payment_link ? `Ödeme linkiniz: <br><a href="${d.order.payment_link}" target="_blank">${d.order.payment_link}</a>` :
-           'Siparişiniz işleme alındı.'}
+        <p style="color:var(--c-text-muted);margin-bottom:var(--space-4)">Sipariş numaranız: <strong>${d.uuid}</strong></p>
+        <div class="alert alert-info" style="display:inline-block;text-align:left;max-width:480px">
+          ${d.status==='pending_stock_check' ? 'Siparişiniz stok onayına alındı. Onay sonrası bilgilendirileceksiniz.' :
+           paymentMethod==='credit_card' ? 'Ödeme link oluşturmak için ekibimiz sizinle iletişime geçecek.' :
+           'Siparişiniz başarıyla alındı. En kısa sürede işleme koyulacak.'}
         </div>
         <div class="mt-8">
-          <a href="${Auth.isDealer()?'/bayi.html#orders':Auth.isLoggedIn()?'/hesabim.html':'/'}" class="btn btn-primary">Siparişlerime Git / Ana Sayfa</a>
+          <a href="${Auth.isDealer()?'/bayi.html#orders':Auth.isLoggedIn()?'/hesabim.html':'/'}" class="btn btn-primary">Siparişlerime Git →</a>
         </div>
       </div>`;
   } catch(e) {

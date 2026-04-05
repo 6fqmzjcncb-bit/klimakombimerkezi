@@ -125,28 +125,36 @@ router.put('/projects/:uuid', requireAuth, requireRole('dealer', 'admin'), (req,
 // POST /api/dealer/projects/:uuid/discount-request - iskonto talebi
 router.post('/projects/:uuid/discount-request', requireAuth, requireRole('dealer'), (req, res) => {
   const db = getDb();
-  const { requested_rate, reason } = req.body;
+  const { requested_rate, requested_amount, discount_type, reason } = req.body;
   const project = db.prepare('SELECT * FROM dealer_projects WHERE uuid=? AND dealer_id=?').get(req.params.uuid, req.user.id);
   if (!project) return res.status(404).json({ error: 'Proje bulunamadı' });
-  if (!requested_rate || requested_rate <= 0) return res.status(400).json({ error: 'Geçerli bir iskonto oranı girin' });
+  
+  const type = discount_type === 'amount' ? 'amount' : 'percentage';
+  const rate = parseFloat(requested_rate) || 0;
+  const amount = parseFloat(requested_amount) || null;
 
-  db.prepare('INSERT INTO discount_requests (project_id, dealer_id, requested_rate, reason) VALUES (?,?,?,?)').run(project.id, req.user.id, requested_rate, reason || null);
+  if (type === 'percentage' && rate <= 0) return res.status(400).json({ error: 'Geçerli bir iskonto oranı girin' });
+  if (type === 'amount' && (!amount || amount <= 0)) return res.status(400).json({ error: 'Geçerli bir tutar girin' });
+
+  db.prepare('INSERT INTO discount_requests (project_id, dealer_id, requested_rate, requested_amount, discount_type, reason) VALUES (?,?,?,?,?,?)')
+    .run(project.id, req.user.id, rate, amount, type, reason || null);
   db.prepare('UPDATE dealer_projects SET status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?').run('pending_discount', project.id);
 
   // Notify admins
   const admins = db.prepare('SELECT id FROM users WHERE role=?').all('admin');
   const stmt = db.prepare('INSERT INTO notifications (user_id, title, message, type, link) VALUES (?,?,?,?,?)');
+  const valText = type === 'amount' ? `${amount} ₺ tutarında` : `%${rate} oranında`;
   for (const admin of admins) {
-    stmt.run(admin.id, 'Yeni İskonto Talebi', `${req.user.company_name || req.user.name} - ${project.project_name} için %${requested_rate} iskonto talep etti`, 'warning', `/admin/discount-requests`);
+    stmt.run(admin.id, 'Yeni İskonto Talebi', `${req.user.company_name || req.user.name} - ${project.project_name} için ${valText} iskonto talep etti`, 'warning', `/admin/discount-requests`);
   }
 
   res.json({ success: true, message: 'İskonto talebiniz iletildi, onay bekliyor.' });
 });
 
 // POST /api/dealer/discount-requests/:id/review - admin onayı/reddi
-router.post('/discount-requests/:id/review', requireAuth, requireRole('admin'), (req, res) => {
+router.post('/discount-requests/:id/review', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
-  const { status, admin_note, approved_rate } = req.body; // status: approved | rejected
+  const { status, admin_note, approved_rate, approved_amount } = req.body; // status: approved | rejected
   if (!['approved', 'rejected'].includes(status)) return res.status(400).json({ error: 'Geçersiz durum' });
 
   const request = db.prepare('SELECT dr.*, dp.dealer_id, dp.project_name, dp.uuid as project_uuid FROM discount_requests dr JOIN dealer_projects dp ON dr.project_id = dp.id WHERE dr.id=?').get(req.params.id);
@@ -155,10 +163,21 @@ router.post('/discount-requests/:id/review', requireAuth, requireRole('admin'), 
   db.prepare('UPDATE discount_requests SET status=?, admin_id=?, admin_note=?, updated_at=CURRENT_TIMESTAMP WHERE id=?').run(status, req.user.id, admin_note || null, req.params.id);
 
   if (status === 'approved') {
-    const rate = approved_rate || request.requested_rate;
-    db.prepare('UPDATE dealer_projects SET extra_discount_rate=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?').run(rate, 'discount_approved', request.project_id);
+    const type = request.discount_type;
+    const rate = type === 'percentage' ? (approved_rate || request.requested_rate) : 0;
+    const amount = type === 'amount' ? (approved_amount || request.requested_amount) : 0;
+    
+    // Add columns if they don't exist yet via migration (we did it in database.js, but just in case, we only use existing extra_discount_rate here)
+    // Quick fix: Since we added discount_type to projects table, wait, did we? I'll let frontend handle percentage or amount by fetching the original request if needed, or by calculating from raw price.
+    // For now, let's inject extra_discount_amount column if missing.
+    try { db.exec('ALTER TABLE dealer_projects ADD COLUMN extra_discount_amount REAL DEFAULT 0.0'); } catch {}
+    try { db.exec('ALTER TABLE dealer_projects ADD COLUMN extra_discount_type TEXT DEFAULT \'percentage\''); } catch {}
+
+    db.prepare('UPDATE dealer_projects SET extra_discount_rate=?, extra_discount_amount=?, extra_discount_type=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?').run(rate, amount, type, 'discount_approved', request.project_id);
+    
+    const valText = type === 'amount' ? `${amount} ₺ tutarında` : `%${rate}`;
     db.prepare('INSERT INTO notifications (user_id, title, message, type, link) VALUES (?,?,?,?,?)')
-      .run(request.dealer_id, 'İskonto Talebiniz Onaylandı! 🎉', `${request.project_name} projesi için %${rate} ek iskonto onaylandı.`, 'success', `/bayi/projeler/${request.project_uuid}`);
+      .run(request.dealer_id, 'İskonto Talebiniz Onaylandı! 🎉', `${request.project_name} projesi için ${valText} ek iskonto onaylandı.`, 'success', `/bayi/projeler/${request.project_uuid}`);
   } else {
     db.prepare('UPDATE dealer_projects SET status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?').run('draft', request.project_id);
     db.prepare('INSERT INTO notifications (user_id, title, message, type, link) VALUES (?,?,?,?,?)')

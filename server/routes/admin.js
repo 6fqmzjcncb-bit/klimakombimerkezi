@@ -42,7 +42,7 @@ router.get('/stats', requireAuth, requireRole('admin', 'employee'), (req, res) =
 });
 
 // GET /api/admin/users
-router.get('/users', requireAuth, requireRole('admin'), (req, res) => {
+router.get('/users', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const { role, search, page = 1, limit = 20 } = req.query;
   let where = [];
@@ -57,7 +57,7 @@ router.get('/users', requireAuth, requireRole('admin'), (req, res) => {
 });
 
 // POST /api/admin/users - admin creates user (including dealers/employees)
-router.post('/users', requireAuth, requireRole('admin'), async (req, res) => {
+router.post('/users', requireAuth, requireRole('admin', 'employee'), async (req, res) => {
   try {
     const db = getDb();
     const { name, email, password, role, company_name, tax_number, phone, address, dealer_code, discount_rate } = req.body;
@@ -72,7 +72,7 @@ router.post('/users', requireAuth, requireRole('admin'), async (req, res) => {
 });
 
 // PUT /api/admin/users/:id
-router.put('/users/:id', requireAuth, requireRole('admin'), async (req, res) => {
+router.put('/users/:id', requireAuth, requireRole('admin', 'employee'), async (req, res) => {
   try {
     const db = getDb();
     const { name, email, role, company_name, tax_number, phone, discount_rate, is_active, new_password } = req.body;
@@ -91,7 +91,7 @@ router.get('/categories', requireAuth, requireRole('admin', 'employee'), (req, r
   res.json(db.prepare('SELECT * FROM categories ORDER BY sort_order, name').all());
 });
 
-router.post('/categories', requireAuth, requireRole('admin'), (req, res) => {
+router.post('/categories', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const { name, slug, description, parent_id, sort_order } = req.body;
   const safeSlug = slug || slugify(name);
@@ -99,7 +99,7 @@ router.post('/categories', requireAuth, requireRole('admin'), (req, res) => {
   res.json({ id: result.lastInsertRowid });
 });
 
-router.put('/categories/:id', requireAuth, requireRole('admin'), (req, res) => {
+router.put('/categories/:id', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const { name, slug, description, parent_id, sort_order, is_active } = req.body;
   db.prepare('UPDATE categories SET name=?,slug=?,description=?,parent_id=?,sort_order=?,is_active=? WHERE id=?').run(name, slug, description || null, parent_id || null, sort_order || 0, is_active ? 1 : 0, req.params.id);
@@ -112,7 +112,7 @@ router.get('/brands', requireAuth, requireRole('admin', 'employee'), (req, res) 
   res.json(db.prepare('SELECT * FROM brands WHERE is_active=1 ORDER BY name').all());
 });
 
-router.post('/brands', requireAuth, requireRole('admin'), (req, res) => {
+router.post('/brands', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const { name, slug, logo_url } = req.body;
   const safeSlug = slug || slugify(name);
@@ -120,7 +120,7 @@ router.post('/brands', requireAuth, requireRole('admin'), (req, res) => {
   res.json({ id: result.lastInsertRowid });
 });
 
-router.put('/brands/:id', requireAuth, requireRole('admin'), (req, res) => {
+router.put('/brands/:id', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const { name, logo_url } = req.body;
   const brand = db.prepare('SELECT * FROM brands WHERE id=?').get(req.params.id);
@@ -132,7 +132,7 @@ router.put('/brands/:id', requireAuth, requireRole('admin'), (req, res) => {
 });
 
 // GET /api/admin/settings
-router.get('/settings', requireAuth, requireRole('admin'), (req, res) => {
+router.get('/settings', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const rows = db.prepare('SELECT * FROM settings').all();
   const settings = {};
@@ -140,7 +140,7 @@ router.get('/settings', requireAuth, requireRole('admin'), (req, res) => {
   res.json(settings);
 });
 
-router.put('/settings', requireAuth, requireRole('admin'), (req, res) => {
+router.put('/settings', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const update = db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)');
   for (const [key, value] of Object.entries(req.body)) {
@@ -167,7 +167,7 @@ router.put('/price-requests/:id/status', requireAuth, requireRole('admin', 'empl
 });
 
 // PATCH /api/admin/users/:id/active
-router.patch('/users/:id/active', requireAuth, requireRole('admin'), (req, res) => {
+router.patch('/users/:id/active', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const { is_active } = req.body;
   db.prepare('UPDATE users SET is_active=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').run(is_active ? 1 : 0, req.params.id);
@@ -187,12 +187,12 @@ try {
   )`);
 } catch {}
 
-router.get('/payment-links', requireAuth, requireRole('admin'), (req, res) => {
+router.get('/payment-links', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   res.json(db.prepare('SELECT * FROM payment_links ORDER BY created_at DESC').all());
 });
 
-router.post('/payment-links', requireAuth, requireRole('admin'), (req, res) => {
+router.post('/payment-links', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const { url, description, order_uuid, expires_at } = req.body;
   if (!url) return res.status(400).json({ error: 'URL zorunludur' });
@@ -201,7 +201,7 @@ router.post('/payment-links', requireAuth, requireRole('admin'), (req, res) => {
   res.json({ id: result.lastInsertRowid });
 });
 
-router.put('/payment-links/:id', requireAuth, requireRole('admin'), (req, res) => {
+router.put('/payment-links/:id', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const { url, description, order_uuid, expires_at } = req.body;
   db.prepare('UPDATE payment_links SET url=?,description=?,order_uuid=?,expires_at=? WHERE id=?')
@@ -209,7 +209,7 @@ router.put('/payment-links/:id', requireAuth, requireRole('admin'), (req, res) =
   res.json({ success: true });
 });
 
-router.delete('/payment-links/:id', requireAuth, requireRole('admin'), (req, res) => {
+router.delete('/payment-links/:id', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   db.prepare('DELETE FROM payment_links WHERE id=?').run(req.params.id);
   res.json({ success: true });

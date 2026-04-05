@@ -72,9 +72,18 @@ router.post('/', requireAuth, (req, res) => {
     const { payment_method, shipping_address, billing_address, notes } = req.body;
     if (!payment_method || !shipping_address) return res.status(400).json({ error: 'Ödeme yöntemi ve teslimat adresi gerekli' });
 
-    // Cart items
-    const cart = db.prepare('SELECT * FROM carts WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(req.user.id);
-    if (!cart) return res.status(400).json({ error: 'Sepet bulunamadı' });
+    // Cart items — look up by user_id first, then session header
+    let cart = db.prepare('SELECT * FROM carts WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(req.user.id);
+    if (!cart) {
+      const sessionId = req.headers['x-session-id'];
+      if (sessionId) cart = db.prepare('SELECT * FROM carts WHERE session_id = ? ORDER BY id DESC LIMIT 1').get(sessionId);
+    }
+    if (!cart) return res.status(400).json({ error: 'Sepet bulunamadı. Lütfen sayfayı yenileyip tekrar deneyin.' });
+
+    // Assign cart to user if not already
+    if (!cart.user_id) {
+      db.prepare('UPDATE carts SET user_id = ? WHERE id = ?').run(req.user.id, cart.id);
+    }
 
     const cartItems = db.prepare(`
       SELECT ci.*, p.name, p.sku, p.base_price, p.dealer_cash_price, p.dealer_card_price, p.stock_status

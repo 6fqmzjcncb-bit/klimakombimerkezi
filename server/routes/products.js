@@ -101,26 +101,45 @@ router.get('/:slug', optionalAuth, (req, res) => {
   });
 });
 
+// Helper to auto-calculate prices
+function autoCalcPrices(db, overrides) {
+  let { cost_price, base_price, dealer_cash_price, dealer_card_price } = overrides;
+  cost_price = parseFloat(cost_price) || 0;
+  base_price = parseFloat(base_price) || 0;
+  dealer_cash_price = parseFloat(dealer_cash_price) || 0;
+  dealer_card_price = parseFloat(dealer_card_price) || 0;
+
+  if (cost_price > 0 && (!base_price || !dealer_cash_price || !dealer_card_price)) {
+    const settings = {};
+    db.prepare("SELECT key, value FROM settings WHERE key IN ('retail_margin', 'dealer_cash_margin', 'dealer_card_margin')")
+      .all().forEach(r => settings[r.key] = parseFloat(r.value) || 0);
+
+    if (!base_price) base_price = cost_price * (1 + (settings.retail_margin||40)/100);
+    if (!dealer_cash_price) dealer_cash_price = cost_price * (1 + (settings.dealer_cash_margin||15)/100);
+    if (!dealer_card_price) dealer_card_price = cost_price * (1 + (settings.dealer_card_margin||20)/100);
+  }
+  return { cost_price, base_price, dealer_cash_price, dealer_card_price };
+}
+
 // POST /api/products - admin only
-router.post('/', requireAuth, requireRole('admin'), (req, res) => {
+router.post('/', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   try {
     const db = getDb();
-    const { name, sku, description, short_description, category_id, brand_id, base_price,
-            dealer_cash_price, dealer_card_price, stock_status, stock_quantity, supply_days,
-            is_hidden_price, is_opportunity, is_bundle, images, specifications,
-            meta_title, meta_description } = req.body;
+    const { name, sku, description, short_description, category_id, brand_id, stock_status, stock_quantity, supply_days,
+            is_hidden_price, is_opportunity, is_bundle, images, specifications, meta_title, meta_description } = req.body;
 
+    const prices = autoCalcPrices(db, req.body);
     const slug = slugify(name);
     const uuid = uuidv4();
 
     const result = db.prepare(`
       INSERT INTO products (uuid, name, slug, sku, description, short_description, category_id, brand_id,
-        base_price, dealer_cash_price, dealer_card_price, stock_status, stock_quantity, supply_days,
+        cost_price, base_price, dealer_cash_price, dealer_card_price, stock_status, stock_quantity, supply_days,
         is_hidden_price, is_opportunity, is_bundle, images, specifications, meta_title, meta_description)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `).run(uuid, name, slug, sku || null, description || '', short_description || '',
-           category_id || null, brand_id || null, base_price || 0, dealer_cash_price || 0,
-           dealer_card_price || 0, stock_status || 'in_stock', stock_quantity || 0, supply_days || 0,
+           category_id || null, brand_id || null, prices.cost_price, prices.base_price, prices.dealer_cash_price,
+           prices.dealer_card_price, stock_status || 'in_stock', stock_quantity || 0, supply_days || 0,
            is_hidden_price ? 1 : 0, is_opportunity ? 1 : 0, is_bundle ? 1 : 0,
            JSON.stringify(images || []), JSON.stringify(specifications || {}),
            meta_title || name, meta_description || '');
@@ -133,13 +152,14 @@ router.post('/', requireAuth, requireRole('admin'), (req, res) => {
 });
 
 // PUT /api/products/:id - admin only
-router.put('/:id', requireAuth, requireRole('admin'), (req, res) => {
+router.put('/:id', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   try {
     const db = getDb();
-    const { name, sku, description, short_description, category_id, brand_id, base_price,
-            cost_price, dealer_cash_price, dealer_card_price, stock_status, stock_quantity, supply_days,
+    const { name, sku, description, short_description, category_id, brand_id, stock_status, stock_quantity, supply_days,
             is_hidden_price, is_opportunity, is_bundle, is_active, images, specifications,
             meta_title, meta_description } = req.body;
+
+    const prices = autoCalcPrices(db, req.body);
 
     db.prepare(`
       UPDATE products SET name=?,sku=?,description=?,short_description=?,category_id=?,brand_id=?,
@@ -148,7 +168,7 @@ router.put('/:id', requireAuth, requireRole('admin'), (req, res) => {
         meta_title=?,meta_description=?,updated_at=CURRENT_TIMESTAMP
       WHERE id=?
     `).run(name, sku||null, description||'', short_description||'', category_id||null, brand_id||null,
-           cost_price||0, base_price||0, dealer_cash_price||0, dealer_card_price||0, stock_status||'in_stock',
+           prices.cost_price, prices.base_price, prices.dealer_cash_price, prices.dealer_card_price, stock_status||'in_stock',
            stock_quantity||0, supply_days||0, is_hidden_price?1:0, is_opportunity?1:0, is_bundle?1:0,
            is_active!==false?1:0, JSON.stringify(images||[]), JSON.stringify(specifications||{}),
            meta_title||null, meta_description||null, req.params.id);
@@ -160,14 +180,14 @@ router.put('/:id', requireAuth, requireRole('admin'), (req, res) => {
 });
 
 // DELETE /api/products/:id - admin
-router.delete('/:id', requireAuth, requireRole('admin'), (req, res) => {
+router.delete('/:id', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   db.prepare('UPDATE products SET is_active=0 WHERE id=?').run(req.params.id);
   res.json({ success: true });
 });
 
 // POST /api/products/:id/cross-sells - admin
-router.post('/:id/cross-sells', requireAuth, requireRole('admin'), (req, res) => {
+router.post('/:id/cross-sells', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const { related_ids } = req.body;
   db.prepare('DELETE FROM product_cross_sells WHERE product_id=?').run(req.params.id);
@@ -177,7 +197,7 @@ router.post('/:id/cross-sells', requireAuth, requireRole('admin'), (req, res) =>
 });
 
 // POST /api/products/:id/bundles - admin
-router.post('/:id/bundles', requireAuth, requireRole('admin'), (req, res) => {
+router.post('/:id/bundles', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   const { components } = req.body;
   db.prepare('DELETE FROM product_bundles WHERE parent_product_id=?').run(req.params.id);

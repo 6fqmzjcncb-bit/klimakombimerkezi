@@ -205,7 +205,12 @@
               <div class="form-group"><label class="form-label">💬 WhatsApp Numarası <span style="font-size:11px;color:var(--c-text-muted)">(90 ile başlayın, boşluksuz)</span></label><input type="text" class="form-input" name="whatsapp_number" placeholder="905321234567"></div>
               <div class="form-group"><label class="form-label">Yüksek Tutar Eşiği (₺)</label><input type="number" class="form-input" name="high_value_order_threshold"></div>
               <div class="form-group"><label class="form-label">KDV Oranı (%)</label><input type="number" class="form-input" name="tax_rate"></div>
-              <button type="submit" class="btn btn-primary">Kaydet</button>
+              <hr class="divider">
+              <h5 style="margin-bottom:var(--space-3);font-weight:600">Afişler / Hero Bannerlar</h5>
+              <div class="form-group"><label class="form-label">Banner 1 URL</label><input type="url" class="form-input" name="site_banner_1" placeholder="https://.../banner1.jpg"></div>
+              <div class="form-group"><label class="form-label">Banner 2 URL</label><input type="url" class="form-input" name="site_banner_2" placeholder="https://.../banner2.jpg"></div>
+              <div class="form-group"><label class="form-label">Banner 3 URL</label><input type="url" class="form-input" name="site_banner_3" placeholder="https://.../banner3.jpg"></div>
+              <button type="submit" class="btn btn-primary mt-4">Kaydet</button>
             </form>
           </div></div>
           <!-- Kâr Marjı Ayarları -->
@@ -396,16 +401,18 @@
 
 <div class="modal-overlay" id="discount-review-modal">
   <div class="modal">
-    <div class="modal-header"><h3 class="modal-title">İskonto Talebini Değerlendir</h3><button class="modal-close">✕</button></div>
+    <div class="modal-header"><h3 class="modal-title">İskonto Değerlendirme</h3><button class="modal-close">✕</button></div>
     <div class="modal-body">
-      <div id="discount-review-info" class="alert alert-info mb-4"></div>
-      <div class="form-group"><label class="form-label">Onaylanan İskonto (%)</label><input type="number" class="form-input" id="approved-rate"></div>
-      <div class="form-group"><label class="form-label">Yönetici Notu</label><textarea class="form-textarea" id="review-note" rows="3"></textarea></div>
+      <div id="discount-review-info" style="margin-bottom:16px;padding:12px;background:var(--c-bg);border-radius:12px"></div>
+      <div class="form-group">
+        <label class="form-label" for="approved-rate">Onaylanan İskonto Değeri</label>
+        <input type="number" step="0.01" class="form-input" id="approved-rate" placeholder="Oran veya Tutar giriniz">
+      </div>
+      <div class="form-group"><label class="form-label">Yönetici Notu (Bayi görebilir)</label><textarea class="form-textarea" id="review-note" rows="2"></textarea></div>
     </div>
-    <div class="modal-footer">
-      <button onclick="closeModal('discount-review-modal')" class="btn btn-ghost">Kapat</button>
-      <button onclick="reviewDiscount('rejected')" class="btn btn-danger">Reddet</button>
-      <button onclick="reviewDiscount('approved')" class="btn btn-success">Onayla</button>
+    <div class="modal-footer" style="display:flex;gap:8px">
+      <button onclick="reviewDiscount('rejected')" class="btn btn-outline" style="color:var(--c-error)">Reddet</button>
+      <button onclick="reviewDiscount('approved')" class="btn btn-primary" style="flex:1">Onayla</button>
     </div>
   </div>
 </div>
@@ -523,49 +530,70 @@ async function loadDiscountRequests() {
       ${requests.map(r => `<tr>
         <td><strong>${r.dealer_name}</strong><br><span class="text-sm text-muted">${r.company_name||''}</span></td>
         <td>${r.project_name}</td>
-        <td><strong>%${r.requested_rate}</strong></td>
+        <td><strong>${r.discount_type === 'amount' ? Format.price(r.requested_amount) : '%'+r.requested_rate}</strong></td>
         <td>${r.reason||'-'}</td>
         <td>${Format.statusBadge(r.status)}</td>
         <td>${Format.date(r.created_at)}</td>
-        <td>${r.status==='pending'?`<button onclick="openDiscountReview(${r.id},'${r.dealer_name}','${r.project_name}',${r.requested_rate})" class="btn btn-primary btn-sm">Değerlendir</button>`:'<span class="text-muted">Tamamlandı</span>'}</td>
+        <td>${r.status==='pending'?`<button onclick="openDiscountReview(${r.id},'${r.dealer_name.replace(/'/g,"\\'")}','${r.project_name.replace(/'/g,"\\'").replace(/"/g,"&quot;")}', ${r.requested_rate}, ${r.requested_amount}, '${r.discount_type}')" class="btn btn-primary btn-sm">Değerlendir</button>`:'<span class="text-muted">Tamamlandı</span>'}</td>
       </tr>`).join('')}
     </tbody></table></div>`;
   } catch(e) { document.getElementById('discount-requests-table').innerHTML=`<p class="text-muted">${e.message}</p>`; }
 }
 
 // Fetch project items for discount review
-async function openDiscountReview(id, dealer, project, rate) {
+let currentReviewDiscountType = 'percentage';
+async function openDiscountReview(id, dealer, project, rate, amount, type) {
   editingDiscountId = id;
-  document.getElementById('approved-rate').value = rate;
+  currentReviewDiscountType = type || 'percentage';
+  const valText = type === 'amount' ? Format.price(amount) : '%'+rate;
+  
+  if (type === 'amount') {
+    document.getElementById('approved-rate').value = amount || '';
+    document.getElementById('approved-rate').setAttribute('placeholder', 'Örn: 5000');
+    // Change label just visually if possible, but let's keep it simple
+    document.querySelector('label[for="approved-rate"]').textContent = 'Onaylanan İskonto Tutarı (₺)';
+  } else {
+    document.getElementById('approved-rate').value = rate || '';
+    document.getElementById('approved-rate').setAttribute('placeholder', 'Örn: 5');
+    document.querySelector('label[for="approved-rate"]').textContent = 'Onaylanan İskonto Oranı (%)';
+  }
+
   document.getElementById('review-note').value = '';
   const infoEl = document.getElementById('discount-review-info');
-  infoEl.innerHTML = `<strong>${dealer}</strong> - "${project}" için <strong>%${rate}</strong> iskonto talep etti.<div class="spinner" style="margin:12px auto"></div>`;
+  infoEl.innerHTML = `<strong>${dealer}</strong> - "${project}" için <strong>${valText}</strong> iskonto talep etti.<div class="spinner" style="margin:12px auto"></div>`;
   openModal('discount-review-modal');
   try {
-    // fetch project items via dealer API
     const allProjs = await API.get('/dealer/projects');
-    const proj = allProjs.find(p=>p.project_name===project&&p.dealer_name===dealer);
+    const proj = allProjs.find(p=>p.project_name===project && p.dealer_name===dealer);
     if (proj) {
       const detail = await API.get(`/dealer/projects/${proj.uuid}`);
       const items = detail.items || [];
       const total = items.reduce((s,i)=>s+(i.unit_price*i.quantity),0);
+      const discountTot = type === 'amount' ? amount : (total * (rate/100));
       infoEl.innerHTML = `
         <strong>${dealer}</strong> (${proj.company_name||''}) — Proje: "${project}"<br>
-        <strong style="color:var(--c-warning)">Talep Edilen İskonto: %${rate}</strong>
+        <strong style="color:var(--c-warning)">Talep Edilen İskonto: ${valText}</strong>
         <div class="table-wrap" style="margin-top:12px">
           <table><thead><tr><th>Ürün</th><th>Adet</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>
-          ${items.map(i=>`<tr><td>${i.product_name||i.name}</td><td>${i.quantity}</td><td>${Format.price(i.unit_price)}</td><td>${Format.price(i.unit_price*i.quantity)}</td></tr>`).join('')}
+          ${items.map(i=>`<tr><td>${i.product_name||i.name||i.label}</td><td>${i.quantity}</td><td>${Format.price(i.unit_price)}</td><td>${Format.price(i.unit_price*i.quantity)}</td></tr>`).join('')}
           </tbody></table>
         </div>
-        <div style="text-align:right;margin-top:8px"><strong>Proje Toplamı: ${Format.price(total)}</strong> → İskonto Sonrası: ${Format.price(total*(1-rate/100))}</div>`;
+        <div style="text-align:right;margin-top:8px"><strong>Proje Toplamı: ${Format.price(total)}</strong> → İskonto Sonrası: ${Format.price(total - discountTot)}</div>`;
     } else {
-      infoEl.textContent = `${dealer} - "${project}" için %${rate} iskonto talep etti.`;
+      infoEl.textContent = `${dealer} - "${project}" için ${valText} iskonto talep etti.`;
     }
-  } catch { infoEl.textContent = `${dealer} - "${project}" için %${rate} iskonto talep etti.`; }
+  } catch { infoEl.textContent = `${dealer} - "${project}" için ${valText} iskonto talep etti.`; }
 }
+
 async function reviewDiscount(status) {
   try {
-    await API.post(`/dealer/discount-requests/${editingDiscountId}/review`, { status, approved_rate: parseFloat(document.getElementById('approved-rate').value), admin_note: document.getElementById('review-note').value });
+    const payload = { status, admin_note: document.getElementById('review-note').value };
+    if (currentReviewDiscountType === 'amount') {
+      payload.approved_amount = parseFloat(document.getElementById('approved-rate').value);
+    } else {
+      payload.approved_rate = parseFloat(document.getElementById('approved-rate').value);
+    }
+    await API.post(`/dealer/discount-requests/${editingDiscountId}/review`, payload);
     closeModal('discount-review-modal'); Toast.success(`Talep ${status==='approved'?'onaylandı':'reddedildi'}!`); loadDiscountRequests();
   } catch(e) { Toast.error(e.message); }
 }
@@ -582,7 +610,7 @@ async function loadQuoteRequests() {
         <td>${Format.statusBadge(r.status)}</td>
         <td>${Format.date(r.created_at)}</td>
         <td style="display:flex;gap:4px">
-          <button onclick="viewQuoteDetail(${JSON.stringify(r).replace(/"/g,'&quot;')})" class="btn btn-primary btn-sm">Detay</button>
+          <button onclick="viewQuoteDetail(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))" class="btn btn-primary btn-sm">Detay</button>
           <select onchange="updateQuoteStatus('${r.uuid}',this.value)" class="form-select" style="width:120px">
             <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
             <option value="in_review" ${r.status==='in_review'?'selected':''}>İncelemede</option>
@@ -791,7 +819,7 @@ async function loadCategories() {
     const children = cats.filter(c=>!!c.parent_id);
     const rows = [];
     roots.sort((a,b)=>a.sort_order-b.sort_order).forEach(root => {
-      rows.push(`<tr style="background:var(--c-surface)"><td><strong>${root.name}</strong></td><td><code>${root.slug}</code></td><td>-</td><td>${root.sort_order}</td><td><button onclick="openAddSubCategory(${root.id},'${root.name.replace(/'/g,'\\'')}')" class="btn btn-outline btn-sm">+ Alt</button></td></tr>`);
+      rows.push(`<tr style="background:var(--c-surface)"><td><strong>${root.name}</strong></td><td><code>${root.slug}</code></td><td>-</td><td>${root.sort_order}</td><td><button onclick="openAddSubCategory(${root.id},'${root.name.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')" class="btn btn-outline btn-sm">+ Alt</button></td></tr>`);
       children.filter(c=>c.parent_id===root.id).sort((a,b)=>a.sort_order-b.sort_order).forEach(child => {
         rows.push(`<tr><td>&nbsp;&nbsp;&nbsp;↳ ${child.name}</td><td><code>${child.slug}</code></td><td><span class="badge badge-gray">${root.name}</span></td><td>${child.sort_order}</td><td></td></tr>`);
       });
@@ -894,9 +922,9 @@ async function loadDealerProjects() {
         <td>${p.dealer_name}</td>
         <td>${p.company_name||'-'}</td>
         <td>${Format.statusBadge(p.status)}</td>
-        <td>${p.extra_discount_rate>0?`<span class="badge badge-green">%${p.extra_discount_rate}</span>`:'-'}</td>
+        <td>${p.extra_discount_type==='amount'? (p.extra_discount_amount>0?`<span class="badge badge-green">${Format.price(p.extra_discount_amount)}</span>`:'-') : (p.extra_discount_rate>0?`<span class="badge badge-green">%${p.extra_discount_rate}</span>`:'-')}</td>
         <td>${Format.date(p.created_at)}</td>
-        <td><button onclick="viewDealerProject('${p.uuid}','${p.project_name.replace(/'/g,'\\'')}')" class="btn btn-primary btn-sm">Detay</button></td>
+        <td><button onclick="viewDealerProject('${p.uuid}','${p.project_name.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')" class="btn btn-primary btn-sm">Detay</button></td>
       </tr>`).join('')}
     </tbody></table></div>`;
   } catch {}
@@ -934,7 +962,8 @@ async function loadSettings() {
   try {
     const s = await API.get('/admin/settings');
     const all = ['site_name','site_phone','site_email','site_address','high_value_order_threshold','tax_rate',
-                 'retail_margin','dealer_cash_margin','dealer_card_margin','site_logo','whatsapp_number'];
+                 'retail_margin','dealer_cash_margin','dealer_card_margin','site_logo','whatsapp_number',
+                 'site_banner_1','site_banner_2','site_banner_3'];
     all.forEach(k => { const el = document.querySelector(`[name="${k}"]`); if(el) el.value = s[k]||''; });
     // Logo preview
     const logo = s['site_logo'];
@@ -947,7 +976,7 @@ async function loadSettings() {
 document.getElementById('settings-form').addEventListener('submit', async e => {
   e.preventDefault();
   const payload = {};
-  ['site_name','site_phone','site_email','site_address','high_value_order_threshold','tax_rate','site_logo','whatsapp_number'].forEach(k => {
+  ['site_name','site_phone','site_email','site_address','high_value_order_threshold','tax_rate','site_logo','whatsapp_number', 'site_banner_1', 'site_banner_2', 'site_banner_3'].forEach(k => {
     const el = document.querySelector(`#settings-form [name="${k}"]`); if(el) payload[k] = el.value;
   });
   try { await API.put('/admin/settings', payload); Toast.success('Site ayarları kaydedildi!'); } catch(e) { Toast.error(e.message); }

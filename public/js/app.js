@@ -234,6 +234,55 @@ const SiteSettings = {
       if (s.whatsapp_number) {
         document.querySelectorAll('.whatsapp-link').forEach(el => { el.href = `https://wa.me/${s.whatsapp_number.replace(/\D/g,'')}`; });
       }
+
+      // Hero Slider logic
+      const hero = document.getElementById('hero-section');
+      if (hero && (s.site_banner_1 || s.site_banner_2 || s.site_banner_3)) {
+        const banners = [s.site_banner_1, s.site_banner_2, s.site_banner_3].filter(Boolean);
+        const sliderWrap = document.createElement('div');
+        sliderWrap.className = 'hero-slider';
+        sliderWrap.innerHTML = banners.map(b => `<div class="hero-slide" style="background-image:url('${b}')"></div>`).join('');
+        hero.insertBefore(sliderWrap, hero.firstChild);
+        
+        if (banners.length > 1) {
+          let cIdx = 0;
+          setInterval(() => {
+            cIdx = (cIdx + 1) % banners.length;
+            sliderWrap.style.transform = `translateX(-${cIdx * 100}%)`;
+          }, 4500);
+        }
+      }
+    } catch(e) {}
+  }
+};
+
+// ===== CATEGORY MENU =====
+const CategoryMenu = {
+  async render() {
+    const nav = document.getElementById('category-nav-list');
+    if (!nav) return;
+    try {
+      const cats = await fetch('/api/categories').then(r=>r.json());
+      const roots = cats.filter(c => !c.parent_id).sort((a,b)=>a.sort_order-b.sort_order);
+      const children = cats.filter(c => c.parent_id);
+      
+      let html = `<li><a href="/urunler.html">🌟 Tüm Ürünler</a></li>`;
+      roots.forEach(root => {
+        const subs = children.filter(c => c.parent_id === root.id).sort((a,b)=>a.sort_order-b.sort_order);
+        if (subs.length > 0) {
+          html += `<li class="dropdown-container">
+            <a href="/urunler.html?category=${root.id}" style="display:flex;align-items:center;gap:4px">
+              ${root.name} <span style="font-size:10px">▼</span>
+            </a>
+            <div class="dropdown-menu-list">
+              ${subs.map(s => `<a href="/urunler.html?category=${s.id}" class="dropdown-menu-item">${s.name}<span>→</span></a>`).join('')}
+            </div>
+          </li>`;
+        } else {
+          html += `<li><a href="/urunler.html?category=${root.id}">${root.name}</a></li>`;
+        }
+      });
+      nav.innerHTML = html;
     } catch(e) {}
   }
 };
@@ -258,10 +307,8 @@ function initTabs(container) {
   });
 }
 
-// ===== PRICE RENDERER (labeled nakit/kart + taksit) =====
+// ===== PRICE RENDERER (labeled nakit/kart + taksit popup) =====
 const PriceRenderer = {
-  // rates: { cash, card } — card can equal cash for non-dealer
-  // installmentBase: price used for taksit calculation
   render(cash, card, opts = {}) {
     if (cash == null) return `<div class="price-on-request">💰 Fiyat Sorunuz</div>`;
     const isDealer = opts.isDealer || false;
@@ -269,14 +316,10 @@ const PriceRenderer = {
     const cardLabel = isDealer ? 'Bayi K.Kartı' : 'Kredi Kartı Tek Çekim';
     const cashCls = isDealer ? 'price-value-dealer' : 'price-value-cash';
     const tagCls = isDealer ? 'price-label-dealer' : 'price-label-cash';
-    const id = 'inst-' + Math.random().toString(36).slice(2,7);
-    const instRows = [3,6,9,12].map(n => {
-      const monthly = (card||cash) / n;
-      return `<div class="installment-row"><span>${n} Taksit</span><strong>${Format.price(monthly)}/ay</strong><span style="font-size:11px;color:var(--c-text-muted)">(Toplam: ${Format.price((card||cash))})</span></div>`;
-    }).join('');
+    
     return `
       <div class="price-block">
-        <div class="price-row-item">
+        <div class="price-row-item mb-1">
           <span class="price-label-tag ${tagCls}">${cashLabel}</span>
           <span class="${cashCls}">${Format.price(cash)}</span>
         </div>
@@ -285,17 +328,54 @@ const PriceRenderer = {
           <span class="price-label-tag price-label-card">${cardLabel}</span>
           <span class="price-value-card">${Format.price(card)}</span>
         </div>` : ''}
-        <button class="installment-toggle" onclick="document.getElementById('${id}').classList.toggle('open'); this.querySelector('.inst-arrow').textContent=document.getElementById('${id}').classList.contains('open')?'▲':'▼'">
-          💳 Taksit Seçenekleri <span class="inst-arrow">▼</span>
+        <button class="btn btn-ghost btn-sm mt-3" style="padding:4px 8px;font-size:12px" onclick="openTaksitModal(${card||cash}, '${opts.productName?opts.productName.replace(/'/g,"\\'"):''}')">
+          💳 Taksit Seçenekleri →
         </button>
-        <div class="installment-table" id="${id}">
-          <div class="installment-row" style="background:var(--c-primary-light);font-weight:700">
-            <span>Tek Çekim</span><strong>${Format.price(card||cash)}</strong><span></span>
-          </div>
-          ${instRows}
-        </div>
       </div>`;
   }
+};
+
+window.openTaksitModal = function(basePrice, productName) {
+  let modal = document.getElementById('global-taksit-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'global-taksit-modal';
+    modal.innerHTML = `
+      <div class="modal" style="max-width:400px">
+        <div class="modal-header"><h3 class="modal-title" style="font-size:16px">💳 Taksit Seçenekleri</h3><button class="modal-close">✕</button></div>
+        <div class="modal-body" style="padding:0">
+          <div style="padding:var(--space-4);background:var(--c-bg);font-weight:600;font-size:14px;border-bottom:1px solid var(--c-border)" id="taksit-product-name"></div>
+          <div style="padding:var(--space-4)" id="taksit-modal-content"></div>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  
+  document.getElementById('taksit-product-name').textContent = productName || 'Taksit Tablosu';
+  document.getElementById('taksit-product-name').style.display = productName ? 'block' : 'none';
+  
+  const instRows = [1,3,6,9,12].map(n => {
+    const monthly = basePrice / n;
+    return `
+      <div style="display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid var(--c-border);${n===1?'background:var(--c-primary-light);font-weight:700':''}">
+        <span>${n===1?'Tek Çekim':n+' Taksit'}</span>
+        <div style="text-align:right">
+          <div style="${n!==1?'font-weight:600;color:var(--c-primary)':''}">${n===1?Format.price(basePrice):Format.price(monthly)+'/ay'}</div>
+          ${n!==1?`<div style="font-size:11px;color:var(--c-text-muted)">Toplam: ${Format.price(basePrice)}</div>`:''}
+        </div>
+      </div>`;
+  }).join('');
+  
+  document.getElementById('taksit-modal-content').innerHTML = `
+    <div style="border:1px solid var(--c-border);border-radius:var(--r-md);overflow:hidden">
+      ${instRows}
+    </div>
+    <div style="margin-top:var(--space-4);text-align:center">
+      <button class="btn btn-outline btn-full modal-close">Kapat</button>
+    </div>
+  `;
+  openModal('global-taksit-modal');
 };
 
 // ===== INIT =====
@@ -303,6 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
   SiteSettings.load();
   Cart.updateBadge();
   Notifications.load();
+  CategoryMenu.render();
 
   // Employee redirect: send employee to admin panel on shopping pages
   if (Auth.isEmployee()) {
