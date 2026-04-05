@@ -201,6 +201,8 @@
               <div class="form-group"><label class="form-label">Telefon</label><input type="text" class="form-input" name="site_phone"></div>
               <div class="form-group"><label class="form-label">E-posta</label><input type="email" class="form-input" name="site_email"></div>
               <div class="form-group"><label class="form-label">Adres</label><textarea class="form-textarea" name="site_address" rows="2"></textarea></div>
+              <div class="form-group"><label class="form-label">🖼️ Logo URL <span style="font-size:11px;color:var(--c-text-muted)">(boş bırakırsan emoji logo kullanılır)</span></label><input type="url" class="form-input" name="site_logo" placeholder="https://example.com/logo.png" oninput="document.getElementById('logo-preview').src=this.value||''; document.getElementById('logo-preview').style.display=this.value?'block':'none'"><img id="logo-preview" src="" style="display:none;max-height:50px;margin-top:8px;border-radius:8px;border:1px solid var(--c-border);padding:4px"></div>
+              <div class="form-group"><label class="form-label">💬 WhatsApp Numarası <span style="font-size:11px;color:var(--c-text-muted)">(90 ile başlayın, boşluksuz)</span></label><input type="text" class="form-input" name="whatsapp_number" placeholder="905321234567"></div>
               <div class="form-group"><label class="form-label">Yüksek Tutar Eşiği (₺)</label><input type="number" class="form-input" name="high_value_order_threshold"></div>
               <div class="form-group"><label class="form-label">KDV Oranı (%)</label><input type="number" class="form-input" name="tax_rate"></div>
               <button type="submit" class="btn btn-primary">Kaydet</button>
@@ -448,6 +450,7 @@ async function loadDashboard() {
       <div class="stat-card blue"><span class="stat-icon">📦</span><div class="stat-label">Aktif Ürünler</div><div class="stat-value">${stats.products.total}</div>${stats.products.out_of_stock>0?`<div class="stat-sub" style="color:var(--c-error)">${stats.products.out_of_stock} stok yok</div>`:''}</div>
       <div class="stat-card yellow"><span class="stat-icon">💬</span><div class="stat-label">Yeni Teklif Talepleri</div><div class="stat-value">${stats.quote_requests.new}</div></div>
       <div class="stat-card orange"><span class="stat-icon">💰</span><div class="stat-label">Bekleyen İskonto</div><div class="stat-value">${stats.discount_requests.pending}</div></div>
+      ${stats.users.pending_dealers>0 ? `<div class="stat-card red" style="cursor:pointer" onclick="showSection('dealers')"><span class="stat-icon">⚠️</span><div class="stat-label">Onay Bekleyen Bayi</div><div class="stat-value">${stats.users.pending_dealers}</div><div class="stat-sub" style="color:var(--c-error)">Onay gerekiyor!</div></div>` : ''}
     `;
     if (stats.orders.pending_stock>0) { document.getElementById('orders-badge').textContent=stats.orders.pending_stock; document.getElementById('orders-badge').style.display=''; }
     if (stats.discount_requests.pending>0) { document.getElementById('disc-badge').textContent=stats.discount_requests.pending; document.getElementById('disc-badge').style.display=''; }
@@ -931,8 +934,12 @@ async function loadSettings() {
   try {
     const s = await API.get('/admin/settings');
     const all = ['site_name','site_phone','site_email','site_address','high_value_order_threshold','tax_rate',
-                 'retail_margin','dealer_cash_margin','dealer_card_margin'];
+                 'retail_margin','dealer_cash_margin','dealer_card_margin','site_logo','whatsapp_number'];
     all.forEach(k => { const el = document.querySelector(`[name="${k}"]`); if(el) el.value = s[k]||''; });
+    // Logo preview
+    const logo = s['site_logo'];
+    const preview = document.getElementById('logo-preview');
+    if (preview && logo) { preview.src = logo; preview.style.display = 'block'; }
     await loadPaymentLinks();
   } catch {}
 }
@@ -940,7 +947,7 @@ async function loadSettings() {
 document.getElementById('settings-form').addEventListener('submit', async e => {
   e.preventDefault();
   const payload = {};
-  ['site_name','site_phone','site_email','site_address','high_value_order_threshold','tax_rate'].forEach(k => {
+  ['site_name','site_phone','site_email','site_address','high_value_order_threshold','tax_rate','site_logo','whatsapp_number'].forEach(k => {
     const el = document.querySelector(`#settings-form [name="${k}"]`); if(el) payload[k] = el.value;
   });
   try { await API.put('/admin/settings', payload); Toast.success('Site ayarları kaydedildi!'); } catch(e) { Toast.error(e.message); }

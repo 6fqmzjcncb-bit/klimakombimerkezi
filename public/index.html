@@ -160,7 +160,9 @@
   <div class="container">
     <div class="navbar-inner">
       <a href="/" class="nav-logo">
-        <div style="width:38px;height:38px;background:linear-gradient(135deg,#1d4ed8,#1e3a8a);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:21px;box-shadow:0 4px 14px rgba(29,78,216,0.35)">🔥</div>
+        <div class="nav-logo-icon-wrap">
+          <div class="nav-logo-emoji-fallback">🔥</div>
+        </div>
         <div>
           <div class="nav-logo-text"><span class="brand-name-text">Klima Kombi Merkezi</span></div>
           <div class="nav-logo-sub">Isıtma &amp; Soğutma Sistemleri</div>
@@ -175,9 +177,10 @@
 
       <div class="nav-actions">
         <a href="/araclar.html" class="nav-btn desktop-only">🔧 Sihirbazlar</a>
-        <a href="/sepet.html" class="nav-btn" style="position:relative">
-          🛒 <span class="cart-count cart-badge" style="display:none">0</span>
-        </a>
+        <div class="cart-btn-wrap">
+          <a href="/sepet.html" class="nav-btn">🛒</a>
+          <span class="cart-count cart-badge" style="display:none">0</span>
+        </div>
         <div id="nav-auth-area"></div>
       </div>
     </div>
@@ -403,7 +406,7 @@
         <div style="display:flex;gap:12px;margin-top:16px">
           <a href="#" style="color:#94a3b8;font-size:20px">📘</a>
           <a href="#" style="color:#94a3b8;font-size:20px">📸</a>
-          <a href="https://wa.me/905320000000" style="color:#94a3b8;font-size:20px">💬</a>
+          <a href="https://wa.me/905320000000" class="whatsapp-link" style="color:#94a3b8;font-size:20px">💬</a>
         </div>
       </div>
       <div class="footer-col">
@@ -463,14 +466,29 @@ const CAT_ICONS = { kombi:'🔥', klima:'❄️', kazan:'⚙️', termostat:'�
 async function loadCategories() {
   try {
     const cats = await fetch('/api/categories').then(r => r.json());
-    // Nav
+    const roots = cats.filter(c => !c.parent_id);
+    const children = cats.filter(c => !!c.parent_id);
+    // Nav — dropdown
     const nav = document.getElementById('category-nav-list');
-    cats.slice(0, 10).forEach(c => {
-      nav.innerHTML += `<li><a href="/urunler.html?category=${c.slug}">${c.name}</a></li>`;
+    nav.innerHTML = `<li><a href="/urunler.html">Tümü</a></li>`;
+    roots.slice(0, 12).forEach(c => {
+      const kids = children.filter(k => k.parent_id === c.id);
+      if (kids.length) {
+        nav.innerHTML += `<li class="has-dropdown">
+          <button class="cat-nav-btn">${c.name} <span class="cat-dropdown-arrow">▼</span></button>
+          <div class="cat-dropdown">
+            <div class="cat-dropdown-header">${c.name}</div>
+            <a href="/urunler.html?category=${c.slug}">📂 Tümünü Gör</a>
+            ${kids.map(k => `<a href="/urunler.html?category=${k.slug}">${k.name}</a>`).join('')}
+          </div>
+        </li>`;
+      } else {
+        nav.innerHTML += `<li><a href="/urunler.html?category=${c.slug}">${c.name}</a></li>`;
+      }
     });
     // Cards
     const cc = document.getElementById('cat-cards');
-    cc.innerHTML = cats.map(c => `
+    cc.innerHTML = roots.map(c => `
       <a href="/urunler.html?category=${c.slug}" class="cat-card">
         <div class="cat-icon">${CAT_ICONS[c.slug] || '📦'}</div>
         <span>${c.name}</span>
@@ -484,8 +502,8 @@ async function loadBrands() {
   try {
     const brands = await fetch('/api/brands').then(r => r.json());
     const track = document.getElementById('brands-track');
-    const items = brands.map(b => `<span class="brand-pill">🏷️ ${b.name}</span>`).join('');
-    track.innerHTML = items + items; // duplicate for seamless loop
+    const items = brands.map(b => `<span class="brand-pill">${b.logo_url ? `<img src="${b.logo_url}" alt="${b.name}" onerror="this.style.display='none'">` : '🏷️'} ${b.name}</span>`).join('');
+    track.innerHTML = items + items;
   } catch {}
 }
 
@@ -509,18 +527,12 @@ function renderProductCard(p) {
   } else if (p.stock_status === 'on_request') {
     priceHtml = `<div class="price-on-request">⏱ Tedarik: ${p.supply_days || 0} Gün</div>`;
   } else if (isDealer && p.dealer_cash_price) {
-    priceHtml = `
-      <div class="price-retail-crossed">${Format.price(p.base_price)}</div>
-      <div class="price-dealer-cash">${Format.price(p.dealer_cash_price)}</div>
-      ${p.dealer_card_price ? `<div class="price-dealer-card">💳 ${Format.price(p.dealer_card_price)}</div>` : ''}
-    `;
+    priceHtml = PriceRenderer.render(p.dealer_cash_price, p.dealer_card_price, { isDealer: true });
   } else {
-    priceHtml = `
-      <div class="price-retail">${Format.price(p.base_price)}</div>
-      <div class="price-dealer-card">💳 ${Format.price(p.base_price)}</div>
-    `;
+    priceHtml = PriceRenderer.render(p.base_price, p.dealer_card_price || p.base_price);
   }
   const canBuy = !p.is_hidden_price && p.stock_status !== 'on_request' && p.stock_status !== 'price_on_request' && p.stock_status !== 'out_of_stock';
+  const isEmployee = Auth.isEmployee() || Auth.isAdmin();
   return `
     <div class="product-card">
       <div class="product-card-image">
@@ -535,10 +547,8 @@ function renderProductCard(p) {
       </div>
       <div class="product-card-actions">
         <a href="/urunler.html?slug=${p.slug}" class="btn btn-outline btn-sm" style="flex:1">İncele</a>
-        ${canBuy
-          ? `<button class="btn btn-primary btn-sm" onclick="addToCart(${p.id})" style="flex:1">🛒 Sepete</button>`
-          : `<a href="/teklif.html?product=${p.id}" class="btn btn-sm" style="flex:1;background:#f59e0b;color:#fff">📩 Teklif</a>`
-        }
+        ${!isEmployee && canBuy ? `<button class="btn btn-primary btn-sm" onclick="addToCart(${p.id})" style="flex:1">🛒 Sepete</button>` : ''}
+        ${!isEmployee && !canBuy && !p.is_hidden_price ? `<a href="/teklif.html?product=${p.id}" class="btn btn-sm" style="flex:1;background:#f59e0b;color:#fff">📩 Teklif</a>` : ''}
       </div>
     </div>
   `;

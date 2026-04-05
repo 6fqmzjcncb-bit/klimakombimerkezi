@@ -74,11 +74,29 @@
             <div class="form-group"><label class="form-label">Açık Adres *</label><textarea id="co-address" class="form-textarea" rows="2" required></textarea></div>
             
             <h4 class="mt-8 mb-4">Ödeme Yöntemi</h4>
-            <div class="form-group">
-              <select id="co-payment" class="form-select" required>
-                <option value="credit_card">💳 Kredi Kartı</option>
-                <option value="bank_transfer">🏦 Havale / EFT</option>
-              </select>
+            <div class="payment-methods">
+              <label class="payment-method-card selected" id="pm-cash-label" onclick="selectPayment('cash')">
+                <input type="radio" name="payment" id="pm-cash" value="bank_transfer" checked>
+                <div>
+                  <div class="payment-method-card-label">💵 Nakit / Havale</div>
+                  <div class="payment-method-card-sub">EFT veya nakit ödeme</div>
+                </div>
+              </label>
+              <label class="payment-method-card" id="pm-card-label" onclick="selectPayment('card')">
+                <input type="radio" name="payment" id="pm-card" value="credit_card">
+                <div>
+                  <div class="payment-method-card-label">💳 Kredi Kartı</div>
+                  <div class="payment-method-card-sub">Tek çekim veya taksit</div>
+                </div>
+              </label>
+            </div>
+            <div class="installment-options" id="installment-options">
+              <div style="font-size:13px;font-weight:700;margin-bottom:8px">💳 Taksit Seçeneği</div>
+              <label><input type="radio" name="inst" value="1" checked> <span class="inst-label-text">Tek Çekim</span><span class="inst-price-text" id="inst-label-1"></span></label>
+              <label><input type="radio" name="inst" value="3"> <span class="inst-label-text">3 Taksit</span><span class="inst-price-text" id="inst-label-3"></span></label>
+              <label><input type="radio" name="inst" value="6"> <span class="inst-label-text">6 Taksit</span><span class="inst-price-text" id="inst-label-6"></span></label>
+              <label><input type="radio" name="inst" value="9"> <span class="inst-label-text">9 Taksit</span><span class="inst-price-text" id="inst-label-9"></span></label>
+              <label><input type="radio" name="inst" value="12"> <span class="inst-label-text">12 Taksit</span><span class="inst-price-text" id="inst-label-12"></span></label>
             </div>
             
             <hr class="divider">
@@ -126,8 +144,36 @@ async function loadCartPage() {
     document.getElementById('c-subtotal').textContent = Format.price(cart.subtotal);
     document.getElementById('c-tax').textContent = Format.price(cart.tax_amount);
     document.getElementById('c-total').textContent = Format.price(cart.total_amount);
+    updateInstallmentLabels(cart.total_amount);
   } catch(e) { Toast.error(e.message); }
 }
+
+function updateInstallmentLabels(total) {
+  [1,3,6,9,12].forEach(n => {
+    const el = document.getElementById(`inst-label-${n}`);
+    if (!el) return;
+    const monthly = total / n;
+    el.textContent = n === 1 ? ` — ${Format.price(total)}` : ` — ${Format.price(monthly)}/ay`;
+  });
+}
+
+function selectPayment(type) {
+  const cashLabel = document.getElementById('pm-cash-label');
+  const cardLabel = document.getElementById('pm-card-label');
+  const instOpts = document.getElementById('installment-options');
+  if (type === 'card') {
+    document.getElementById('pm-card').checked = true;
+    cardLabel.classList.add('selected');
+    cashLabel.classList.remove('selected');
+    instOpts.classList.add('open');
+  } else {
+    document.getElementById('pm-cash').checked = true;
+    cashLabel.classList.add('selected');
+    cardLabel.classList.remove('selected');
+    instOpts.classList.remove('open');
+  }
+}
+
 
 async function updateQty(id, qty) {
   if (qty < 1) { removeItem(id); return; }
@@ -170,7 +216,10 @@ document.getElementById('checkout-form').addEventListener('submit', async e => {
   e.preventDefault();
   const btn = document.getElementById('submit-order');
   btn.disabled=true; btn.textContent='Onaylanıyor...';
-  
+  const paymentMethod = document.getElementById('pm-card')?.checked ? 'credit_card' : 'bank_transfer';
+  const instCount = paymentMethod === 'credit_card'
+    ? parseInt(document.querySelector('input[name="inst"]:checked')?.value || '1')
+    : 1;
   try {
     const payload = {
       user_name: document.getElementById('co-name').value,
@@ -179,20 +228,16 @@ document.getElementById('checkout-form').addEventListener('submit', async e => {
       company_name: document.getElementById('co-company').value,
       shipping_address: document.getElementById('co-address').value,
       billing_address: document.getElementById('co-address').value,
-      payment_method: document.getElementById('co-payment').value
+      payment_method: paymentMethod,
+      installment_count: instCount
     };
-    
-    // Attempt checkout
-    // Use auth token explicitly
     const r = await fetch('/api/orders', {
       method: 'POST',
       headers: { ...Cart.headers(), 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    
     const d = await r.json();
     if (!r.ok) throw new Error(d.error);
-    
     await Cart.updateBadge();
     document.getElementById('cart-content').innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:var(--space-10) 0">
@@ -200,15 +245,14 @@ document.getElementById('checkout-form').addEventListener('submit', async e => {
         <h2 style="margin-bottom:var(--space-2)">Siparişiniz Alındı!</h2>
         <p class="text-muted mb-4">Sipariş numaranız: <strong>${d.order.uuid}</strong></p>
         <div class="alert alert-info" style="display:inline-block;text-align:left">
-          ${d.order.status==='pending_stock_check' ? 'Satın aldığınız ürünler stok onayına (özel durumlara) tabidir. Stok teyidi sonrası sizinle iletişime geçeceğiz.' : 
-           d.order.payment_method==='credit_card' && d.order.payment_link ? `Ödeme linkiniz hazırlandı. Link: <br><a href="${d.order.payment_link}" target="_blank">${d.order.payment_link}</a>` :
+          ${d.order.status==='pending_stock_check' ? 'Stok onayı sonrası sizinle iletişime geçeceğiz.' :
+           d.order.payment_method==='credit_card' && d.order.payment_link ? `Ödeme linkiniz: <br><a href="${d.order.payment_link}" target="_blank">${d.order.payment_link}</a>` :
            'Siparişiniz işleme alındı.'}
         </div>
         <div class="mt-8">
           <a href="${Auth.isDealer()?'/bayi.html#orders':Auth.isLoggedIn()?'/hesabim.html':'/'}" class="btn btn-primary">Siparişlerime Git / Ana Sayfa</a>
         </div>
-      </div>
-    `;
+      </div>`;
   } catch(e) {
     Toast.error(e.message);
     btn.disabled=false; btn.textContent='Siparişi Onayla';

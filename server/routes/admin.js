@@ -25,6 +25,7 @@ router.get('/stats', requireAuth, requireRole('admin', 'employee'), (req, res) =
     users: {
       total: db.prepare('SELECT COUNT(*) as cnt FROM users WHERE is_active=1').get().cnt,
       dealers: db.prepare("SELECT COUNT(*) as cnt FROM users WHERE role='dealer' AND is_active=1").get().cnt,
+      pending_dealers: db.prepare("SELECT COUNT(*) as cnt FROM users WHERE role='dealer' AND is_active=0").get().cnt,
     },
     products: {
       total: db.prepare('SELECT COUNT(*) as cnt FROM products WHERE is_active=1').get().cnt,

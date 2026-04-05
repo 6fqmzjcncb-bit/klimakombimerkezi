@@ -218,14 +218,22 @@ const Notifications = {
 const SiteSettings = {
   async load() {
     try {
-      const s = await API.get('/settings/public');
+      const s = await fetch('/api/settings/public').then(r=>r.json());
       if (s.site_name) {
         document.title = document.title.includes('|') ? `${document.title.split('|')[0]} | ${s.site_name}` : s.site_name;
         document.querySelectorAll('.brand-name-text').forEach(el => el.textContent = s.site_name);
       }
-      if (s.site_phone) document.querySelectorAll('.contact-phone').forEach(el => { el.href=`tel:${s.site_phone.replace(/\\s+/g,'')}`; el.textContent=s.site_phone; });
+      if (s.site_phone) document.querySelectorAll('.contact-phone').forEach(el => { el.href=`tel:${s.site_phone.replace(/\s+/g,'')}`; el.textContent=s.site_phone; });
       if (s.site_email) document.querySelectorAll('.contact-email').forEach(el => { el.href=`mailto:${s.site_email}`; el.textContent=s.site_email; });
       if (s.site_address) document.querySelectorAll('.contact-address').forEach(el => el.textContent = s.site_address);
+      if (s.site_logo) {
+        document.querySelectorAll('.nav-logo-icon-wrap').forEach(el => {
+          el.innerHTML = `<img src="${s.site_logo}" class="site-logo-img" alt="logo" onerror="this.parentNode.innerHTML='<div class=nav-logo-emoji-fallback>&#128293;</div>'">`;
+        });
+      }
+      if (s.whatsapp_number) {
+        document.querySelectorAll('.whatsapp-link').forEach(el => { el.href = `https://wa.me/${s.whatsapp_number.replace(/\D/g,'')}`; });
+      }
     } catch(e) {}
   }
 };
@@ -250,11 +258,58 @@ function initTabs(container) {
   });
 }
 
+// ===== PRICE RENDERER (labeled nakit/kart + taksit) =====
+const PriceRenderer = {
+  // rates: { cash, card } — card can equal cash for non-dealer
+  // installmentBase: price used for taksit calculation
+  render(cash, card, opts = {}) {
+    if (cash == null) return `<div class="price-on-request">💰 Fiyat Sorunuz</div>`;
+    const isDealer = opts.isDealer || false;
+    const cashLabel = isDealer ? 'Bayi Nakit' : 'Nakit Fiyatı';
+    const cardLabel = isDealer ? 'Bayi K.Kartı' : 'Kredi Kartı Tek Çekim';
+    const cashCls = isDealer ? 'price-value-dealer' : 'price-value-cash';
+    const tagCls = isDealer ? 'price-label-dealer' : 'price-label-cash';
+    const id = 'inst-' + Math.random().toString(36).slice(2,7);
+    const instRows = [3,6,9,12].map(n => {
+      const monthly = (card||cash) / n;
+      return `<div class="installment-row"><span>${n} Taksit</span><strong>${Format.price(monthly)}/ay</strong><span style="font-size:11px;color:var(--c-text-muted)">(Toplam: ${Format.price((card||cash))})</span></div>`;
+    }).join('');
+    return `
+      <div class="price-block">
+        <div class="price-row-item">
+          <span class="price-label-tag ${tagCls}">${cashLabel}</span>
+          <span class="${cashCls}">${Format.price(cash)}</span>
+        </div>
+        ${card && card !== cash ? `
+        <div class="price-row-item">
+          <span class="price-label-tag price-label-card">${cardLabel}</span>
+          <span class="price-value-card">${Format.price(card)}</span>
+        </div>` : ''}
+        <button class="installment-toggle" onclick="document.getElementById('${id}').classList.toggle('open'); this.querySelector('.inst-arrow').textContent=document.getElementById('${id}').classList.contains('open')?'▲':'▼'">
+          💳 Taksit Seçenekleri <span class="inst-arrow">▼</span>
+        </button>
+        <div class="installment-table" id="${id}">
+          <div class="installment-row" style="background:var(--c-primary-light);font-weight:700">
+            <span>Tek Çekim</span><strong>${Format.price(card||cash)}</strong><span></span>
+          </div>
+          ${instRows}
+        </div>
+      </div>`;
+  }
+};
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   SiteSettings.load();
   Cart.updateBadge();
   Notifications.load();
+
+  // Employee redirect: send employee to admin panel on shopping pages
+  if (Auth.isEmployee()) {
+    const path = window.location.pathname;
+    const shopPages = ['/', '/index.html', '/urunler.html', '/sepet.html', '/hesabim.html', '/teklif.html', '/araclar.html'];
+    if (shopPages.includes(path)) { window.location.href = '/admin.html'; return; }
+  }
 
   // Dealer mode banner
   if (Auth.isDealer()) {
@@ -262,20 +317,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (banner) {
       banner.classList.add('active');
       const u = Auth.getUser();
-      banner.innerHTML = `🏢 <strong>${u.company_name || u.name}</strong> olarak giriş yaptınız &nbsp;—&nbsp; <strong style="color:#4ade80">✓ Bayi Modu Aktif</strong> &nbsp;|&nbsp; <span style="font-size:12px;opacity:0.85">İskontolu fiyatlar geçerlidir</span> &nbsp;|&nbsp; <a href="/bayi.html" style="color:#fbbf24;font-weight:700">Bayi Paneli →</a>`;
+      banner.innerHTML = `🏢 <strong>${u.company_name || u.name}</strong> olarak giriş yapıldı &nbsp;—&nbsp; <strong style="color:#4ade80">✓ Bayi Modu Aktif</strong> &nbsp;|&nbsp; <span style="font-size:12px;opacity:0.85"İskontolu fiyatlar geçerlidir</span> &nbsp;|&nbsp; <a href="/bayi.html" style="color:#fbbf24;font-weight:700">Bayi Paneli →</a>`;
     }
   }
-
 
   // Update nav auth state
   const user = Auth.getUser();
   const navAuthArea = document.getElementById('nav-auth-area');
   if (navAuthArea) {
     if (user) {
+      const isStaff = Auth.isAdmin() || Auth.isEmployee();
       navAuthArea.innerHTML = `
         <div style="position:relative;display:inline-block">
           <button class="nav-btn" onclick="document.getElementById('user-dropdown').classList.toggle('open'); event.stopPropagation();" style="gap:8px">
-            <span style="font-size:18px">👤</span>
+            <span style="font-size:18px">${isStaff ? '⚙️' : Auth.isDealer() ? '🏢' : '👤'}</span>
             <span class="desktop-only">${user.name.split(' ')[0]}</span>
             <span style="font-size:10px">▼</span>
             <span class="notif-count cart-badge" style="display:none">0</span>
@@ -284,12 +339,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="padding:12px 16px;border-bottom:1px solid var(--c-border)">
               <p style="font-weight:600;font-size:14px">${user.name}</p>
               <p style="font-size:12px;color:var(--c-text-muted)">${user.email}</p>
-              ${user.role === 'dealer' ? `<span class="badge badge-yellow" style="margin-top:4px">Bayi</span>` : ''}
+              ${{admin:'<span class="badge badge-red" style="margin-top:4px">Admin</span>',employee:'<span class="badge badge-blue" style="margin-top:4px">Çalışan</span>',dealer:'<span class="badge badge-yellow" style="margin-top:4px">Bayi</span>'}[user.role]||''}
             </div>
+            ${Auth.isAdmin() || Auth.isEmployee() ? `<a class="dropdown-item" href="/admin.html">⚙️ Yönetim Paneli</a>` : ''}
             ${user.role === 'dealer' ? `<a class="dropdown-item" href="/bayi.html">🏢 Bayi Paneli</a>` : ''}
-            ${Auth.isAdmin() ? `<a class="dropdown-item" href="/admin.html">⚙️ Admin Paneli</a>` : ''}
-            <a class="dropdown-item" href="/hesabim.html">👤 Hesabım</a>
-            <a class="dropdown-item" href="/hesabim.html#siparisler">📦 Siparişlerim</a>
+            ${!isStaff ? `<a class="dropdown-item" href="/hesabim.html">👤 Hesabım</a>` : ''}
+            ${!isStaff ? `<a class="dropdown-item" href="/hesabim.html#siparisler">📦 Siparişlerim</a>` : ''}
             <button class="dropdown-item" onclick="Auth.logout()" style="color:var(--c-error)">🚪 Çıkış Yap</button>
           </div>
         </div>`;

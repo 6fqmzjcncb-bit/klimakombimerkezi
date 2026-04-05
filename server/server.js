@@ -73,7 +73,7 @@ app.get('/api/brands', optionalAuth, (req, res) => {
 
 app.get('/api/settings/public', (req, res) => {
   const db = getDb();
-  const publicKeys = ['site_name', 'site_phone', 'site_email', 'site_address'];
+  const publicKeys = ['site_name', 'site_phone', 'site_email', 'site_address', 'site_logo', 'whatsapp_number'];
   const rows = db.prepare(`SELECT * FROM settings WHERE key IN (${publicKeys.map(() => '?').join(',')})`)
     .all(...publicKeys);
   const settings = {};
