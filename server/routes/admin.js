@@ -119,6 +119,17 @@ router.post('/brands', requireAuth, requireRole('admin'), (req, res) => {
   res.json({ id: result.lastInsertRowid });
 });
 
+router.put('/brands/:id', requireAuth, requireRole('admin'), (req, res) => {
+  const db = getDb();
+  const { name, logo_url } = req.body;
+  const brand = db.prepare('SELECT * FROM brands WHERE id=?').get(req.params.id);
+  if (!brand) return res.status(404).json({ error: 'Marka bulunamadı' });
+  const safeSlug = slugify(name || brand.name);
+  db.prepare('UPDATE brands SET name=?,slug=?,logo_url=?,updated_at=CURRENT_TIMESTAMP WHERE id=?')
+    .run(name || brand.name, safeSlug, logo_url !== undefined ? (logo_url || null) : brand.logo_url, req.params.id);
+  res.json({ success: true });
+});
+
 // GET /api/admin/settings
 router.get('/settings', requireAuth, requireRole('admin'), (req, res) => {
   const db = getDb();
@@ -151,6 +162,55 @@ router.get('/price-requests', requireAuth, requireRole('admin', 'employee'), (re
 router.put('/price-requests/:id/status', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
   db.prepare('UPDATE price_requests SET status=? WHERE id=?').run(req.body.status, req.params.id);
+  res.json({ success: true });
+});
+
+// PATCH /api/admin/users/:id/active
+router.patch('/users/:id/active', requireAuth, requireRole('admin'), (req, res) => {
+  const db = getDb();
+  const { is_active } = req.body;
+  db.prepare('UPDATE users SET is_active=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').run(is_active ? 1 : 0, req.params.id);
+  res.json({ success: true });
+});
+
+// ===== PAYMENT LINKS =====
+// Safe migration: create payment_links table if missing
+try {
+  getDb().exec(`CREATE TABLE IF NOT EXISTS payment_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url TEXT NOT NULL,
+    description TEXT,
+    order_uuid TEXT,
+    expires_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+} catch {}
+
+router.get('/payment-links', requireAuth, requireRole('admin'), (req, res) => {
+  const db = getDb();
+  res.json(db.prepare('SELECT * FROM payment_links ORDER BY created_at DESC').all());
+});
+
+router.post('/payment-links', requireAuth, requireRole('admin'), (req, res) => {
+  const db = getDb();
+  const { url, description, order_uuid, expires_at } = req.body;
+  if (!url) return res.status(400).json({ error: 'URL zorunludur' });
+  const result = db.prepare('INSERT INTO payment_links (url, description, order_uuid, expires_at) VALUES (?,?,?,?)')
+    .run(url, description || null, order_uuid || null, expires_at || null);
+  res.json({ id: result.lastInsertRowid });
+});
+
+router.put('/payment-links/:id', requireAuth, requireRole('admin'), (req, res) => {
+  const db = getDb();
+  const { url, description, order_uuid, expires_at } = req.body;
+  db.prepare('UPDATE payment_links SET url=?,description=?,order_uuid=?,expires_at=? WHERE id=?')
+    .run(url, description || null, order_uuid || null, expires_at || null, req.params.id);
+  res.json({ success: true });
+});
+
+router.delete('/payment-links/:id', requireAuth, requireRole('admin'), (req, res) => {
+  const db = getDb();
+  db.prepare('DELETE FROM payment_links WHERE id=?').run(req.params.id);
   res.json({ success: true });
 });
 

@@ -23,9 +23,13 @@ router.post('/register', async (req, res) => {
     const generatedDealerCode = safeRole === 'dealer' ? (dealer_code || `BAY-${Date.now()}`) : null;
 
     const result = db.prepare(`
-      INSERT INTO users (uuid, name, email, password, role, company_name, tax_number, phone, address, dealer_code)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(uuid, name, email, hashedPassword, safeRole, company_name || null, tax_number || null, phone || null, address || null, generatedDealerCode);
+      INSERT INTO users (uuid, name, email, password, role, company_name, tax_number, phone, address, dealer_code, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(uuid, name, email, hashedPassword, safeRole, company_name || null, tax_number || null, phone || null, address || null, generatedDealerCode, safeRole === 'dealer' ? 0 : 1);
+
+    if (safeRole === 'dealer') {
+      return res.json({ pending: true, message: 'Bayi başvurunuz alındı. Yönetici onayından sonra giriş yapabilirsiniz.' });
+    }
 
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
     const token = generateToken(user);

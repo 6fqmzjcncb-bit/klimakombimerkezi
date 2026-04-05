@@ -331,6 +331,12 @@ function initializeSchema() {
   insertSetting.run('site_address', 'İstanbul, Türkiye');
   insertSetting.run('high_value_order_threshold', '50000');
   insertSetting.run('tax_rate', '20');
+  insertSetting.run('retail_margin', '40');   // Perakende kâr marjı %
+  insertSetting.run('dealer_cash_margin', '15'); // Bayi nakit kâr marjı %
+  insertSetting.run('dealer_card_margin', '20'); // Bayi kredi kartı kâr marjı %
+
+  // Safe migration: add cost_price if missing
+  try { db.exec('ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0.0'); } catch {}
 }
 
 module.exports = { getDb };

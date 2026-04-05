@@ -58,6 +58,14 @@ const API = {
     }
     return r.json();
   },
+  async patch(path, data) {
+    const r = await fetch(`/api${path}`, { method: 'PATCH', headers: Auth.headers(), body: JSON.stringify(data) });
+    if (!r.ok) {
+        if (r.status === 401) Auth.logout();
+        const e = await r.json(); throw new Error(e.error || 'Sunucu hatası');
+    }
+    return r.json();
+  },
   async postForm(path, formData) {
     const t = Auth.getToken();
     const h = t ? { 'Authorization': `Bearer ${t}` } : {};
@@ -206,6 +214,22 @@ const Notifications = {
   }
 };
 
+// ===== SITE SETTINGS =====
+const SiteSettings = {
+  async load() {
+    try {
+      const s = await API.get('/settings/public');
+      if (s.site_name) {
+        document.title = document.title.includes('|') ? `${document.title.split('|')[0]} | ${s.site_name}` : s.site_name;
+        document.querySelectorAll('.brand-name-text').forEach(el => el.textContent = s.site_name);
+      }
+      if (s.site_phone) document.querySelectorAll('.contact-phone').forEach(el => { el.href=`tel:${s.site_phone.replace(/\\s+/g,'')}`; el.textContent=s.site_phone; });
+      if (s.site_email) document.querySelectorAll('.contact-email').forEach(el => { el.href=`mailto:${s.site_email}`; el.textContent=s.site_email; });
+      if (s.site_address) document.querySelectorAll('.contact-address').forEach(el => el.textContent = s.site_address);
+    } catch(e) {}
+  }
+};
+
 // ===== MODAL HELPERS =====
 function openModal(id) { document.getElementById(id)?.classList.add('open'); }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
@@ -228,6 +252,7 @@ function initTabs(container) {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
+  SiteSettings.load();
   Cart.updateBadge();
   Notifications.load();
 

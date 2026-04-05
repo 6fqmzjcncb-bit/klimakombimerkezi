@@ -137,19 +137,21 @@ router.put('/:id', requireAuth, requireRole('admin'), (req, res) => {
   try {
     const db = getDb();
     const { name, sku, description, short_description, category_id, brand_id, base_price,
-            dealer_cash_price, dealer_card_price, stock_status, stock_quantity, supply_days,
-            is_hidden_price, is_opportunity, is_bundle, images, specifications } = req.body;
+            cost_price, dealer_cash_price, dealer_card_price, stock_status, stock_quantity, supply_days,
+            is_hidden_price, is_opportunity, is_bundle, is_active, images, specifications,
+            meta_title, meta_description } = req.body;
 
     db.prepare(`
       UPDATE products SET name=?,sku=?,description=?,short_description=?,category_id=?,brand_id=?,
-        base_price=?,dealer_cash_price=?,dealer_card_price=?,stock_status=?,stock_quantity=?,supply_days=?,
-        is_hidden_price=?,is_opportunity=?,is_bundle=?,images=?,specifications=?,updated_at=CURRENT_TIMESTAMP
+        cost_price=?,base_price=?,dealer_cash_price=?,dealer_card_price=?,stock_status=?,stock_quantity=?,supply_days=?,
+        is_hidden_price=?,is_opportunity=?,is_bundle=?,is_active=?,images=?,specifications=?,
+        meta_title=?,meta_description=?,updated_at=CURRENT_TIMESTAMP
       WHERE id=?
-    `).run(name, sku || null, description || '', short_description || '', category_id || null, brand_id || null,
-           base_price || 0, dealer_cash_price || 0, dealer_card_price || 0, stock_status || 'in_stock',
-           stock_quantity || 0, supply_days || 0, is_hidden_price ? 1 : 0, is_opportunity ? 1 : 0,
-           is_bundle ? 1 : 0, JSON.stringify(images || []), JSON.stringify(specifications || {}),
-           req.params.id);
+    `).run(name, sku||null, description||'', short_description||'', category_id||null, brand_id||null,
+           cost_price||0, base_price||0, dealer_cash_price||0, dealer_card_price||0, stock_status||'in_stock',
+           stock_quantity||0, supply_days||0, is_hidden_price?1:0, is_opportunity?1:0, is_bundle?1:0,
+           is_active!==false?1:0, JSON.stringify(images||[]), JSON.stringify(specifications||{}),
+           meta_title||null, meta_description||null, req.params.id);
 
     res.json({ success: true });
   } catch (err) {

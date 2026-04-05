@@ -192,16 +192,39 @@
     <div id="section-settings" class="section-view" style="display:none">
       <div class="page-header"><h1>Site Ayarları</h1></div>
       <div class="page-body">
-        <div class="card" style="max-width:540px"><div class="card-body">
-          <form id="settings-form">
-            <div class="form-group"><label class="form-label">Site Adı</label><input type="text" class="form-input" name="site_name"></div>
-            <div class="form-group"><label class="form-label">Telefon</label><input type="text" class="form-input" name="site_phone"></div>
-            <div class="form-group"><label class="form-label">E-posta</label><input type="email" class="form-input" name="site_email"></div>
-            <div class="form-group"><label class="form-label">Adres</label><textarea class="form-textarea" name="site_address" rows="2"></textarea></div>
-            <div class="form-group"><label class="form-label">Yüksek Tutarlı Sipariş Eşiği (₺)</label><input type="number" class="form-input" name="high_value_order_threshold"></div>
-            <div class="form-group"><label class="form-label">KDV Oranı (%)</label><input type="number" class="form-input" name="tax_rate"></div>
-            <button type="submit" class="btn btn-primary">Kaydet</button>
-          </form>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);align-items:start">
+          <!-- Site Bilgileri -->
+          <div class="card"><div class="card-body">
+            <h4 style="font-weight:700;margin-bottom:var(--space-4)">🌐 Site Bilgileri</h4>
+            <form id="settings-form">
+              <div class="form-group"><label class="form-label">Site Adı</label><input type="text" class="form-input" name="site_name"></div>
+              <div class="form-group"><label class="form-label">Telefon</label><input type="text" class="form-input" name="site_phone"></div>
+              <div class="form-group"><label class="form-label">E-posta</label><input type="email" class="form-input" name="site_email"></div>
+              <div class="form-group"><label class="form-label">Adres</label><textarea class="form-textarea" name="site_address" rows="2"></textarea></div>
+              <div class="form-group"><label class="form-label">Yüksek Tutar Eşiği (₺)</label><input type="number" class="form-input" name="high_value_order_threshold"></div>
+              <div class="form-group"><label class="form-label">KDV Oranı (%)</label><input type="number" class="form-input" name="tax_rate"></div>
+              <button type="submit" class="btn btn-primary">Kaydet</button>
+            </form>
+          </div></div>
+          <!-- Kâr Marjı Ayarları -->
+          <div class="card"><div class="card-body">
+            <h4 style="font-weight:700;margin-bottom:var(--space-4)">💰 Varsayılan Kâr Marjı</h4>
+            <div class="alert alert-info" style="font-size:13px">Yeni ürün eklerken otomatik hesaplama için kullanılır. Ürün bazında değiştirilebilir.</div>
+            <form id="margin-settings-form">
+              <div class="form-group"><label class="form-label">Perakende Kâr Marjı (%)</label><input type="number" class="form-input" name="retail_margin" step="0.1"></div>
+              <div class="form-group"><label class="form-label">Bayi Nakit Kâr Marjı (%)</label><input type="number" class="form-input" name="dealer_cash_margin" step="0.1"></div>
+              <div class="form-group"><label class="form-label">Bayi K.Kartı Kâr Marjı (%)</label><input type="number" class="form-input" name="dealer_card_margin" step="0.1"></div>
+              <button type="submit" class="btn btn-primary">Kaydet</button>
+            </form>
+          </div></div>
+        </div>
+        <!-- Ödeme Linki Yönetimi -->
+        <div class="card" style="margin-top:var(--space-6)"><div class="card-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
+            <h4 style="font-weight:700">🔗 Ödeme Linki Yönetimi</h4>
+            <button onclick="openAddPaymentLink()" class="btn btn-primary btn-sm">+ Yeni Link</button>
+          </div>
+          <div id="payment-links-table"></div>
         </div></div>
       </div>
     </div>
@@ -242,26 +265,97 @@
   <div class="modal modal-lg">
     <div class="modal-header"><h3 class="modal-title" id="product-modal-title">Ürün</h3><button class="modal-close">✕</button></div>
     <div class="modal-body">
+      <div class="tabs" id="product-tabs" style="margin-bottom:var(--space-4)">
+        <button class="tab active" data-tab="ptab-main" onclick="switchProductTab('main')">📦 Temel Bilgiler</button>
+        <button class="tab" data-tab="ptab-pricing" onclick="switchProductTab('pricing')">💰 Fiyatlandırma</button>
+        <button class="tab" data-tab="ptab-media" onclick="switchProductTab('media')">🖼️ Görseller</button>
+        <button class="tab" data-tab="ptab-seo" onclick="switchProductTab('seo')">&#128270; SEO</button>
+      </div>
+
       <form id="product-form">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
-          <div class="form-group"><label class="form-label">Ürün Adı <span class="required">*</span></label><input type="text" class="form-input" id="p-name" required></div>
-          <div class="form-group"><label class="form-label">SKU</label><input type="text" class="form-input" id="p-sku"></div>
-          <div class="form-group"><label class="form-label">Kategori</label><select class="form-select" id="p-category"><option value="">Seçin...</option></select></div>
-          <div class="form-group"><label class="form-label">Marka</label><select class="form-select" id="p-brand"><option value="">Seçin...</option></select></div>
-          <div class="form-group"><label class="form-label">Perakende Fiyatı (₺)</label><input type="number" class="form-input" id="p-price" step="0.01"></div>
-          <div class="form-group"><label class="form-label">Bayi Nakit Fiyatı (₺)</label><input type="number" class="form-input" id="p-dealer-cash" step="0.01"></div>
-          <div class="form-group"><label class="form-label">Bayi K.Kartı Fiyatı (₺)</label><input type="number" class="form-input" id="p-dealer-card" step="0.01"></div>
-          <div class="form-group"><label class="form-label">Stok Durumu</label><select class="form-select" id="p-stock-status"><option value="in_stock">Stokta Var</option><option value="out_of_stock">Stok Yok</option><option value="on_request">Tedarik/Teklif</option><option value="price_on_request">Fiyat Sorunuz</option></select></div>
-          <div class="form-group"><label class="form-label">Stok Miktarı</label><input type="number" class="form-input" id="p-qty" value="0"></div>
-          <div class="form-group"><label class="form-label">Tedarik Süresi (gün)</label><input type="number" class="form-input" id="p-supply" value="0"></div>
+        <!-- TAB: MAIN -->
+        <div id="ptab-main">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+            <div class="form-group"><label class="form-label">Ürün Adı <span class="required">*</span></label><input type="text" class="form-input" id="p-name" required></div>
+            <div class="form-group"><label class="form-label">SKU</label><input type="text" class="form-input" id="p-sku"></div>
+            <div class="form-group"><label class="form-label">Kategori</label><select class="form-select" id="p-category"><option value="">Seçin...</option></select></div>
+            <div class="form-group"><label class="form-label">Marka</label><select class="form-select" id="p-brand"><option value="">Seçin...</option></select></div>
+            <div class="form-group"><label class="form-label">Stok Durumu</label><select class="form-select" id="p-stock-status"><option value="in_stock">Stokta Var</option><option value="out_of_stock">Stok Yok</option><option value="on_request">Tedarik/Teklif</option><option value="price_on_request">Fiyat Sorunuz</option></select></div>
+            <div class="form-group"><label class="form-label">Stok Miktarı</label><input type="number" class="form-input" id="p-qty" value="0"></div>
+            <div class="form-group"><label class="form-label">Tedarik Süresi (gün)</label><input type="number" class="form-input" id="p-supply" value="0"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Kısa Açıklama</label><textarea class="form-textarea" id="p-short-desc" rows="2"></textarea></div>
+          <div class="form-group"><label class="form-label">Uzun Açıklama</label><textarea class="form-textarea" id="p-desc" rows="4"></textarea></div>
+          <div style="display:flex;gap:var(--space-5)">
+            <label class="filter-option"><input type="checkbox" id="p-hidden-price"> Fiyatı Gizle</label>
+            <label class="filter-option"><input type="checkbox" id="p-opportunity"> Fırsat Ürünü</label>
+            <label class="filter-option"><input type="checkbox" id="p-bundle"> Bileşenli Paket</label>
+            <label class="filter-option"><input type="checkbox" id="p-active" checked> Aktif</label>
+          </div>
         </div>
-        <div class="form-group"><label class="form-label">Kısa Açıklama</label><textarea class="form-textarea" id="p-short-desc" rows="2"></textarea></div>
-        <div class="form-group"><label class="form-label">Açıklama</label><textarea class="form-textarea" id="p-desc" rows="4"></textarea></div>
-        <div class="form-group"><label class="form-label">Resimler (URL, birden fazla için virgülle ayırın)</label><input type="text" class="form-input" id="p-images" placeholder="https://..."></div>
-        <div style="display:flex;gap:var(--space-5)">
-          <label class="filter-option"><input type="checkbox" id="p-hidden-price"> Fiyatı Gizle</label>
-          <label class="filter-option"><input type="checkbox" id="p-opportunity"> Fırsat Ürünü</label>
-          <label class="filter-option"><input type="checkbox" id="p-bundle"> Bileşenli Paket</label>
+
+        <!-- TAB: PRICING -->
+        <div id="ptab-pricing" style="display:none">
+          <div class="alert alert-info" style="margin-bottom:var(--space-4);font-size:13px">
+            💡 Alış fiyatı girin, ardından <strong>Margin Hesapla</strong> butonu ile tüm satış fiyatlarını otomatik doldurun.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+            <div class="form-group">
+              <label class="form-label">📦 Alış Fiyatı (TL)</label>
+              <input type="number" class="form-input" id="p-cost" step="0.01" placeholder="0.00" oninput="autoCalcMargin()">
+            </div>
+            <div style="display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:var(--space-5)">
+              <button type="button" class="btn btn-outline btn-sm" onclick="autoCalcMargin(true)">✨ Margin Hesapla</button>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Perakende Marjı (%)</label>
+              <input type="number" class="form-input" id="p-retail-margin" step="0.1" value="40" oninput="autoCalcMargin()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Perakende Fiyatı (TL)</label>
+              <input type="number" class="form-input" id="p-price" step="0.01">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bayi Nakit Marjı (%)</label>
+              <input type="number" class="form-input" id="p-dealer-cash-margin" step="0.1" value="15" oninput="autoCalcMargin()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bayi Nakit Fiyatı (TL)</label>
+              <input type="number" class="form-input" id="p-dealer-cash" step="0.01">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bayi K.Kartı Marjı (%)</label>
+              <input type="number" class="form-input" id="p-dealer-card-margin" step="0.1" value="20" oninput="autoCalcMargin()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bayi K.Kartı Fiyatı (TL)</label>
+              <input type="number" class="form-input" id="p-dealer-card" step="0.01">
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: MEDIA -->
+        <div id="ptab-media" style="display:none">
+          <div class="form-group">
+            <label class="form-label">🖼️ Resim URL'leri (her satıra bir URL girin)</label>
+            <textarea class="form-textarea" id="p-images" rows="6" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"></textarea>
+          </div>
+          <div id="p-image-previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+          <button type="button" class="btn btn-outline btn-sm" style="margin-top:8px" onclick="previewImages()">👁️ Görselleri Önizle</button>
+        </div>
+
+        <!-- TAB: SEO -->
+        <div id="ptab-seo" style="display:none">
+          <div class="form-group">
+            <label class="form-label">📌 SEO Başlığı (meta title)</label>
+            <input type="text" class="form-input" id="p-meta-title" placeholder="Ürün adı + marka + anahtar kelimeler..." maxlength="160">
+            <div style="font-size:11px;color:var(--c-text-muted);margin-top:4px">Max 160 karakter. Boş bırakırsanız ürün adı kullanılır.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">📝 SEO Açıklaması (meta description)</label>
+            <textarea class="form-textarea" id="p-meta-desc" rows="3" placeholder="Google arama sonuçlarında görünecek kısa açıklama..." maxlength="320"></textarea>
+            <div style="font-size:11px;color:var(--c-text-muted);margin-top:4px">Max 320 karakter.</div>
+          </div>
         </div>
       </form>
     </div>
@@ -310,6 +404,17 @@
       <button onclick="closeModal('discount-review-modal')" class="btn btn-ghost">Kapat</button>
       <button onclick="reviewDiscount('rejected')" class="btn btn-danger">Reddet</button>
       <button onclick="reviewDiscount('approved')" class="btn btn-success">Onayla</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUOTE DETAIL MODAL -->
+<div class="modal-overlay" id="quote-detail-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h3 class="modal-title">Teklif Talebi Detayı</h3><button class="modal-close">✕</button></div>
+    <div class="modal-body" id="quote-detail-body"></div>
+    <div class="modal-footer">
+      <button onclick="closeModal('quote-detail-modal')" class="btn btn-ghost">Kapat</button>
     </div>
   </div>
 </div>
@@ -425,11 +530,35 @@ async function loadDiscountRequests() {
   } catch(e) { document.getElementById('discount-requests-table').innerHTML=`<p class="text-muted">${e.message}</p>`; }
 }
 
-function openDiscountReview(id, dealer, project, rate) {
+// Fetch project items for discount review
+async function openDiscountReview(id, dealer, project, rate) {
   editingDiscountId = id;
-  document.getElementById('discount-review-info').textContent = `${dealer} - "${project}" için %${rate} iskonto talep etti.`;
   document.getElementById('approved-rate').value = rate;
+  document.getElementById('review-note').value = '';
+  const infoEl = document.getElementById('discount-review-info');
+  infoEl.innerHTML = `<strong>${dealer}</strong> - "${project}" için <strong>%${rate}</strong> iskonto talep etti.<div class="spinner" style="margin:12px auto"></div>`;
   openModal('discount-review-modal');
+  try {
+    // fetch project items via dealer API
+    const allProjs = await API.get('/dealer/projects');
+    const proj = allProjs.find(p=>p.project_name===project&&p.dealer_name===dealer);
+    if (proj) {
+      const detail = await API.get(`/dealer/projects/${proj.uuid}`);
+      const items = detail.items || [];
+      const total = items.reduce((s,i)=>s+(i.unit_price*i.quantity),0);
+      infoEl.innerHTML = `
+        <strong>${dealer}</strong> (${proj.company_name||''}) — Proje: "${project}"<br>
+        <strong style="color:var(--c-warning)">Talep Edilen İskonto: %${rate}</strong>
+        <div class="table-wrap" style="margin-top:12px">
+          <table><thead><tr><th>Ürün</th><th>Adet</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>
+          ${items.map(i=>`<tr><td>${i.product_name||i.name}</td><td>${i.quantity}</td><td>${Format.price(i.unit_price)}</td><td>${Format.price(i.unit_price*i.quantity)}</td></tr>`).join('')}
+          </tbody></table>
+        </div>
+        <div style="text-align:right;margin-top:8px"><strong>Proje Toplamı: ${Format.price(total)}</strong> → İskonto Sonrası: ${Format.price(total*(1-rate/100))}</div>`;
+    } else {
+      infoEl.textContent = `${dealer} - "${project}" için %${rate} iskonto talep etti.`;
+    }
+  } catch { infoEl.textContent = `${dealer} - "${project}" için %${rate} iskonto talep etti.`; }
 }
 async function reviewDiscount(status) {
   try {
@@ -442,26 +571,58 @@ async function reviewDiscount(status) {
 async function loadQuoteRequests() {
   try {
     const requests = await API.get('/quotes');
-    document.getElementById('quote-requests-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ad/Firma</th><th>E-posta</th><th>Mesaj</th><th>Dosyalar</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead><tbody>
+    document.getElementById('quote-requests-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ad/Firma</th><th>E-posta</th><th>Mesaj (kısa)</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead><tbody>
       ${requests.map(r => `<tr>
         <td><strong>${r.name}</strong>${r.company?`<br><span class="text-sm text-muted">${r.company}</span>`:''}</td>
         <td>${r.email}<br>${r.phone||''}</td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.message}</td>
-        <td>${r.files?.length?`${r.files.length} dosya`:'-'}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.message}</td>
         <td>${Format.statusBadge(r.status)}</td>
         <td>${Format.date(r.created_at)}</td>
-        <td><select onchange="updateQuoteStatus('${r.uuid}',this.value)" class="form-select" style="width:130px">
-          <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
-          <option value="in_review" ${r.status==='in_review'?'selected':''}>İncelemede</option>
-          <option value="replied" ${r.status==='replied'?'selected':''}>Yanıtlandı</option>
-          <option value="closed" ${r.status==='closed'?'selected':''}>Kapalı</option>
-        </select></td>
+        <td style="display:flex;gap:4px">
+          <button onclick="viewQuoteDetail(${JSON.stringify(r).replace(/"/g,'&quot;')})" class="btn btn-primary btn-sm">Detay</button>
+          <select onchange="updateQuoteStatus('${r.uuid}',this.value)" class="form-select" style="width:120px">
+            <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
+            <option value="in_review" ${r.status==='in_review'?'selected':''}>İncelemede</option>
+            <option value="replied" ${r.status==='replied'?'selected':''}>Yanıtlandı</option>
+            <option value="closed" ${r.status==='closed'?'selected':''}>Kapalı</option>
+          </select>
+        </td>
       </tr>`).join('')}
     </tbody></table></div>`;
   } catch(e) { document.getElementById('quote-requests-table').innerHTML=`<p class="text-muted">${e.message}</p>`; }
 }
 async function updateQuoteStatus(uuid, status) {
   try { await API.put(`/quotes/${uuid}/status`,{status}); Toast.success('Durum güncellendi'); } catch(e) { Toast.error(e.message); }
+}
+function viewQuoteDetail(r) {
+  document.getElementById('quote-detail-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-5)">
+      <div>
+        <p><strong>Ad:</strong> ${r.name}</p>
+        ${r.company?`<p><strong>Firma:</strong> ${r.company}</p>`:''}
+        <p><strong>E-posta:</strong> <a href="mailto:${r.email}">${r.email}</a></p>
+        <p><strong>Telefon:</strong> ${r.phone||'-'}</p>
+      </div>
+      <div>
+        <p><strong>Durum:</strong> ${Format.statusBadge(r.status)}</p>
+        <p><strong>Tarih:</strong> ${Format.date(r.created_at)}</p>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mesaj:</label>
+      <div style="background:var(--c-bg);padding:12px;border-radius:8px;white-space:pre-wrap;font-size:14px">${r.message||'-'}</div>
+    </div>
+    ${(r.files||[]).length?`<div class="form-group" style="margin-top:12px"><label class="form-label">Dosyalar:</label><ul>${r.files.map(f=>`<li><a href="${f}" target="_blank">${f.split('/').pop()}</a></li>`).join('')}</ul></div>`:''}
+    <div style="margin-top:var(--space-4)">
+      <strong>Durum Güncelle:</strong>
+      <select class="form-select" style="width:200px;margin-top:8px" onchange="updateQuoteStatus('${r.uuid}',this.value)">
+        <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
+        <option value="in_review" ${r.status==='in_review'?'selected':''}>Incelemede</option>
+        <option value="replied" ${r.status==='replied'?'selected':''}>Yanıtlandı</option>
+        <option value="closed" ${r.status==='closed'?'selected':''}>Kapalı</option>
+      </select>
+    </div>`;
+  openModal('quote-detail-modal');
 }
 
 // ===== PRICE REQUESTS =====
@@ -510,17 +671,27 @@ async function openAddProduct() {
   editingProductId = null;
   document.getElementById('product-modal-title').textContent='Yeni Ürün';
   document.getElementById('product-form').reset();
+  switchProductTab('main');
+  // Load global margin settings
+  try {
+    const s = await API.get('/admin/settings');
+    if (s.retail_margin) document.getElementById('p-retail-margin').value = s.retail_margin;
+    if (s.dealer_cash_margin) document.getElementById('p-dealer-cash-margin').value = s.dealer_cash_margin;
+    if (s.dealer_card_margin) document.getElementById('p-dealer-card-margin').value = s.dealer_card_margin;
+  } catch {}
   await loadCatBrandSelects();
   openModal('product-modal');
 }
 async function openEditProduct(p) {
   editingProductId = p.id;
   document.getElementById('product-modal-title').textContent='Ürün Düzenle';
+  switchProductTab('main');
   await loadCatBrandSelects();
   document.getElementById('p-name').value=p.name||'';
   document.getElementById('p-sku').value=p.sku||'';
   document.getElementById('p-category').value=p.category_id||'';
   document.getElementById('p-brand').value=p.brand_id||'';
+  document.getElementById('p-cost').value=p.cost_price||0;
   document.getElementById('p-price').value=p.base_price||0;
   document.getElementById('p-dealer-cash').value=p.dealer_cash_price||0;
   document.getElementById('p-dealer-card').value=p.dealer_card_price||0;
@@ -529,10 +700,13 @@ async function openEditProduct(p) {
   document.getElementById('p-supply').value=p.supply_days||0;
   document.getElementById('p-short-desc').value=p.short_description||'';
   document.getElementById('p-desc').value=p.description||'';
-  document.getElementById('p-images').value=(Array.isArray(p.images)?p.images:[]).join(',');
+  document.getElementById('p-images').value=(Array.isArray(p.images)?p.images:tryParseAdmin(p.images,[])).join('\n');
   document.getElementById('p-hidden-price').checked=!!p.is_hidden_price;
   document.getElementById('p-opportunity').checked=!!p.is_opportunity;
   document.getElementById('p-bundle').checked=!!p.is_bundle;
+  document.getElementById('p-active').checked=!!p.is_active;
+  document.getElementById('p-meta-title').value=p.meta_title||'';
+  document.getElementById('p-meta-desc').value=p.meta_description||'';
   openModal('product-modal');
 }
 async function loadCatBrandSelects() {
@@ -541,38 +715,118 @@ async function loadCatBrandSelects() {
   document.getElementById('p-brand').innerHTML='<option value="">Seçin...</option>'+brands.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
 }
 async function saveProduct() {
-  const payload = { name:document.getElementById('p-name').value, sku:document.getElementById('p-sku').value, category_id:document.getElementById('p-category').value||null, brand_id:document.getElementById('p-brand').value||null, base_price:parseFloat(document.getElementById('p-price').value)||0, dealer_cash_price:parseFloat(document.getElementById('p-dealer-cash').value)||0, dealer_card_price:parseFloat(document.getElementById('p-dealer-card').value)||0, stock_status:document.getElementById('p-stock-status').value, stock_quantity:parseInt(document.getElementById('p-qty').value)||0, supply_days:parseInt(document.getElementById('p-supply').value)||0, short_description:document.getElementById('p-short-desc').value, description:document.getElementById('p-desc').value, images:document.getElementById('p-images').value.split(',').map(s=>s.trim()).filter(Boolean), is_hidden_price:document.getElementById('p-hidden-price').checked, is_opportunity:document.getElementById('p-opportunity').checked, is_bundle:document.getElementById('p-bundle').checked };
+  const imgRaw = document.getElementById('p-images').value;
+  const images = imgRaw.includes('\n')
+    ? imgRaw.split('\n').map(s=>s.trim()).filter(Boolean)
+    : imgRaw.split(',').map(s=>s.trim()).filter(Boolean);
+  const payload = {
+    name: document.getElementById('p-name').value,
+    sku: document.getElementById('p-sku').value,
+    category_id: document.getElementById('p-category').value||null,
+    brand_id: document.getElementById('p-brand').value||null,
+    cost_price: parseFloat(document.getElementById('p-cost').value)||0,
+    base_price: parseFloat(document.getElementById('p-price').value)||0,
+    dealer_cash_price: parseFloat(document.getElementById('p-dealer-cash').value)||0,
+    dealer_card_price: parseFloat(document.getElementById('p-dealer-card').value)||0,
+    stock_status: document.getElementById('p-stock-status').value,
+    stock_quantity: parseInt(document.getElementById('p-qty').value)||0,
+    supply_days: parseInt(document.getElementById('p-supply').value)||0,
+    short_description: document.getElementById('p-short-desc').value,
+    description: document.getElementById('p-desc').value,
+    images,
+    is_hidden_price: document.getElementById('p-hidden-price').checked,
+    is_opportunity: document.getElementById('p-opportunity').checked,
+    is_bundle: document.getElementById('p-bundle').checked,
+    is_active: document.getElementById('p-active').checked,
+    meta_title: document.getElementById('p-meta-title').value||null,
+    meta_description: document.getElementById('p-meta-desc').value||null
+  };
   try {
     if (editingProductId) await API.put(`/products/${editingProductId}`, payload);
     else await API.post('/products', payload);
     closeModal('product-modal'); Toast.success('Ürün kaydedildi!'); loadAdminProducts();
   } catch(e) { Toast.error(e.message); }
 }
+function tryParseAdmin(v, def) { try { return JSON.parse(v); } catch { return def; } }
 async function deleteProduct(id) {
   if (!confirm('Bu ürünü silmek istiyor musunuz?')) return;
   try { await API.delete(`/products/${id}`); Toast.success('Ürün silindi'); loadAdminProducts(); } catch(e) { Toast.error(e.message); }
+}
+
+function switchProductTab(tab) {
+  ['main','pricing','media','seo'].forEach(t => {
+    document.getElementById(`ptab-${t}`).style.display = t===tab?'':'none';
+    document.querySelector(`#product-tabs [data-tab="ptab-${t}"]`)?.classList.toggle('active', t===tab);
+  });
+}
+
+function autoCalcMargin(force=false) {
+  const cost = parseFloat(document.getElementById('p-cost').value)||0;
+  if (!cost) return;
+  const rm = parseFloat(document.getElementById('p-retail-margin').value)||40;
+  const dcm = parseFloat(document.getElementById('p-dealer-cash-margin').value)||15;
+  const dkm = parseFloat(document.getElementById('p-dealer-card-margin').value)||20;
+  const retail = +(cost * (1 + rm/100)).toFixed(2);
+  const dealerCash = +(cost * (1 + dcm/100)).toFixed(2);
+  const dealerCard = +(cost * (1 + dkm/100)).toFixed(2);
+  document.getElementById('p-price').value = retail;
+  document.getElementById('p-dealer-cash').value = dealerCash;
+  document.getElementById('p-dealer-card').value = dealerCard;
+}
+
+function previewImages() {
+  const urls = document.getElementById('p-images').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  document.getElementById('p-image-previews').innerHTML = urls.map(u=>`<img src="${u}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--c-border)" onerror="this.style.opacity=0.3">`).join('');
 }
 
 // ===== CATEGORIES / BRANDS =====
 async function loadCategories() {
   try {
     const cats = await API.get('/admin/categories');
-    document.getElementById('categories-table').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Ad</th><th>Slug</th><th>Üst Kategori</th><th>Sıra</th></tr></thead><tbody>${cats.map(c=>`<tr><td><strong>${c.name}</strong></td><td><code>${c.slug}</code></td><td>${cats.find(x=>x.id===c.parent_id)?.name||'-'}</td><td>${c.sort_order}</td></tr>`).join('')}</tbody></table></div>`;
+    // Render as indented tree
+    const roots = cats.filter(c=>!c.parent_id);
+    const children = cats.filter(c=>!!c.parent_id);
+    const rows = [];
+    roots.sort((a,b)=>a.sort_order-b.sort_order).forEach(root => {
+      rows.push(`<tr style="background:var(--c-surface)"><td><strong>${root.name}</strong></td><td><code>${root.slug}</code></td><td>-</td><td>${root.sort_order}</td><td><button onclick="openAddSubCategory(${root.id},'${root.name.replace(/'/g,'\\'')}')" class="btn btn-outline btn-sm">+ Alt</button></td></tr>`);
+      children.filter(c=>c.parent_id===root.id).sort((a,b)=>a.sort_order-b.sort_order).forEach(child => {
+        rows.push(`<tr><td>&nbsp;&nbsp;&nbsp;↳ ${child.name}</td><td><code>${child.slug}</code></td><td><span class="badge badge-gray">${root.name}</span></td><td>${child.sort_order}</td><td></td></tr>`);
+      });
+    });
+    document.getElementById('categories-table').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Ad</th><th>Slug</th><th>Üst Kategori</th><th>Sıra</th><th>İşlem</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
   } catch {}
 }
 async function openAddCategory() {
   const name = prompt('Kategori adı:'); if (!name) return;
-  try { await API.post('/admin/categories',{name}); loadCategories(); Toast.success('Kategori eklendi'); } catch(e) { Toast.error(e.message); }
+  const sortOrder = parseInt(prompt('Sıra (sayı):','0')||'0');
+  try { await API.post('/admin/categories',{name, sort_order: sortOrder}); loadCategories(); Toast.success('Kategori eklendi'); } catch(e) { Toast.error(e.message); }
+}
+async function openAddSubCategory(parentId, parentName) {
+  const name = prompt(`"${parentName}" altında yeni kategori adı:`); if (!name) return;
+  const sortOrder = parseInt(prompt('Sıra:','0')||'0');
+  try { await API.post('/admin/categories',{name, parent_id: parentId, sort_order: sortOrder}); loadCategories(); Toast.success('Alt kategori eklendi'); } catch(e) { Toast.error(e.message); }
 }
 async function loadBrands() {
   try {
     const bs = await API.get('/admin/brands');
-    document.getElementById('brands-table').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Ad</th><th>Slug</th></tr></thead><tbody>${bs.map(b=>`<tr><td><strong>${b.name}</strong></td><td><code>${b.slug}</code></td></tr>`).join('')}</tbody></table></div>`;
+    document.getElementById('brands-table').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Logo</th><th>Ad</th><th>Slug</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>${bs.map(b=>`<tr>
+      <td>${b.logo_url?`<img src="${b.logo_url}" style="width:48px;height:48px;object-fit:contain;border-radius:6px;border:1px solid var(--c-border)">`:`<div style="width:48px;height:48px;background:var(--c-bg);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px">🏢</div>`}</td>
+      <td><strong>${b.name}</strong></td>
+      <td><code>${b.slug}</code></td>
+      <td>${b.is_active?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Pasif</span>'}</td>
+      <td style="display:flex;gap:4px"><button onclick="openEditBrand(${JSON.stringify(b).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">Düzenle</button></td>
+    </tr>`).join('')}</tbody></table></div>`;
   } catch {}
 }
 async function openAddBrand() {
   const name = prompt('Marka adı:'); if (!name) return;
-  try { await API.post('/admin/brands',{name}); loadBrands(); Toast.success('Marka eklendi'); } catch(e) { Toast.error(e.message); }
+  const logoUrl = prompt('Logo URL (isteğe bağlı):') || '';
+  try { await API.post('/admin/brands',{name, logo_url: logoUrl||null}); loadBrands(); Toast.success('Marka eklendi'); } catch(e) { Toast.error(e.message); }
+}
+async function openEditBrand(b) {
+  const name = prompt('Marka adı:', b.name); if (name === null) return;
+  const logoUrl = prompt('Logo URL:', b.logo_url||'');
+  try { await API.put(`/admin/brands/${b.id}`,{name: name||b.name, logo_url: logoUrl||null}); loadBrands(); Toast.success('Marka güncellendi'); } catch(e) { Toast.error(e.message); }
 }
 
 // ===== USERS =====
@@ -585,13 +839,13 @@ async function loadUsers(roleOverride) {
   try {
     const { users } = await API.get(`/admin/users?${qs}`);
     const tbl = document.getElementById(roleOverride === 'dealer' ? 'dealers-table' : 'users-table');
-    tbl.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ad</th><th>E-posta</th><th>Rol</th><th>Firma</th>${roleOverride==='dealer'?'<th>Bayi Kodu</th><th>İskonto</th>':''}<th>Tarih</th><th>İşlem</th></tr></thead><tbody>
+    tbl.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ad</th><th>E-posta</th><th>Rol</th><th>Firma</th>${roleOverride==='dealer'?'<th>Bayi Kodu</th><th>İskonto</th><th>Durum</th>':''}<th>Tarih</th><th>İşlem</th></tr></thead><tbody>
       ${users.map(u => `<tr>
         <td><strong>${u.name}</strong></td>
         <td>${u.email}</td>
         <td>${Format.statusBadge(u.role)}</td>
         <td>${u.company_name||'-'}</td>
-        ${roleOverride==='dealer'?`<td><code>${u.dealer_code||'-'}</code></td><td>${u.discount_rate>0?`<strong style="color:var(--c-success)">%${u.discount_rate}</strong>`:'-'}</td>`:''}
+        ${roleOverride==='dealer'?`<td><code>${u.dealer_code||'-'}</code></td><td>${u.discount_rate>0?`<strong style="color:var(--c-success)">%${u.discount_rate}</strong>`:'-'}</td><td><button onclick="toggleUserActive(${u.id},${u.is_active?0:1})" class="btn btn-sm ${u.is_active?'btn-success':'btn-danger'}">${u.is_active?'Aktif':'Pasif'}</button></td>`:''}
         <td>${Format.date(u.created_at)}</td>
         <td><button onclick='openEditUser(${JSON.stringify(u).replace(/&/g,"&amp;").replace(/'/g,"&apos;")})' class="btn btn-outline btn-sm">Düzenle</button></td>
       </tr>`).join('')}
@@ -618,30 +872,122 @@ async function saveUser() {
     closeModal('user-modal'); Toast.success('Kullanıcı kaydedildi!'); loadUsers();
   } catch(e) { Toast.error(e.message); }
 }
+async function toggleUserActive(id, newState) {
+  try {
+    await API.patch(`/admin/users/${id}/active`, { is_active: newState });
+    Toast.success(newState ? 'Bayi aktifleştirildi!' : 'Bayi pasife alındı!');
+    loadUsers('dealer');
+  } catch(e) { Toast.error(e.message); }
+}
 
 // ===== DEALER PROJECTS =====
+let projectDetailModal = null;
 async function loadDealerProjects() {
   try {
     const projs = await API.get('/dealer/projects');
-    document.getElementById('dealer-projects-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Proje</th><th>Bayi</th><th>Firma</th><th>Durum</th><th>Ek İskonto</th><th>Tarih</th></tr></thead><tbody>
-      ${projs.map(p=>`<tr><td><strong>${p.project_name}</strong><br><span class="text-sm text-muted">${p.customer_name||''}</span></td><td>${p.dealer_name}</td><td>${p.company_name||'-'}</td><td>${Format.statusBadge(p.status)}</td><td>${p.extra_discount_rate>0?`<span class="badge badge-green">%${p.extra_discount_rate}</span>`:'-'}</td><td>${Format.date(p.created_at)}</td></tr>`).join('')}
+    document.getElementById('dealer-projects-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Proje</th><th>Bayi</th><th>Firma</th><th>Durum</th><th>Ek İskonto</th><th>Tarih</th><th>İşlem</th></tr></thead><tbody>
+      ${projs.map(p=>`<tr>
+        <td><strong>${p.project_name}</strong><br><span class="text-sm text-muted">${p.customer_name||''}</span></td>
+        <td>${p.dealer_name}</td>
+        <td>${p.company_name||'-'}</td>
+        <td>${Format.statusBadge(p.status)}</td>
+        <td>${p.extra_discount_rate>0?`<span class="badge badge-green">%${p.extra_discount_rate}</span>`:'-'}</td>
+        <td>${Format.date(p.created_at)}</td>
+        <td><button onclick="viewDealerProject('${p.uuid}','${p.project_name.replace(/'/g,'\\'')}')" class="btn btn-primary btn-sm">Detay</button></td>
+      </tr>`).join('')}
     </tbody></table></div>`;
   } catch {}
+}
+async function viewDealerProject(uuid, name) {
+  // Reuse quote-detail-modal for project items
+  document.getElementById('quote-detail-body').innerHTML = `<h3 style="margin-bottom:12px">${name}</h3><div class="spinner" style="margin:40px auto"></div>`;
+  openModal('quote-detail-modal');
+  document.querySelector('#quote-detail-modal .modal-title').textContent = 'Bayi Projesi Detayı';
+  try {
+    const detail = await API.get(`/dealer/projects/${uuid}`);
+    const items = detail.items || [];
+    const total = items.reduce((s,i)=>s+(i.unit_price*i.quantity),0);
+    const discounted = detail.extra_discount_rate>0 ? total*(1-detail.extra_discount_rate/100) : total;
+    document.getElementById('quote-detail-body').innerHTML = `
+      <h3 style="margin-bottom:12px">${name}</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <span class="badge badge-blue">Bayi: ${detail.dealer_name||'-'}</span>
+        <span class="badge badge-gray">Müşteri: ${detail.customer_name||'-'}</span>
+        ${detail.extra_discount_rate>0?`<span class="badge badge-green">İskonto: %${detail.extra_discount_rate}</span>`:''}
+        ${Format.statusBadge(detail.status)}
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Adet</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>
+        ${items.map(i=>`<tr><td>${i.product_name||i.name}</td><td>${i.quantity}</td><td>${Format.price(i.unit_price)}</td><td>${Format.price(i.unit_price*i.quantity)}</td></tr>`).join('')}
+      </tbody></table></div>
+      <div style="text-align:right;margin-top:12px;font-size:14px">
+        <div>Toplam: <strong>${Format.price(total)}</strong></div>
+        ${detail.extra_discount_rate>0?`<div style="color:var(--c-success)">İskonto Sonrası: <strong>${Format.price(discounted)}</strong></div>`:''}
+      </div>`;
+  } catch(e) { document.getElementById('quote-detail-body').innerHTML = `<p class="text-muted">${e.message}</p>`; }
 }
 
 // ===== SETTINGS =====
 async function loadSettings() {
   try {
     const s = await API.get('/admin/settings');
-    Object.entries(s).forEach(([k,v]) => { const el = document.querySelector(`[name="${k}"]`); if(el) el.value=v; });
+    const all = ['site_name','site_phone','site_email','site_address','high_value_order_threshold','tax_rate',
+                 'retail_margin','dealer_cash_margin','dealer_card_margin'];
+    all.forEach(k => { const el = document.querySelector(`[name="${k}"]`); if(el) el.value = s[k]||''; });
+    await loadPaymentLinks();
   } catch {}
 }
+
 document.getElementById('settings-form').addEventListener('submit', async e => {
   e.preventDefault();
   const payload = {};
-  ['site_name','site_phone','site_email','site_address','high_value_order_threshold','tax_rate'].forEach(k => { const el=document.querySelector(`[name="${k}"]`); if(el) payload[k]=el.value; });
-  try { await API.put('/admin/settings', payload); Toast.success('Ayarlar kaydedildi!'); } catch(e) { Toast.error(e.message); }
+  ['site_name','site_phone','site_email','site_address','high_value_order_threshold','tax_rate'].forEach(k => {
+    const el = document.querySelector(`#settings-form [name="${k}"]`); if(el) payload[k] = el.value;
+  });
+  try { await API.put('/admin/settings', payload); Toast.success('Site ayarları kaydedildi!'); } catch(e) { Toast.error(e.message); }
 });
+
+document.getElementById('margin-settings-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const payload = {};
+  ['retail_margin','dealer_cash_margin','dealer_card_margin'].forEach(k => {
+    const el = document.querySelector(`#margin-settings-form [name="${k}"]`); if(el) payload[k] = el.value;
+  });
+  try { await API.put('/admin/settings', payload); Toast.success('Margin ayarları kaydedildi!'); } catch(e) { Toast.error(e.message); }
+});
+
+// ===== PAYMENT LINKS =====
+async function loadPaymentLinks() {
+  try {
+    const links = await API.get('/admin/payment-links');
+    document.getElementById('payment-links-table').innerHTML = links.length
+      ? `<div class="table-wrap"><table><thead><tr><th>Açıklama</th><th>URL</th><th>Sipariş</th><th>Son Geçerlilik</th><th>İşlem</th></tr></thead><tbody>
+        ${links.map(l=>`<tr>
+          <td>${l.description||'-'}</td>
+          <td><a href="${l.url}" target="_blank" style="font-size:12px;word-break:break-all">${l.url.length>40?l.url.slice(0,40)+'...' :l.url}</a></td>
+          <td>${l.order_uuid?`<code>${l.order_uuid.slice(0,8)}</code>`:'-'}</td>
+          <td>${l.expires_at?Format.date(l.expires_at):'✴️ Süresiz'}</td>
+          <td style="display:flex;gap:4px">
+            <button onclick="navigator.clipboard.writeText('${l.url}').then(()=>Toast.success('Kopyalandı!'))" class="btn btn-outline btn-sm">📋 Kopyala</button>
+            <button onclick="deletePaymentLink(${l.id})" class="btn btn-danger btn-sm">Sil</button>
+          </td>
+        </tr>`).join('')}
+        </tbody></table></div>`
+      : `<p class="text-muted" style="padding:16px">Henüz ödeme linki eklenmemiş.</p>`;
+  } catch {}
+}
+async function openAddPaymentLink() {
+  const url = prompt('Ödeme URL\'si:'); if (!url) return;
+  const desc = prompt('Açıklama (isteğe bağlı):') || '';
+  const expires = prompt('Son geçerlilik tarihi (YYYY-MM-DD, boş bırakırsanız süresiz):') || null;
+  try {
+    await API.post('/admin/payment-links', { url, description: desc, expires_at: expires });
+    Toast.success('Ödeme linki eklendi!'); loadPaymentLinks();
+  } catch(e) { Toast.error(e.message); }
+}
+async function deletePaymentLink(id) {
+  if (!confirm('Bu linki silmek istiyor musunuz?')) return;
+  try { await API.delete(`/admin/payment-links/${id}`); Toast.success('Silindi'); loadPaymentLinks(); } catch(e) { Toast.error(e.message); }
+}
 
 // ===== TOOLS ADMIN =====
 function switchToolTab(t) {
