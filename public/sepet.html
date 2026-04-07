@@ -55,7 +55,7 @@
           <hr class="divider">
           <div style="display:flex;justify-content:space-between;font-size:18px"><span style="font-weight:700">Genel Toplam</span><strong id="c-total" style="color:var(--c-primary)">0 TL</strong></div>
           <button onclick="proceedToCheckout()" class="btn btn-primary btn-full btn-lg mt-4">Alışverişi Tamamla</button>
-          <button onclick="Auth.isDealer()?saveCartToProject():(window.location.href='/giris.html?redirect=/sepet.html')" class="btn btn-outline btn-full mt-2" id="save-proj-btn" style="display:none">🏢 Sepeti Projeye Kaydet</button>
+          <button onclick="(Auth.isDealer() || Auth.isEmployee())?saveCartToProject():(window.location.href='/giris.html?redirect=/sepet.html')" class="btn btn-outline btn-full mt-2" id="save-proj-btn" style="display:none">🏢 Sepeti Projeye Kaydet / Teklif Hazırla</button>
         </div>
       </div>
       
@@ -145,7 +145,7 @@ async function loadCartPage() {
     document.getElementById('cart-empty').style.display='none';
     document.getElementById('cart-content').style.display='grid';
     document.getElementById('clear-btn').style.display='inline-flex';
-    if(Auth.isDealer()) document.getElementById('save-proj-btn').style.display='inline-flex';
+    if(Auth.isDealer() || Auth.isEmployee()) document.getElementById('save-proj-btn').style.display='inline-flex';
     
     document.getElementById('cart-items').innerHTML = cart.items.map(i => `
       <div style="display:flex;align-items:center;padding:var(--space-4);border-bottom:1px solid var(--c-border);gap:var(--space-4)">
@@ -407,7 +407,12 @@ async function saveCartToProject() {
     Cart.currentCount = 0;
     Cart.updateBadge();
     
-    window.location.href = `/bayi.html?action=view-project&uuid=${d.uuid}`;
+    // Redirect employees or admins to admin panel project view, dealers to bayi panel project view
+    if (Auth.isEmployee()) {
+        window.location.href = `/bayi.html?action=view-project&uuid=${d.uuid}`;
+    } else {
+        window.location.href = `/bayi.html?action=view-project&uuid=${d.uuid}`;
+    }
   } catch(e) { Toast.error(e.message); }
 }
 

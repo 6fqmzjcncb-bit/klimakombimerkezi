@@ -472,6 +472,26 @@
   </div>
 </div>
 
+<!-- ADD ORDER ITEM MODAL -->
+<div class="modal-overlay" id="add-order-item-modal">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title">Siparişe Kalem Ekle</h3><button class="modal-close">✕</button></div>
+    <div class="modal-body">
+      <div class="alert alert-info mb-4" style="font-size:13px">Katalogdaki ürünü ID ile ekleyebilir veya özel (manuel) kalem tanımlayabilirsiniz. Eklenen kalem sipariş toplamını günceller.</div>
+      <div class="form-group"><label class="form-label">Ürün ID (Katalog ürünü ise, boş bırakın)</label><input type="number" class="form-input" id="aoi-product-id" placeholder="Örn: 42"></div>
+      <div class="form-group"><label class="form-label">Ürün / Kalem Adı <span class="required">*</span></label><input type="text" class="form-input" id="aoi-name" placeholder="Örn: Nakliye, Ekstra Hortum..."></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label class="form-label">Adet</label><input type="number" class="form-input" id="aoi-qty" value="1" min="1"></div>
+        <div class="form-group"><label class="form-label">Birim Fiyat (₺)</label><input type="number" class="form-input" id="aoi-price" step="0.01" placeholder="0.00"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('add-order-item-modal')" class="btn btn-ghost">İptal</button>
+      <button onclick="saveAddOrderItem()" class="btn btn-primary">Siparişe Ekle</button>
+    </div>
+  </div>
+</div>
+
 <script src="/js/app.js?v=3"></script>
 <script>
 if (!Auth.isAdmin() && !Auth.isEmployee()) window.location.href = '/giris.html';
@@ -545,6 +565,10 @@ async function viewOrder(uuid) {
         <div><strong>Müşteri:</strong> ${o.user_name} (${o.user_email})<br><strong>Rol:</strong> ${o.user_role}<br>${o.phone?`<strong>Tel:</strong> ${o.phone}`:''}${o.company_name?`<br><strong>Firma:</strong> ${o.company_name}`:''}</div>
         <div><strong>Ödeme:</strong> ${o.payment_method}<br><strong>Durum:</strong> ${Format.statusBadge(o.status)}<br>${o.payment_link?`<strong>Ödeme Linki:</strong> <a href="${o.payment_link}" target="_blank">Aç</a>`:''}</div>
       </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h4 style="margin:0;font-weight:700">Sipariş Kalemleri</h4>
+        <button onclick="openAddOrderItemModal('${uuid}')" class="btn btn-outline btn-sm">+ Yeni Kalem Ekle</button>
+      </div>
       <div class="table-wrap mb-4"><table><thead><tr><th>Ürün</th><th>Miktar</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>
         ${(o.items||[]).map(i => `<tr><td>${i.product_name} ${i.product_sku?`<span class="text-sm text-muted">(${i.product_sku})</span>`:''}</td><td>${i.quantity}</td><td>${Format.price(i.unit_price)}</td><td>${Format.price(i.total_price)}</td></tr>`).join('')}
       </tbody></table></div>
@@ -564,6 +588,41 @@ async function updateOrderStatus() {
     });
     closeModal('order-status-modal'); Toast.success('Sipariş durumu güncellendi!'); loadOrders();
   } catch(e) { Toast.error(e.message); }
+}
+
+
+function openAddOrderItemModal(uuid) {
+  editingOrderUuid = uuid;
+  document.getElementById('aoi-product-id').value = '';
+  document.getElementById('aoi-name').value = '';
+  document.getElementById('aoi-qty').value = '1';
+  document.getElementById('aoi-price').value = '';
+  openModal('add-order-item-modal');
+}
+async function saveAddOrderItem() {
+  const name = document.getElementById('aoi-name').value.trim();
+  const qty = parseInt(document.getElementById('aoi-qty').value) || 1;
+  const price = parseFloat(document.getElementById('aoi-price').value) || 0;
+  const productId = document.getElementById('aoi-product-id').value;
+
+  if (!name || qty <= 0 || price < 0) {
+    return Toast.error('Geçerli bir ürün adı, miktar ve fiyat girin.');
+  }
+
+  try {
+    const payload = {
+      product_name: name,
+      quantity: qty,
+      unit_price: price,
+      product_id: productId ? parseInt(productId) : null
+    };
+    await API.post(`/orders/${editingOrderUuid}/items`, payload);
+    closeModal('add-order-item-modal');
+    Toast.success('Kalem başarıyla siparişe eklendi!');
+    viewOrder(editingOrderUuid); // refresh
+  } catch(e) {
+    Toast.error(e.message);
+  }
 }
 
 // ===== DISCOUNT REQUESTS =====

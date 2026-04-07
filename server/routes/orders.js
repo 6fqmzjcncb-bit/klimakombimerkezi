@@ -204,4 +204,44 @@ router.post('/:uuid/notes', requireAuth, (req, res) => {
   res.json({ success: true });
 });
 
+// POST /api/orders/:uuid/items - add order item (admin/employee)
+router.post('/:uuid/items', requireAuth, requireRole('admin', 'employee'), (req, res) => {
+  const db = getDb();
+  const { product_id, product_name, quantity, unit_price } = req.body;
+  
+  if (!product_name || !quantity || quantity <= 0 || unit_price == null || unit_price < 0) {
+    return res.status(400).json({ error: 'Geçersiz parametreler' });
+  }
+
+  const order = db.prepare('SELECT * FROM orders WHERE uuid=?').get(req.params.uuid);
+  if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı' });
+
+  const total_price = quantity * unit_price;
+  
+  db.transaction(() => {
+    // 1. Ekleme
+    db.prepare(`
+      INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, total_price)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(order.id, product_id || null, product_name, quantity, unit_price, total_price);
+
+    // 2. Sipariş toplamını güncelle
+    const newSubtotal = order.subtotal + total_price;
+    const taxRate = 0.20; // 20%
+    const newTax = newSubtotal * taxRate;
+    const newTotal = newSubtotal + newTax - (order.discount_amount || 0);
+
+    db.prepare('UPDATE orders SET subtotal=?, tax_amount=?, total_amount=?, updated_at=CURRENT_TIMESTAMP WHERE id=?')
+      .run(newSubtotal, newTax, newTotal, order.id);
+
+    // Opsiyonel: Admin notu ekle
+    db.prepare(`
+      INSERT INTO order_notes (order_id, user_id, note, is_internal)
+      VALUES (?, ?, ?, 1)
+    `).run(order.id, req.user.id, `Siparişe manuel kalem eklendi: ${product_name} (${quantity} adet, ${total_price} ₺)`);
+  })();
+
+  res.json({ success: true, subtotal: order.subtotal + total_price });
+});
+
 module.exports = router;

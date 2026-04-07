@@ -264,8 +264,10 @@
 
 <script src="/js/app.js?v=3"></script>
 <script>
-// Redirect if not dealer
-if (!Auth.isDealer()) window.location.href = '/giris.html?mode=dealer';
+// Redirect if not dealer, employee, or admin
+if (!Auth.isDealer() && !Auth.isEmployee() && !Auth.isAdmin()) {
+  window.location.href = '/giris.html?mode=dealer';
+}
 
 const user = Auth.getUser();
 let currentProjectUuid = null;
