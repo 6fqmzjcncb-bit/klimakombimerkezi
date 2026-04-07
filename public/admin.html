@@ -428,6 +428,50 @@
   </div>
 </div>
 
+<!-- BRAND MODAL -->
+<div class="modal-overlay" id="brand-modal">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title" id="brand-modal-title">Marka</h3><button class="modal-close">✕</button></div>
+    <div class="modal-body">
+      <form id="brand-form">
+        <input type="hidden" id="edit-brand-id">
+        <div class="form-group"><label class="form-label">Marka Adı *</label><input type="text" class="form-input" id="brand-name" required></div>
+        <div class="form-group">
+          <label class="form-label">🖼️ Logo Dosyası Yükle</label>
+          <input type="file" class="form-input" id="brand-logo-file" accept="image/*">
+          <div style="margin-top:8px;font-size:12px;color:var(--c-text-muted)">veya URL girin:</div>
+          <input type="url" class="form-input" id="brand-logo-url" placeholder="https://example.com/logo.png" style="margin-top:6px" oninput="const p=document.getElementById('brand-logo-preview');p.src=this.value;p.style.display=this.value?'block':'none'">
+          <img id="brand-logo-preview" src="" style="display:none;max-height:60px;margin-top:8px;border-radius:8px;border:1px solid var(--c-border)">
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('brand-modal')" class="btn btn-ghost">İptal</button>
+      <button onclick="saveBrand()" class="btn btn-primary">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY MODAL -->
+<div class="modal-overlay" id="category-modal">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title" id="cat-modal-title">Kategori</h3><button class="modal-close">✕</button></div>
+    <div class="modal-body">
+      <form id="cat-form">
+        <input type="hidden" id="edit-cat-id">
+        <input type="hidden" id="cat-parent-id">
+        <div class="form-group"><label class="form-label">Kategori Adı *</label><input type="text" class="form-input" id="cat-name" required></div>
+        <div class="form-group"><label class="form-label">Slug (boş bırakırsan otomatik)</label><input type="text" class="form-input" id="cat-slug" placeholder="ornek-kategori"></div>
+        <div class="form-group"><label class="form-label">Sıra Numarası</label><input type="number" class="form-input" id="cat-sort-order" value="0"></div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('category-modal')" class="btn btn-ghost">İptal</button>
+      <button onclick="saveCategory()" class="btn btn-primary">Kaydet</button>
+    </div>
+  </div>
+</div>
+
 <script src="/js/app.js?v=3"></script>
 <script>
 if (!Auth.isAdmin() && !Auth.isEmployee()) window.location.href = '/giris.html';
@@ -640,19 +684,23 @@ function viewQuoteDetail(r) {
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Mesaj:</label>
-      <div style="background:var(--c-bg);padding:12px;border-radius:8px;white-space:pre-wrap;font-size:14px">${r.message||'-'}</div>
+      <label class="form-label">Mesaj / Talep İçeriği:</label>
+      <div style="background:var(--c-bg);padding:12px;border-radius:8px;white-space:pre-wrap;font-size:14px;border:1px solid var(--c-border)">${r.message||'-'}</div>
     </div>
     ${(r.files||[]).length?`<div class="form-group" style="margin-top:12px"><label class="form-label">Dosyalar:</label><ul>${r.files.map(f=>`<li><a href="${f}" target="_blank">${f.split('/').pop()}</a></li>`).join('')}</ul></div>`:''}
-    <div style="margin-top:var(--space-4)">
-      <strong>Durum Güncelle:</strong>
-      <select class="form-select" style="width:200px;margin-top:8px" onchange="updateQuoteStatus('${r.uuid}',this.value)">
-        <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
-        <option value="in_review" ${r.status==='in_review'?'selected':''}>Incelemede</option>
-        <option value="replied" ${r.status==='replied'?'selected':''}>Yanıtlandı</option>
-        <option value="closed" ${r.status==='closed'?'selected':''}>Kapalı</option>
-      </select>
+    <div style="margin-top:var(--space-4);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div>
+        <strong>Durum Güncelle:</strong>
+        <select class="form-select" style="width:200px;margin-top:8px" onchange="updateQuoteStatus('${r.uuid}',this.value)">
+          <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
+          <option value="in_review" ${r.status==='in_review'?'selected':''}>Incelemede</option>
+          <option value="replied" ${r.status==='replied'?'selected':''}>Yanıtlandı</option>
+          <option value="closed" ${r.status==='closed'?'selected':''}>Kapalı</option>
+        </select>
+      </div>
+      <a href="/teklif.html" class="btn btn-primary" target="_blank" style="margin-top:24px">&#128203; Teklif Oluştur →</a>
     </div>`;
+  document.querySelector('#quote-detail-modal .modal-title').textContent = 'Teklif Talebi Detayı';
   openModal('quote-detail-modal');
 }
 
@@ -682,13 +730,14 @@ async function loadPriceRequests() {
 // ===== PRODUCTS =====
 async function loadAdminProducts() {
   try {
-    const { products } = await API.get('/products?limit=50');
-    document.getElementById('products-admin-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ad</th><th>SKU</th><th>Stok</th><th>Perakende</th><th>Bayi</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>
+    const { products } = await API.get('/products?limit=100');
+    document.getElementById('products-admin-table').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ad</th><th>SKU</th><th>Stok</th><th>Aliş</th><th>Perakende</th><th>Bayi</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>
       ${products.map(p => `<tr>
         <td><strong>${p.name}</strong>${p.is_opportunity?'<span class="badge badge-green ml-2">Fırsat</span>':''}</td>
         <td>${p.sku||'-'}</td>
         <td>${p.stock_quantity}</td>
-        <td>${p.base_price?Format.price(p.base_price):'-'}</td>
+        <td style="color:var(--c-text-muted);font-size:13px">${p.cost_price>0?Format.price(p.cost_price):'-'}</td>
+        <td><strong>${p.base_price?Format.price(p.base_price):'-'}</strong></td>
         <td>${p.dealer_cash_price?Format.price(p.dealer_cash_price):'-'}</td>
         <td>${Format.stockBadge(p.stock_status,p.supply_days)}</td>
         <td style="display:flex;gap:4px"><button onclick='openEditProduct(${JSON.stringify(p).replace(/&/g,"&amp;").replace(/'/g,"&apos;")})' class="btn btn-outline btn-sm">Düzenle</button><button onclick="deleteProduct(${p.id})" class="btn btn-danger btn-sm">Sil</button></td>
@@ -814,28 +863,58 @@ function previewImages() {
 async function loadCategories() {
   try {
     const cats = await API.get('/admin/categories');
-    // Render as indented tree
     const roots = cats.filter(c=>!c.parent_id);
     const children = cats.filter(c=>!!c.parent_id);
     const rows = [];
     roots.sort((a,b)=>a.sort_order-b.sort_order).forEach(root => {
-      rows.push(`<tr style="background:var(--c-surface)"><td><strong>${root.name}</strong></td><td><code>${root.slug}</code></td><td>-</td><td>${root.sort_order}</td><td><button onclick="openAddSubCategory(${root.id},'${root.name.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')" class="btn btn-outline btn-sm">+ Alt</button></td></tr>`);
+      rows.push(`<tr style="background:var(--c-surface)"><td><strong>${root.name}</strong></td><td><code>${root.slug}</code></td><td>-</td><td>${root.sort_order}</td><td style="display:flex;gap:4px"><button onclick="openEditCategory(${JSON.stringify(root).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">Düzenle</button><button onclick="openAddSubCategory(${root.id},'${root.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" class="btn btn-outline btn-sm">+ Alt</button><button onclick="deleteCategory(${root.id})" class="btn btn-danger btn-sm">Sil</button></td></tr>`);
       children.filter(c=>c.parent_id===root.id).sort((a,b)=>a.sort_order-b.sort_order).forEach(child => {
-        rows.push(`<tr><td>&nbsp;&nbsp;&nbsp;↳ ${child.name}</td><td><code>${child.slug}</code></td><td><span class="badge badge-gray">${root.name}</span></td><td>${child.sort_order}</td><td></td></tr>`);
+        rows.push(`<tr><td>&nbsp;&nbsp;&nbsp;&#x21b3; ${child.name}</td><td><code>${child.slug}</code></td><td><span class="badge badge-gray">${root.name}</span></td><td>${child.sort_order}</td><td style="display:flex;gap:4px"><button onclick="openEditCategory(${JSON.stringify(child).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">Düzenle</button><button onclick="deleteCategory(${child.id})" class="btn btn-danger btn-sm">Sil</button></td></tr>`);
       });
     });
     document.getElementById('categories-table').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Ad</th><th>Slug</th><th>Üst Kategori</th><th>Sıra</th><th>İşlem</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
   } catch {}
 }
 async function openAddCategory() {
-  const name = prompt('Kategori adı:'); if (!name) return;
-  const sortOrder = parseInt(prompt('Sıra (sayı):','0')||'0');
-  try { await API.post('/admin/categories',{name, sort_order: sortOrder}); loadCategories(); Toast.success('Kategori eklendi'); } catch(e) { Toast.error(e.message); }
+  document.getElementById('cat-modal-title').textContent = 'Yeni Kategori';
+  document.getElementById('cat-form').reset();
+  document.getElementById('cat-parent-id').value = '';
+  document.getElementById('edit-cat-id').value = '';
+  openModal('category-modal');
 }
 async function openAddSubCategory(parentId, parentName) {
-  const name = prompt(`"${parentName}" altında yeni kategori adı:`); if (!name) return;
-  const sortOrder = parseInt(prompt('Sıra:','0')||'0');
-  try { await API.post('/admin/categories',{name, parent_id: parentId, sort_order: sortOrder}); loadCategories(); Toast.success('Alt kategori eklendi'); } catch(e) { Toast.error(e.message); }
+  document.getElementById('cat-modal-title').textContent = `"${parentName}" Alt Kategorisi`;
+  document.getElementById('cat-form').reset();
+  document.getElementById('cat-parent-id').value = parentId;
+  document.getElementById('edit-cat-id').value = '';
+  openModal('category-modal');
+}
+async function openEditCategory(cat) {
+  document.getElementById('cat-modal-title').textContent = 'Kategori Düzenle';
+  document.getElementById('edit-cat-id').value = cat.id;
+  document.getElementById('cat-name').value = cat.name || '';
+  document.getElementById('cat-slug').value = cat.slug || '';
+  document.getElementById('cat-sort-order').value = cat.sort_order || 0;
+  document.getElementById('cat-parent-id').value = cat.parent_id || '';
+  openModal('category-modal');
+}
+async function saveCategory() {
+  const id = document.getElementById('edit-cat-id').value;
+  const payload = {
+    name: document.getElementById('cat-name').value,
+    slug: document.getElementById('cat-slug').value,
+    sort_order: parseInt(document.getElementById('cat-sort-order').value)||0,
+    parent_id: document.getElementById('cat-parent-id').value || null
+  };
+  try {
+    if (id) await API.put(`/admin/categories/${id}`, payload);
+    else await API.post('/admin/categories', payload);
+    closeModal('category-modal'); loadCategories(); Toast.success('Kategori kaydedildi!');
+  } catch(e) { Toast.error(e.message); }
+}
+async function deleteCategory(id) {
+  if (!confirm('Bu kategoriyi silmek istiyor musunuz?')) return;
+  try { await API.delete(`/admin/categories/${id}`); loadCategories(); Toast.success('Silindi!'); } catch(e) { Toast.error(e.message); }
 }
 async function loadBrands() {
   try {
@@ -850,14 +929,38 @@ async function loadBrands() {
   } catch {}
 }
 async function openAddBrand() {
-  const name = prompt('Marka adı:'); if (!name) return;
-  const logoUrl = prompt('Logo URL (isteğe bağlı):') || '';
-  try { await API.post('/admin/brands',{name, logo_url: logoUrl||null}); loadBrands(); Toast.success('Marka eklendi'); } catch(e) { Toast.error(e.message); }
+  document.getElementById('brand-modal-title').textContent = 'Yeni Marka';
+  document.getElementById('brand-form').reset();
+  document.getElementById('edit-brand-id').value = '';
+  document.getElementById('brand-logo-preview').style.display = 'none';
+  openModal('brand-modal');
 }
 async function openEditBrand(b) {
-  const name = prompt('Marka adı:', b.name); if (name === null) return;
-  const logoUrl = prompt('Logo URL:', b.logo_url||'');
-  try { await API.put(`/admin/brands/${b.id}`,{name: name||b.name, logo_url: logoUrl||null}); loadBrands(); Toast.success('Marka güncellendi'); } catch(e) { Toast.error(e.message); }
+  document.getElementById('brand-modal-title').textContent = 'Marka Düzenle';
+  document.getElementById('edit-brand-id').value = b.id;
+  document.getElementById('brand-name').value = b.name || '';
+  document.getElementById('brand-logo-url').value = b.logo_url || '';
+  const prev = document.getElementById('brand-logo-preview');
+  if (b.logo_url) { prev.src = b.logo_url; prev.style.display = 'block'; } else { prev.style.display = 'none'; }
+  openModal('brand-modal');
+}
+async function saveBrand() {
+  const id = document.getElementById('edit-brand-id').value;
+  const fileInput = document.getElementById('brand-logo-file');
+  let logoUrl = document.getElementById('brand-logo-url').value;
+  if (fileInput.files.length > 0) {
+    try {
+      const fd = new FormData(); fd.append('file', fileInput.files[0]);
+      const r = await fetch('/api/admin/upload', { method: 'POST', headers: Auth.headers(), body: fd });
+      const d = await r.json(); if (d.url) logoUrl = d.url;
+    } catch {}
+  }
+  const payload = { name: document.getElementById('brand-name').value, logo_url: logoUrl || null };
+  try {
+    if (id) await API.put(`/admin/brands/${id}`, payload);
+    else await API.post('/admin/brands', payload);
+    closeModal('brand-modal'); loadBrands(); Toast.success('Marka kaydedildi!');
+  } catch(e) { Toast.error(e.message); }
 }
 
 // ===== USERS =====
@@ -930,7 +1033,6 @@ async function loadDealerProjects() {
   } catch {}
 }
 async function viewDealerProject(uuid, name) {
-  // Reuse quote-detail-modal for project items
   document.getElementById('quote-detail-body').innerHTML = `<h3 style="margin-bottom:12px">${name}</h3><div class="spinner" style="margin:40px auto"></div>`;
   openModal('quote-detail-modal');
   document.querySelector('#quote-detail-modal .modal-title').textContent = 'Bayi Projesi Detayı';
@@ -938,23 +1040,74 @@ async function viewDealerProject(uuid, name) {
     const detail = await API.get(`/dealer/projects/${uuid}`);
     const items = detail.items || [];
     const total = items.reduce((s,i)=>s+(i.unit_price*i.quantity),0);
-    const discounted = detail.extra_discount_rate>0 ? total*(1-detail.extra_discount_rate/100) : total;
+    const discountType = detail.extra_discount_type || 'percentage';
+    const discountAmt = discountType === 'amount' ? (detail.extra_discount_amount||0) : total*(detail.extra_discount_rate||0)/100;
+    const discounted = total - discountAmt;
+    const hasDiscount = discountAmt > 0;
     document.getElementById('quote-detail-body').innerHTML = `
       <h3 style="margin-bottom:12px">${name}</h3>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
         <span class="badge badge-blue">Bayi: ${detail.dealer_name||'-'}</span>
         <span class="badge badge-gray">Müşteri: ${detail.customer_name||'-'}</span>
         ${detail.extra_discount_rate>0?`<span class="badge badge-green">İskonto: %${detail.extra_discount_rate}</span>`:''}
+        ${detail.extra_discount_amount>0&&discountType==='amount'?`<span class="badge badge-green">İskonto: ${Format.price(detail.extra_discount_amount)}</span>`:''}
         ${Format.statusBadge(detail.status)}
       </div>
+      ${detail.status==='discount_approved'?`<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px"><span style="font-size:20px">✅</span><strong style="color:#065f46">İskonto Onaylandı! ${hasDiscount?'Onaylanan: '+(discountType==='amount'?Format.price(discountAmt):'%'+detail.extra_discount_rate):''}</strong></div>`:''}
       <div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Adet</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>
-        ${items.map(i=>`<tr><td>${i.product_name||i.name}</td><td>${i.quantity}</td><td>${Format.price(i.unit_price)}</td><td>${Format.price(i.unit_price*i.quantity)}</td></tr>`).join('')}
+        ${items.map(i=>`<tr><td>${i.product_name||i.name||i.label}</td><td>${i.quantity}</td><td>${Format.price(i.unit_price)}</td><td>${Format.price(i.unit_price*i.quantity)}</td></tr>`).join('')}
       </tbody></table></div>
       <div style="text-align:right;margin-top:12px;font-size:14px">
         <div>Toplam: <strong>${Format.price(total)}</strong></div>
-        ${detail.extra_discount_rate>0?`<div style="color:var(--c-success)">İskonto Sonrası: <strong>${Format.price(discounted)}</strong></div>`:''}
+        ${hasDiscount?`<div style="color:var(--c-success)">İskonto Sonrası: <strong>${Format.price(discounted)}</strong></div>`:''}
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button onclick="editDealerProjectItems('${uuid}',${JSON.stringify(items).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">✏️ Projeyi Düzenle</button>
       </div>`;
   } catch(e) { document.getElementById('quote-detail-body').innerHTML = `<p class="text-muted">${e.message}</p>`; }
+}
+
+async function editDealerProjectItems(uuid, items) {
+  // Build an inline edit UI within the same modal body
+  const itemsHtml = items.map((i,idx) => `
+    <div style="display:grid;grid-template-columns:1fr 80px 120px 36px;gap:8px;align-items:center;margin-bottom:8px">
+      <input type="text" class="form-input proj-item-name" value="${(i.product_name||i.name||i.label).replace(/"/g,'&quot;')}" placeholder="Ürün Adı" data-idx="${idx}">
+      <input type="number" class="form-input proj-item-qty" value="${i.quantity}" min="1" data-idx="${idx}">
+      <input type="number" class="form-input proj-item-price" value="${i.unit_price}" step="0.01" data-idx="${idx}">
+      <button onclick="this.closest('div').remove()" class="btn btn-danger btn-sm">&times;</button>
+    </div>`).join('');
+  document.getElementById('quote-detail-body').innerHTML = `
+    <h3 style="margin-bottom:12px">Proje Düzenle</h3>
+    <div id="proj-items-edit">${itemsHtml}</div>
+    <button onclick="addProjItemRow()" class="btn btn-outline btn-sm" style="margin-top:8px">+ Yeni Kalem</button>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button onclick="saveDealerProjectEdit('${uuid}')" class="btn btn-primary">✓ Kaydet</button>
+      <button onclick="viewDealerProject('${uuid}','Proje Detayı')" class="btn btn-ghost">← Geri</button>
+    </div>`;
+}
+function addProjItemRow() {
+  const row = document.createElement('div');
+  const idx = Date.now();
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 80px 120px 36px;gap:8px;align-items:center;margin-bottom:8px';
+  row.innerHTML = `<input type="text" class="form-input proj-item-name" placeholder="Ürün Adı" data-idx="${idx}">
+    <input type="number" class="form-input proj-item-qty" value="1" min="1" data-idx="${idx}">
+    <input type="number" class="form-input proj-item-price" value="0" step="0.01" data-idx="${idx}">
+    <button onclick="this.closest('div').remove()" class="btn btn-danger btn-sm">&times;</button>`;
+  document.getElementById('proj-items-edit').appendChild(row);
+}
+async function saveDealerProjectEdit(uuid) {
+  const names = document.querySelectorAll('.proj-item-name');
+  const qtys = document.querySelectorAll('.proj-item-qty');
+  const prices = document.querySelectorAll('.proj-item-price');
+  const newItems = [];
+  names.forEach((n,i) => {
+    const name = n.value.trim(); if (!name) return;
+    newItems.push({ label: name, quantity: parseInt(qtys[i].value)||1, unit_price: parseFloat(prices[i].value)||0, is_manual: 1 });
+  });
+  try {
+    await API.put(`/dealer/projects/${uuid}`, { items: newItems });
+    Toast.success('Proje güncellendi!'); viewDealerProject(uuid, 'Proje Detayı');
+  } catch(e) { Toast.error(e.message); }
 }
 
 // ===== SETTINGS =====

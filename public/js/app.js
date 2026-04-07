@@ -232,7 +232,21 @@ const SiteSettings = {
         });
       }
       if (s.whatsapp_number) {
-        document.querySelectorAll('.whatsapp-link').forEach(el => { el.href = `https://wa.me/${s.whatsapp_number.replace(/\D/g,'')}`; });
+        const waNum = s.whatsapp_number.replace(/\D/g,'');
+        document.querySelectorAll('.whatsapp-link').forEach(el => { el.href = `https://wa.me/${waNum}`; });
+        // Inject floating WhatsApp button if not already present
+        if (!document.getElementById('wa-float-btn')) {
+          const waBtn = document.createElement('a');
+          waBtn.id = 'wa-float-btn';
+          waBtn.className = 'wa-float-btn';
+          waBtn.href = `https://wa.me/${waNum}`;
+          waBtn.target = '_blank';
+          waBtn.rel = 'noopener';
+          waBtn.title = 'WhatsApp ile iletişim';
+          waBtn.innerHTML = '&#x1F4AC;';
+          waBtn.style.cssText = '';
+          document.body.appendChild(waBtn);
+        }
       }
 
       // Hero Slider logic
@@ -270,12 +284,12 @@ const CategoryMenu = {
       roots.forEach(root => {
         const subs = children.filter(c => c.parent_id === root.id).sort((a,b)=>a.sort_order-b.sort_order);
         if (subs.length > 0) {
-          html += `<li class="dropdown-container">
-            <a href="/urunler.html?category=${root.id}" style="display:flex;align-items:center;gap:4px">
-              ${root.name} <span style="font-size:10px">▼</span>
-            </a>
-            <div class="dropdown-menu-list">
-              ${subs.map(s => `<a href="/urunler.html?category=${s.id}" class="dropdown-menu-item">${s.name}<span>→</span></a>`).join('')}
+          html += `<li class="has-dropdown">
+            <button class="cat-nav-btn" onclick="window.location.href='/urunler.html?category=${root.id}'">
+              ${root.name} <span class="cat-dropdown-arrow">▼</span>
+            </button>
+            <div class="cat-dropdown">
+              ${subs.map(s => `<a href="/urunler.html?category=${s.id}">${s.name}</a>`).join('')}
             </div>
           </li>`;
         } else {
@@ -385,12 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
   Notifications.load();
   CategoryMenu.render();
 
-  // Employee redirect: send employee to admin panel on shopping pages
-  if (Auth.isEmployee()) {
-    const path = window.location.pathname;
-    const shopPages = ['/', '/index.html', '/urunler.html', '/sepet.html', '/hesabim.html', '/teklif.html', '/araclar.html'];
-    if (shopPages.includes(path)) { window.location.href = '/admin.html'; return; }
-  }
+  // (Employee allowed to view shop pages for quote prep)
 
   // Dealer mode banner
   if (Auth.isDealer()) {

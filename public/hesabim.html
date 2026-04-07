@@ -108,7 +108,7 @@ document.getElementById('profile-content').innerHTML = `
 // Load Orders
 async function loadOrders() {
   try {
-    const orders = await API.get('/orders/my-orders');
+    const orders = await API.get('/orders');
     const c = document.getElementById('orders-content');
     if (!orders || orders.length === 0) {
       c.innerHTML = '<p style="color:var(--c-text-muted);padding:40px;text-align:center;background:var(--c-bg);border-radius:var(--r-lg)">Henüz bir siparişiniz bulunmuyor.</p>';

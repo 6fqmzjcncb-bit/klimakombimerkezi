@@ -318,7 +318,8 @@ function cancelCheckout() {
 document.getElementById('checkout-form').addEventListener('submit', async e => {
   e.preventDefault();
   const btn = document.getElementById('submit-order');
-  btn.disabled=true; btn.textContent='Onaylanıyor...';
+  btn.disabled = true; 
+  btn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid #fff;border-bottom-color:transparent;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px;vertical-align:middle"></span> Ödeme Bekleniyor...';
   const paymentMethod = document.getElementById('pm-card')?.checked ? 'credit_card' : 'bank_transfer';
   const instCount = paymentMethod === 'credit_card'
     ? parseInt(document.querySelector('input[name="inst"]:checked')?.value || '1')
