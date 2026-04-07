@@ -89,6 +89,21 @@
       </div>
     </div>
 
+    <!-- PRODUCTS (for dealers) -->
+    <div id="section-products" class="section-view" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <h1>Ürünler &amp; Bayi Fiyatları</h1>
+        <a href="/urunler.html" class="btn btn-outline" target="_blank">🛂 Genel Katalog</a>
+      </div>
+      <div class="page-body">
+        <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <input type="text" class="form-input" id="dealer-prod-search" placeholder="Ürün ara..." oninput="loadDealerProducts()" style="max-width:280px">
+          <select class="form-select" id="dealer-prod-cat" onchange="loadDealerProducts()" style="max-width:200px"><option value="">Tüm Kategoriler</option></select>
+        </div>
+        <div id="dealer-products-table"></div>
+      </div>
+    </div>
+
     <!-- NEW PROJECT -->
     <div id="section-new-project" class="section-view" style="display:none">
       <div class="page-header"><h1>Yeni Proje Oluştur</h1></div>
@@ -226,6 +241,27 @@
   </div>
 </div>
 
+<!-- ADD ITEM TO PROJECT MODAL -->
+<div class="modal-overlay" id="add-item-modal">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title">+ Projeye Kalem Ekle</h3><button class="modal-close">&#x2715;</button></div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="font-size:13px;margin-bottom:16px">Katalogdaki ürünü ID ile ekleyebilir veya özel (manuel) kalem tanımlayabilirsiniz.</div>
+      <div class="form-group"><label class="form-label">Ürün ID (Katalog ürünü ise, boş bırakın)</label><input type="number" class="form-input" id="add-item-product-id" placeholder="Örn: 42 (boş = manuel kalem)"></div>
+      <div class="form-group"><label class="form-label">Ürün / Kalem Adı <span class="required">*</span></label><input type="text" class="form-input" id="add-item-name" placeholder="Örn: Kombi Montaj, Vaillant 24 kW..."></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-group"><label class="form-label">Adet</label><input type="number" class="form-input" id="add-item-qty" value="1" min="1"></div>
+        <div class="form-group"><label class="form-label">Birim Fiyat (₺)</label><input type="number" class="form-input" id="add-item-price" step="0.01" placeholder="0.00"></div>
+        <div class="form-group"><label class="form-label">Marj (%)</label><input type="number" class="form-input" id="add-item-margin" value="0" min="0"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('add-item-modal')" class="btn btn-ghost">İptal</button>
+      <button onclick="saveAddItemToProject()" class="btn btn-primary">Ekle</button>
+    </div>
+  </div>
+</div>
+
 <script src="/js/app.js?v=3"></script>
 <script>
 // Redirect if not dealer
@@ -252,6 +288,7 @@ function showSection(name) {
   if (name === 'orders') loadOrders();
   if (name === 'notifications') loadNotifications();
   if (name === 'profile') loadProfile();
+  if (name === 'products') { loadDealerProducts(); loadDealerCategories(); }
   if (name === 'pdf-quote') loadProjectsForPdf();
 }
 
@@ -312,13 +349,18 @@ async function viewProject(uuid) {
   const body = document.getElementById('project-detail-body');
   body.innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
   try {
-    const { project, items, discount_requests } = await API.get(`/dealer/projects/${uuid}`).then(d => ({ project: d, items: d.items, discount_requests: d.discount_requests }));
+    const project = await API.get(`/dealer/projects/${uuid}`);
+    const discount_requests = project.discount_requests || [];
     document.getElementById('proj-detail-title').textContent = project.project_name;
 
     const totalBase = (project.items||[]).reduce((s,i) => s + i.unit_price * i.quantity, 0);
-    const totalWithMargin = (project.items||[]).reduce((s,i) => s + i.unit_price * (1 + (i.margin_rate||0)/100) * i.quantity, 0);
+     const totalWithMargin = (project.items||[]).reduce((s,i) => s + i.unit_price * (1 + (i.margin_rate||0)/100) * i.quantity, 0);
+     const discountType = project.extra_discount_type || 'percentage';
+     const discountAmt = discountType === 'amount' ? (project.extra_discount_amount||0) : totalWithMargin * (project.extra_discount_rate||0) / 100;
+     const finalTotal = totalWithMargin - discountAmt;
+     const hasApprovedDiscount = project.status === 'discount_approved' && discountAmt > 0;
 
-    body.innerHTML = `
+     body.innerHTML = `
       <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--space-6);align-items:start">
         <div>
           <div class="card mb-4">
@@ -327,15 +369,22 @@ async function viewProject(uuid) {
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
                 <div><div class="text-muted text-sm">Müşteri</div><div style="font-weight:600">${project.customer_name||'-'}</div></div>
                 <div><div class="text-muted text-sm">Durum</div>${Format.statusBadge(project.status)}</div>
-                <div><div class="text-muted text-sm">Ek İskonto</div><div style="font-weight:600;color:var(--c-success)">${project.extra_discount_rate>0?`%${project.extra_discount_rate}`:'-'}</div></div>
+                <div><div class="text-muted text-sm">Ek İskonto</div><div style="font-weight:600;color:var(--c-success)">${project.extra_discount_rate>0?`%${project.extra_discount_rate}`:project.extra_discount_amount>0?Format.price(project.extra_discount_amount):'-'}</div></div>
                 <div><div class="text-muted text-sm">Oluşturulma</div><div>${Format.date(project.created_at)}</div></div>
               </div>
               ${project.description?`<div class="mt-4"><div class="text-muted text-sm mb-1">Açıklama</div><p>${project.description}</p></div>`:''}
             </div>
           </div>
 
+          ${hasApprovedDiscount?`<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px"><span style="font-size:20px">✅</span><strong style="color:#065f46">Ek İskonto Onaylandı! Uygulanan: ${discountType==='amount'?Format.price(discountAmt):'%'+project.extra_discount_rate}</strong></div>`:''}
+
           <div class="card">
-            <div class="card-header"><strong>Proje Kalemleri</strong></div>
+            <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+              <strong>Proje Kalemleri</strong>
+              <div style="display:flex;gap:8px">
+                <button onclick="openAddItemToProject('${uuid}')" class="btn btn-outline btn-sm">+ Ürün/Kalem Ekle</button>
+              </div>
+            </div>
             <div class="table-wrap">
               <table>
                 <thead><tr><th>Ürün / Hizmet</th><th>Miktar</th><th>Birim Fiyat</th><th>Marj</th><th>Toplam</th></tr></thead>
@@ -354,7 +403,9 @@ async function viewProject(uuid) {
               </table>
             </div>
             <div class="card-footer" style="text-align:right">
-              <span style="font-size:18px;font-weight:800">Toplam: ${Format.price(totalWithMargin)}</span>
+              <span style="font-size:15px;color:var(--c-text-muted)">Ara Toplam: ${Format.price(totalWithMargin)}</span><br>
+              ${discountAmt>0?`<span style="font-size:13px;color:var(--c-success)">İskonto: -${Format.price(discountAmt)}</span><br>`:''}
+              <span style="font-size:20px;font-weight:800">Toplam: ${Format.price(finalTotal)}</span>
             </div>
           </div>
         </div>
@@ -377,7 +428,7 @@ async function viewProject(uuid) {
                 ${discount_requests.map(dr => `
                   <div style="padding:var(--space-3) 0;border-bottom:1px solid var(--c-border)">
                     <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                      <span>%${dr.requested_rate} talep</span>${Format.statusBadge(dr.status)}
+                      <span>${dr.discount_type==='amount'?Format.price(dr.requested_amount):'%'+dr.requested_rate} talep</span>${Format.statusBadge(dr.status)}
                     </div>
                     ${dr.admin_note?`<p class="text-sm text-muted">${dr.admin_note}</p>`:''}
                     <div class="text-sm text-muted">${Format.date(dr.created_at)}</div>
@@ -389,7 +440,111 @@ async function viewProject(uuid) {
   } catch(e) { body.innerHTML=`<p class="text-muted">${e.message}</p>`; }
 }
 
-// ---- NEW PROJECT FORM ----
+// ============================================================
+// ADD ITEM TO EXISTING PROJECT
+// ============================================================
+let _addItemProjectUuid = null;
+function openAddItemToProject(uuid) {
+  _addItemProjectUuid = uuid;
+  document.getElementById('add-item-name').value = '';
+  document.getElementById('add-item-qty').value = '1';
+  document.getElementById('add-item-price').value = '';
+  document.getElementById('add-item-margin').value = '0';
+  document.getElementById('add-item-product-id').value = '';
+  openModal('add-item-modal');
+}
+async function saveAddItemToProject() {
+  if (!_addItemProjectUuid) return;
+  const name = document.getElementById('add-item-name').value.trim();
+  const qty = parseInt(document.getElementById('add-item-qty').value) || 1;
+  const price = parseFloat(document.getElementById('add-item-price').value) || 0;
+  const margin = parseFloat(document.getElementById('add-item-margin').value) || 0;
+  const productId = document.getElementById('add-item-product-id').value;
+  if (!name) { Toast.error('Ürün/kalem adı gerekli'); return; }
+  try {
+    const detail = await API.get(`/dealer/projects/${_addItemProjectUuid}`);
+    const existingItems = (detail.items || []).map(i => ({
+      label: i.label || i.product_name, quantity: i.quantity, unit_price: i.unit_price,
+      margin_rate: i.margin_rate || 0, is_manual: i.is_manual, product_id: i.product_id || null
+    }));
+    existingItems.push({ product_id: productId ? parseInt(productId) : null, label: name, quantity: qty, unit_price: price, margin_rate: margin, is_manual: !productId });
+    await API.put(`/dealer/projects/${_addItemProjectUuid}`, { items: existingItems });
+    closeModal('add-item-modal');
+    Toast.success('Kalem eklendi!');
+    viewProject(_addItemProjectUuid);
+  } catch(e) { Toast.error(e.message); }
+}
+
+// ============================================================
+// PRODUCTS SECTION (dealer view)
+// ============================================================
+async function loadDealerProducts() {
+  const search = document.getElementById('dealer-prod-search')?.value || '';
+  const cat = document.getElementById('dealer-prod-cat')?.value || '';
+  const qs = new URLSearchParams({ limit: 50 });
+  if (search) qs.set('search', search);
+  if (cat) qs.set('category', cat);
+  const el = document.getElementById('dealer-products-table');
+  if (!el) return;
+  try {
+    el.innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
+    const { products } = await API.get(`/products?${qs}`);
+    if (!products.length) { el.innerHTML = '<p class="text-muted" style="padding:24px">Ürün bulunamadı.</p>'; return; }
+    el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Bayi Nakit</th><th>Bayi K.Kartı</th><th>Liste</th><th>Stok</th><th>İşlem</th></tr></thead><tbody>
+      ${products.map(p => `<tr>
+        <td><strong>${p.name}</strong><br><span style="font-size:11px;color:var(--c-text-muted)">${p.sku||''}</span></td>
+        <td><strong style="color:var(--c-secondary)">${p.dealer_cash_price?Format.price(p.dealer_cash_price):'-'}</strong></td>
+        <td>${p.dealer_card_price?Format.price(p.dealer_card_price):'-'}</td>
+        <td style="text-decoration:line-through;color:var(--c-text-muted);font-size:13px">${p.base_price?Format.price(p.base_price):'-'}</td>
+        <td>${Format.stockBadge(p.stock_status, p.supply_days)}</td>
+        <td style="display:flex;gap:4px">
+          <button onclick="addToCartDealer(${p.id})" class="btn btn-primary btn-sm">🛒 Sepet</button>
+          <button onclick="addToProjectFromSearch(${p.id},'${(p.name||'').replace(/'/g,"\\'")}',${p.dealer_cash_price||p.base_price||0})" class="btn btn-outline btn-sm">📁 Proje</button>
+        </td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) { el.innerHTML = `<p class="text-muted">${e.message}</p>`; }
+}
+async function addToCartDealer(productId) {
+  try {
+    await Cart.add(productId, 1);
+    Toast.success('Ürün sepete eklendi!');
+  } catch(e) { Toast.error(e.message); }
+}
+async function loadDealerCategories() {
+  try {
+    const cats = await fetch('/api/categories').then(r=>r.json());
+    const sel = document.getElementById('dealer-prod-cat');
+    if (!sel) return;
+    cats.forEach(c => {
+      const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; sel.appendChild(opt);
+    });
+  } catch {}
+}
+
+// Add product to an existing project (from dealer products view)
+let addToProjectTargetUuid = null;
+async function addToProjectFromSearch(productId, productName, price) {
+  const projects = await API.get('/dealer/projects');
+  if (!projects.length) { Toast.error('Önce bir proje oluşturun'); return; }
+  const names = projects.map(p => p.project_name);
+  const choices = projects.map((p, i) => `${i+1}. ${p.project_name} (${Format.statusBadge ? '' : ''}${p.status})`).join('\n');
+  const sel = prompt(`Ürünü hangi projeye eklemek istiyorsunuz?\n${projects.map((p,i)=>`${i+1}. ${p.project_name}`).join('\n')}\n\nNumara girin:`);
+  if (!sel) return;
+  const idx = parseInt(sel) - 1;
+  if (isNaN(idx) || !projects[idx]) { Toast.error('Geçersiz seçim'); return; }
+  const proj = projects[idx];
+  const qty = parseInt(prompt(`"${productName}" için kaç adet? (Fiyat: ${Format.price ? Format.price(price) : price}₺)`, '1') || '1');
+  if (!qty || qty <= 0) return;
+  
+  const detail = await API.get(`/dealer/projects/${proj.uuid}`);
+  const existingItems = (detail.items || []).map(i => ({ label: i.label||i.product_name, quantity: i.quantity, unit_price: i.unit_price, margin_rate: i.margin_rate||0, is_manual: i.is_manual, product_id: i.product_id }));
+  existingItems.push({ product_id: productId, label: productName, quantity: qty, unit_price: price, margin_rate: 0, is_manual: 0 });
+  await API.put(`/dealer/projects/${proj.uuid}`, { items: existingItems });
+  Toast.success(`"${productName}" \"${proj.project_name}\" projesine eklendi!`);
+}
+
+// ============================================================
 let newProjectItems = [];
 
 function addProductItem() {
