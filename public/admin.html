@@ -951,7 +951,7 @@ async function deleteProduct(id) {
 }
 
 function switchProductTab(tab) {
-  ['main','pricing','media','seo'].forEach(t => {
+  ['main','specs','pricing','media','seo'].forEach(t => {
     document.getElementById(`ptab-${t}`).style.display = t===tab?'':'none';
     document.querySelector(`#product-tabs [data-tab="ptab-${t}"]`)?.classList.toggle('active', t===tab);
   });

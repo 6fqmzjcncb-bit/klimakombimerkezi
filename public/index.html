@@ -534,8 +534,6 @@ function renderProductCard(p) {
   let priceHtml = '';
   if (p.stock_status === 'price_on_request' || p.is_hidden_price) {
     priceHtml = `<div class="price-on-request">💰 Fiyat Sorunuz</div>`;
-  } else if (p.stock_status === 'on_request') {
-    priceHtml = `<div class="price-on-request">⏱ Tedarik: ${p.supply_days || 0} Gün</div>`;
   } else if (isDealer && p.dealer_cash_price) {
     priceHtml = PriceRenderer.render(p.dealer_cash_price, p.dealer_card_price, { isDealer: true });
   } else {

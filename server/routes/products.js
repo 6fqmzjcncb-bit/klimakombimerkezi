@@ -32,8 +32,8 @@ router.get('/', optionalAuth, (req, res) => {
   const reserved = ['category', 'brand', 'search', 'opportunity', 'page', 'limit', 'sort', 'stock_status'];
   for (const [k, v] of Object.entries(req.query)) {
     if (!reserved.includes(k) && v) {
-      where.push(`json_extract(p.specifications, '$.' || ?) = ?`);
-      params.push(k, v);
+      where.push(`json_extract(p.specifications, ?) = ?`);
+      params.push('$."' + k.replace(/"/g, '') + '"', v);
     }
   }
 
