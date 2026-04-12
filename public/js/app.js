@@ -435,6 +435,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ${user.role === 'dealer' ? `<a class="dropdown-item" href="/bayi.html">🏢 Bayi Paneli</a>` : ''}
             ${!isStaff ? `<a class="dropdown-item" href="/hesabim.html">👤 Hesabım</a>` : ''}
             ${!isStaff ? `<a class="dropdown-item" href="/hesabim.html#siparisler">📦 Siparişlerim</a>` : ''}
+            ${Auth.isAdmin() || localStorage.getItem('kkm_real_user') ? `
+              <div style="border-top:1px solid var(--c-border);margin:4px 0;padding-top:4px"></div>
+              <div style="padding:4px 16px;font-size:11px;font-weight:700;color:var(--c-text-muted);text-transform:uppercase">Test Görünümleri</div>
+              <button class="dropdown-item" onclick="simulateRole('customer')">👀 Müşteri Olarak Gör</button>
+              <button class="dropdown-item" onclick="simulateRole('dealer')">👀 Bayi Olarak Gör</button>
+              <button class="dropdown-item" onclick="simulateRole('employee')">👀 Çalışan Olarak Gör</button>
+              <div style="border-top:1px solid var(--c-border);margin:4px 0;padding-top:4px"></div>
+            ` : ''}
             <button class="dropdown-item" onclick="Auth.logout()" style="color:var(--c-error)">🚪 Çıkış Yap</button>
           </div>
         </div>`;

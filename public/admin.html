@@ -43,12 +43,6 @@
       <button class="sidebar-item" onclick="showSection('settings')" data-section="settings"><span class="icon">⚙️</span> Site Ayarları</button>
 
       <hr style="border:none;border-top:1px solid var(--c-border);margin:8px 16px">
-      <div class="sidebar-section">Görünüm ve Test</div>
-      <button class="sidebar-item" onclick="simulateRole('customer')"><span class="icon">👀</span> Müşteri Şablonu</button>
-      <button class="sidebar-item" onclick="simulateRole('dealer')"><span class="icon">👀</span> Bayi Şablonu</button>
-      <button class="sidebar-item" onclick="simulateRole('employee')"><span class="icon">👀</span> Çalışan Şablonu</button>
-
-      <hr style="border:none;border-top:1px solid var(--c-border);margin:8px 16px">
       <button class="sidebar-item" onclick="Auth.logout()" style="color:var(--c-error)"><span class="icon">🚪</span> Çıkış</button>
     </nav>
   </aside>
@@ -629,13 +623,26 @@ async function promptEditOrderTotals(uuid, currentDiscount, currentTotal) {
 function openStatusModal(uuid) { editingOrderUuid=uuid; openModal('order-status-modal'); }
 async function updateOrderStatus() {
   try {
+    const btn = document.querySelector('#order-status-modal .btn-primary');
+    if(btn) btn.disabled = true;
+    
     await API.put(`/orders/${editingOrderUuid}/status`, {
       status: document.getElementById('new-order-status').value,
       payment_link: document.getElementById('status-payment-link').value || null,
       admin_note: document.getElementById('status-admin-note').value || null
     });
-    closeModal('order-status-modal'); Toast.success('Sipariş durumu güncellendi!'); loadOrders();
-  } catch(e) { Toast.error(e.message); }
+    
+    closeModal('order-status-modal'); 
+    Toast.success('Sipariş durumu güncellendi!'); 
+    loadOrders();
+    if(btn) btn.disabled = false;
+  } catch(e) { 
+    const btn = document.querySelector('#order-status-modal .btn-primary');
+    if(btn) btn.disabled = false;
+    console.error(e); 
+    Toast.error(e.message); 
+    alert("Hata: " + e.message); 
+  }
 }
 
 

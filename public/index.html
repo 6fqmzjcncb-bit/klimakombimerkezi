@@ -555,8 +555,8 @@ function renderProductCard(p) {
       </div>
       <div class="product-card-actions">
         <a href="/urunler.html?slug=${p.slug}" class="btn btn-outline btn-sm" style="flex:1">İncele</a>
-        ${!isEmployee && canBuy ? `<button class="btn btn-primary btn-sm" onclick="addToCart(${p.id})" style="flex:1">🛒 Sepete</button>` : ''}
-        ${!isEmployee && !canBuy && !p.is_hidden_price ? `<a href="/teklif.html?product=${p.id}" class="btn btn-sm" style="flex:1;background:#f59e0b;color:#fff">📩 Teklif</a>` : ''}
+        ${canBuy ? `<button class="btn btn-primary btn-sm" onclick="addToCart(${p.id})" style="flex:1">🛒 Sepete</button>` : ''}
+        ${!canBuy && !p.is_hidden_price ? `<a href="/teklif.html?product=${p.id}" class="btn btn-sm" style="flex:1;background:#f59e0b;color:#fff">📩 Teklif</a>` : ''}
       </div>
     </div>
   `;
