@@ -120,10 +120,14 @@ document.getElementById('login-form').addEventListener('submit', async e => {
   const btn = document.getElementById('login-btn');
   btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true;
   try {
-    const data = await API.post('/auth/login', {
-      email: document.getElementById('login-email').value,
-      password: document.getElementById('login-password').value
-    });
+    const data = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': localStorage.getItem('kkm_session') || '' },
+      body: JSON.stringify({
+        email: document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value
+      })
+    }).then(r => { if (!r.ok) throw r; return r.json(); }).catch(async e => { const err=await e.json(); throw new Error(err.error||'Hata'); });
     localStorage.setItem('kkm_token', data.token);
     localStorage.setItem('kkm_user', JSON.stringify(data.user));
     const redirect = new URLSearchParams(location.search).get('redirect') || (data.user.role === 'dealer' ? '/bayi.html' : data.user.role === 'admin' ? '/admin.html' : data.user.role === 'employee' ? '/employee.html' : '/');
@@ -140,15 +144,19 @@ document.getElementById('register-form').addEventListener('submit', async e => {
   const btn = document.getElementById('register-btn');
   btn.textContent = 'Kaydediliyor...'; btn.disabled = true;
   try {
-    const data = await API.post('/auth/register', {
-      name: document.getElementById('reg-name').value,
-      email: document.getElementById('reg-email').value,
-      phone: document.getElementById('reg-phone').value,
-      company_name: document.getElementById('reg-company').value || undefined,
-      tax_number: document.getElementById('reg-tax').value || undefined,
-      password: document.getElementById('reg-password').value,
-      role: currentRole
-    });
+    const data = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': localStorage.getItem('kkm_session') || '' },
+      body: JSON.stringify({
+        name: document.getElementById('reg-name').value,
+        email: document.getElementById('reg-email').value,
+        phone: document.getElementById('reg-phone').value,
+        company_name: document.getElementById('reg-company').value || undefined,
+        tax_number: document.getElementById('reg-tax').value || undefined,
+        password: document.getElementById('reg-password').value,
+        role: currentRole
+      })
+    }).then(r => { if (!r.ok) throw r; return r.json(); }).catch(async e => { const err=await e.json(); throw new Error(err.error||'Hata'); });
     localStorage.setItem('kkm_token', data.token);
     localStorage.setItem('kkm_user', JSON.stringify(data.user));
     window.location.href = data.user.role === 'dealer' ? '/bayi.html' : '/';

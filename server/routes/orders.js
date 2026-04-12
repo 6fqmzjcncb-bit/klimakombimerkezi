@@ -244,4 +244,64 @@ router.post('/:uuid/items', requireAuth, requireRole('admin', 'employee'), (req,
   res.json({ success: true, subtotal: order.subtotal + total_price });
 });
 
+// PUT /api/orders/:uuid/edit-admin - edit order totals/discounts
+router.put('/:uuid/edit-admin', requireAuth, requireRole('admin', 'employee'), (req, res) => {
+  const db = getDb();
+  const { discount_amount, total_amount, shipping_address } = req.body;
+  const order = db.prepare('SELECT * FROM orders WHERE uuid=?').get(req.params.uuid);
+  if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı' });
+
+  db.transaction(() => {
+    if (discount_amount !== undefined || total_amount !== undefined || shipping_address !== undefined) {
+      db.prepare(`
+        UPDATE orders 
+        SET discount_amount = COALESCE(?, discount_amount),
+            total_amount = COALESCE(?, total_amount),
+            shipping_address = COALESCE(?, shipping_address),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(
+        discount_amount !== undefined ? Number(discount_amount) : null,
+        total_amount !== undefined ? Number(total_amount) : null,
+        shipping_address !== undefined ? shipping_address : null,
+        order.id
+      );
+
+      db.prepare(`
+        INSERT INTO order_notes (order_id, user_id, note, is_internal)
+        VALUES (?, ?, ?, 1)
+      `).run(order.id, req.user.id, `Sipariş detayları güncellendi. Yeni Toplam: ${total_amount !== undefined ? total_amount : order.total_amount} ₺`);
+    }
+  })();
+  res.json({ success: true });
+});
+
+// DELETE /api/orders/:uuid/items/:itemId - remove an item
+router.delete('/:uuid/items/:itemId', requireAuth, requireRole('admin', 'employee'), (req, res) => {
+  const db = getDb();
+  const order = db.prepare('SELECT * FROM orders WHERE uuid=?').get(req.params.uuid);
+  if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı' });
+
+  const item = db.prepare('SELECT * FROM order_items WHERE id=? AND order_id=?').get(req.params.itemId, order.id);
+  if (!item) return res.status(404).json({ error: 'Kalem bulunamadı' });
+
+  db.transaction(() => {
+    db.prepare('DELETE FROM order_items WHERE id=?').run(item.id);
+    
+    // Recalculate roughly (Admin should double check totals)
+    const newSubtotal = Math.max(0, order.subtotal - item.total_price);
+    const newTax = newSubtotal * 0.20;
+    const newTotal = Math.max(0, newSubtotal + newTax - (order.discount_amount || 0));
+
+    db.prepare('UPDATE orders SET subtotal=?, tax_amount=?, total_amount=?, updated_at=CURRENT_TIMESTAMP WHERE id=?')
+      .run(newSubtotal, newTax, newTotal, order.id);
+      
+    db.prepare(`
+      INSERT INTO order_notes (order_id, user_id, note, is_internal)
+      VALUES (?, ?, ?, 1)
+    `).run(order.id, req.user.id, `Siparişten kalem silindi: ${item.product_name} (${item.quantity} adet)`);
+  })();
+  res.json({ success: true });
+});
+
 module.exports = router;

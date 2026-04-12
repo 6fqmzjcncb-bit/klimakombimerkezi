@@ -241,6 +241,17 @@
   </div>
 </div>
 
+<!-- Order Detail Modal -->
+<div class="modal-overlay" id="customer-order-modal">
+  <div class="modal" style="max-width:800px;width:90%">
+    <div class="modal-header">
+      <h3 class="modal-title">Sipariş Detayı</h3>
+      <button class="modal-close" onclick="closeModal('customer-order-modal')">&times;</button>
+    </div>
+    <div class="modal-body" id="customer-order-body">Yükleniyor...</div>
+  </div>
+</div>
+
 <!-- ADD ITEM TO PROJECT MODAL -->
 <div class="modal-overlay" id="add-item-modal">
   <div class="modal">
@@ -666,16 +677,58 @@ async function loadOrders() {
     const orders = await API.get('/orders');
     const el = document.getElementById('orders-list');
     if (!orders.length) { el.innerHTML = '<div class="alert alert-info">Henüz sipariş yok.</div>'; return; }
-    el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Sipariş No</th><th>Tarih</th><th>Ödeme</th><th>Tutar</th><th>Durum</th></tr></thead><tbody>
+    el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Sipariş No</th><th>Tarih</th><th>Ödeme</th><th>Tutar</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>
       ${orders.map(o => `<tr>
         <td><code>${o.uuid.slice(0,8)}</code></td>
         <td>${Format.date(o.created_at)}</td>
         <td>${{'credit_card':'Kredi Kartı','bank_transfer':'Havale','cash':'Nakit'}[o.payment_method]||o.payment_method}</td>
         <td><strong>${Format.price(o.total_amount)}</strong></td>
         <td>${Format.statusBadge(o.status)}</td>
+        <td><button onclick="viewCustomerOrder('${o.uuid}')" class="btn btn-outline btn-sm">Detay & İncele</button></td>
       </tr>`).join('')}
     </tbody></table></div>`;
   } catch(e) { document.getElementById('orders-list').innerHTML=`<p class="text-muted">${e.message}</p>`; }
+}
+
+async function viewCustomerOrder(uuid) {
+  openModal('customer-order-modal');
+  document.getElementById('customer-order-body').innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
+  try {
+    const o = await API.get(`/orders/${uuid}`);
+    document.getElementById('customer-order-body').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-5);background:var(--c-bg);padding:16px;border-radius:var(--r-md);border:1px solid var(--c-border)">
+        <div>
+          <strong style="color:var(--c-text-muted);font-size:13px;display:block">Teslimat Adresi</strong>
+          <div style="font-size:14px;margin-top:4px;white-space:pre-wrap">${o.shipping_address||'Belirtilmedi'}</div>
+        </div>
+        <div>
+          <strong style="color:var(--c-text-muted);font-size:13px;display:block">Ödeme Yöntemi</strong>
+          <div style="font-size:14px;margin-top:4px">${o.payment_method}</div>
+          <strong style="color:var(--c-text-muted);font-size:13px;display:block;margin-top:8px">Mevcut Durum</strong>
+          <div style="font-size:14px;margin-top:4px">${Format.statusBadge(o.status)}</div>
+        </div>
+      </div>
+      
+      <h4 style="margin:0 0 12px 0;font-weight:700">Sipariş Kalemleri</h4>
+      <div class="table-wrap mb-4"><table><thead><tr><th>Ürün</th><th>Miktar</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>
+        ${(o.items||[]).map(i => `<tr>
+          <td>${i.product_name} ${i.product_sku?`<span class="text-sm text-muted">(${i.product_sku})</span>`:''}</td>
+          <td>${i.quantity}</td>
+          <td>${Format.price(i.unit_price)}</td>
+          <td><strong>${Format.price(i.total_price)}</strong></td>
+        </tr>`).join('')}
+      </tbody></table></div>
+      
+      <div style="text-align:right;font-size:15px;background:var(--c-bg);padding:16px;border-radius:var(--r-md);border:1px solid var(--c-border)">
+        <div style="color:var(--c-text-muted)">Ara Toplam: ${Format.price(o.subtotal)}</div>
+        <div style="color:var(--c-text-muted)">KDV (%20): ${Format.price(o.tax_amount)}</div>
+        ${o.discount_amount > 0 ? `<div style="color:var(--c-success);font-weight:600">İndirim: -${Format.price(o.discount_amount)}</div>` : ''}
+        <div style="font-size:22px;font-weight:800;margin-top:12px;padding-top:12px;border-top:1px solid var(--c-border);color:var(--c-primary)">Genel Toplam: ${Format.price(o.total_amount)}</div>
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('customer-order-body').innerHTML = `<p style="color:var(--c-error)">${e.message}</p>`;
+  }
 }
 
 // ---- NOTIFICATIONS ----

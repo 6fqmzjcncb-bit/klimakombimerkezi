@@ -534,7 +534,7 @@ async function loadDashboard() {
 
     const orders = await API.get('/orders?limit=5');
     document.getElementById('recent-orders').innerHTML = `<div class="table-wrap"><table><thead><tr><th>No</th><th>Müşteri</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th></th></tr></thead><tbody>
-      ${orders.slice(0,5).map(o => `<tr><td><code>${o.uuid.slice(0,8)}</code></td><td>${o.user_name||'-'} ${o.user_role==='dealer'?'<span class="badge badge-yellow">Bayi</span>':''}</td><td>${Format.price(o.total_amount)}</td><td>${Format.statusBadge(o.status)}</td><td>${Format.date(o.created_at)}</td><td><button onclick="viewOrder('${o.uuid}')" class="btn btn-outline btn-sm">Detay</button></td></tr>`).join('')}
+      ${orders.slice(0,5).map(o => `<tr><td><code>${o.uuid.slice(0,8)}</code></td><td>${o.user_name||'-'} ${o.user_role==='dealer'?'<span class="badge badge-yellow">Bayi</span>':''}</td><td>${Format.price(o.total_amount)}</td><td>${Format.statusBadge(o.status)}</td><td>${Format.date(o.created_at)}</td><td><button onclick="viewOrder('${o.uuid}')" class="btn btn-outline btn-sm">Detay</button></div></td></tr>`).join('')}
     </tbody></table></div>`;
   } catch(e) { console.error(e); }
 }
@@ -553,7 +553,7 @@ async function loadOrders() {
         <td><strong>${Format.price(o.total_amount)}</strong></td>
         <td>${Format.statusBadge(o.status)}</td>
         <td>${Format.date(o.created_at)}</td>
-        <td style="display:flex;gap:4px"><button onclick="viewOrder('${o.uuid}')" class="btn btn-outline btn-sm">Detay</button><button onclick="openStatusModal('${o.uuid}')" class="btn btn-primary btn-sm">Durum</button></td>
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap"><button onclick="viewOrder('${o.uuid}')" class="btn btn-outline btn-sm">Detay</button><button onclick="openStatusModal('${o.uuid}')" class="btn btn-primary btn-sm">Durum</button></div></td>
       </tr>`).join('')}
     </tbody></table></div>`;
   } catch(e) { document.getElementById('orders-table').innerHTML=`<p class="text-muted">${e.message}</p>`; }
@@ -574,13 +574,46 @@ async function viewOrder(uuid) {
         <h4 style="margin:0;font-weight:700">Sipariş Kalemleri</h4>
         <button onclick="openAddOrderItemModal('${uuid}')" class="btn btn-outline btn-sm">+ Yeni Kalem Ekle</button>
       </div>
-      <div class="table-wrap mb-4"><table><thead><tr><th>Ürün</th><th>Miktar</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>
-        ${(o.items||[]).map(i => `<tr><td>${i.product_name} ${i.product_sku?`<span class="text-sm text-muted">(${i.product_sku})</span>`:''}</td><td>${i.quantity}</td><td>${Format.price(i.unit_price)}</td><td>${Format.price(i.total_price)}</td></tr>`).join('')}
+      <div class="table-wrap mb-4"><table><thead><tr><th>Ürün</th><th>Miktar</th><th>Birim Fiyat</th><th>Toplam</th><th>İşlem</th></tr></thead><tbody>
+        ${(o.items||[]).map(i => `<tr><td>${i.product_name} ${i.product_sku?`<span class="text-sm text-muted">(${i.product_sku})</span>`:''}</td><td>${i.quantity}</td><td>${Format.price(i.unit_price)}</td><td>${Format.price(i.total_price)}</td><td><button onclick="removeOrderItem('${uuid}', ${i.id})" class="btn btn-danger btn-sm" style="padding:2px 6px">Sil</button></td></tr>`).join('')}
       </tbody></table></div>
-      <div style="text-align:right;font-size:16px"><strong>Ara Toplam: ${Format.price(o.subtotal)}</strong><br>KDV: ${Format.price(o.tax_amount)}<br><strong style="font-size:20px">Toplam: ${Format.price(o.total_amount)}</strong></div>
+      <div style="text-align:right;font-size:16px;background:var(--c-bg);padding:16px;border-radius:var(--r-md);border:1px solid var(--c-border)">
+        <div><strong>Ara Toplam: ${Format.price(o.subtotal)}</strong></div>
+        <div>KDV: ${Format.price(o.tax_amount)}</div>
+        ${o.discount_amount > 0 ? `<div style="color:var(--c-success)">İndirim: -${Format.price(o.discount_amount)}</div>` : ''}
+        <div style="font-size:22px;font-weight:800;margin-top:8px;padding-top:8px;border-top:1px solid var(--c-border)">Genel Toplam: ${Format.price(o.total_amount)}</div>
+        <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
+          <button onclick="promptEditOrderTotals('${uuid}', ${o.discount_amount || 0}, ${o.total_amount})" class="btn btn-outline btn-sm">G. Toplam / İndirim Düzenle</button>
+        </div>
+      </div>
       ${o.notes?.length?`<hr class="divider"><strong>Notlar:</strong><div>${o.notes.map(n=>`<div style="padding:8px 0;border-bottom:1px solid var(--c-border)"><span class="badge ${n.is_internal?'badge-yellow':'badge-gray'}">${n.author_name||'-'}</span> ${n.note} <span class="text-sm text-muted">${Format.date(n.created_at)}</span></div>`).join('')}</div>`:''}
       <div style="margin-top:var(--space-4)"><button onclick="openStatusModal('${uuid}');closeModal('order-detail-modal')" class="btn btn-primary">Durumu Güncelle</button></div>`;
   } catch(e) { document.getElementById('order-detail-body').innerHTML=e.message; }
+}
+
+async function removeOrderItem(uuid, itemId) {
+  if(!confirm('Bu kalemi silmek istediğinize emin misiniz?')) return;
+  try {
+    await API.delete(`/orders/${uuid}/items/${itemId}`);
+    Toast.success('Kalem silindi');
+    viewOrder(uuid);
+  } catch(e) { Toast.error(e.message); }
+}
+
+async function promptEditOrderTotals(uuid, currentDiscount, currentTotal) {
+  const d = prompt('Yeni İndirim Tutarı (TL) [Varsayılan: '+currentDiscount+']:', currentDiscount);
+  if (d === null) return;
+  const t = prompt('Yeni Genel Toplam (TL) [Varsayılan: '+currentTotal+']:', currentTotal);
+  if (t === null) return;
+
+  try {
+    await API.put(`/orders/${uuid}/edit-admin`, {
+      discount_amount: parseFloat(d) || 0,
+      total_amount: parseFloat(t) || 0
+    });
+    Toast.success('Sipariş tutarları güncellendi');
+    viewOrder(uuid);
+  } catch(e) { Toast.error(e.message); }
 }
 
 function openStatusModal(uuid) { editingOrderUuid=uuid; openModal('order-status-modal'); }
@@ -717,7 +750,7 @@ async function loadQuoteRequests() {
         <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.message}</td>
         <td>${Format.statusBadge(r.status)}</td>
         <td>${Format.date(r.created_at)}</td>
-        <td style="display:flex;gap:4px">
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap">
           <button onclick="viewQuoteDetail(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))" class="btn btn-primary btn-sm">Detay</button>
           <select onchange="updateQuoteStatus('${r.uuid}',this.value)" class="form-select" style="width:120px">
             <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
@@ -804,7 +837,7 @@ async function loadAdminProducts() {
         <td><strong>${p.base_price?Format.price(p.base_price):'-'}</strong></td>
         <td>${p.dealer_cash_price?Format.price(p.dealer_cash_price):'-'}</td>
         <td>${Format.stockBadge(p.stock_status,p.supply_days)}</td>
-        <td style="display:flex;gap:4px"><button onclick='openEditProduct(${JSON.stringify(p).replace(/&/g,"&amp;").replace(/'/g,"&apos;")})' class="btn btn-outline btn-sm">Düzenle</button><button onclick="deleteProduct(${p.id})" class="btn btn-danger btn-sm">Sil</button></td>
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap"><button onclick='openEditProduct(${JSON.stringify(p).replace(/&/g,"&amp;").replace(/'/g,"&apos;")})' class="btn btn-outline btn-sm">Düzenle</button><button onclick="deleteProduct(${p.id})" class="btn btn-danger btn-sm">Sil</button></div></td>
       </tr>`).join('')}
     </tbody></table></div>`;
   } catch(e) {}
@@ -989,9 +1022,9 @@ async function loadCategories() {
 
     const rows = [];
     roots.sort((a,b)=>a.sort_order-b.sort_order).forEach(root => {
-      rows.push(`<tr style="background:var(--c-surface)"><td><strong>${root.name}</strong></td><td><code>${root.slug}</code></td><td>-</td><td>${root.sort_order}</td><td style="display:flex;gap:4px"><button onclick="openEditCategory(${JSON.stringify(root).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">Düzenle</button><button onclick="openAddSubCategory(${root.id},'${root.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" class="btn btn-outline btn-sm">+ Alt</button><button onclick="deleteCategory(${root.id})" class="btn btn-danger btn-sm">Sil</button></td></tr>`);
+      rows.push(`<tr style="background:var(--c-surface)"><td><strong>${root.name}</strong></td><td><code>${root.slug}</code></td><td>-</td><td>${root.sort_order}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap"><button onclick="openEditCategory(${JSON.stringify(root).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">Düzenle</button><button onclick="openAddSubCategory(${root.id},'${root.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" class="btn btn-outline btn-sm">+ Alt</button><button onclick="deleteCategory(${root.id})" class="btn btn-danger btn-sm">Sil</button></div></td></tr>`);
       children.filter(c=>c.parent_id===root.id).sort((a,b)=>a.sort_order-b.sort_order).forEach(child => {
-        rows.push(`<tr><td>&nbsp;&nbsp;&nbsp;&#x21b3; ${child.name}</td><td><code>${child.slug}</code></td><td><span class="badge badge-gray">${root.name}</span></td><td>${child.sort_order}</td><td style="display:flex;gap:4px"><button onclick="openEditCategory(${JSON.stringify(child).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">Düzenle</button><button onclick="deleteCategory(${child.id})" class="btn btn-danger btn-sm">Sil</button></td></tr>`);
+        rows.push(`<tr><td>&nbsp;&nbsp;&nbsp;&#x21b3; ${child.name}</td><td><code>${child.slug}</code></td><td><span class="badge badge-gray">${root.name}</span></td><td>${child.sort_order}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap"><button onclick="openEditCategory(${JSON.stringify(child).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">Düzenle</button><button onclick="deleteCategory(${child.id})" class="btn btn-danger btn-sm">Sil</button></div></td></tr>`);
       });
     });
     document.getElementById('categories-table').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Ad</th><th>Slug</th><th>Üst Kategori</th><th>Sıra</th><th>İşlem</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
@@ -1060,7 +1093,7 @@ async function loadBrands() {
       <td><strong>${b.name}</strong></td>
       <td><code>${b.slug}</code></td>
       <td>${b.is_active?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Pasif</span>'}</td>
-      <td style="display:flex;gap:4px"><button onclick="openEditBrand(${JSON.stringify(b).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">Düzenle</button></td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap"><button onclick="openEditBrand(${JSON.stringify(b).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">Düzenle</button></div></td>
     </tr>`).join('')}</tbody></table></div>`;
   } catch {}
 }
@@ -1115,9 +1148,9 @@ async function loadUsers(roleOverride) {
         <td>${u.email}</td>
         <td>${Format.statusBadge(u.role)}</td>
         <td>${u.company_name||'-'}</td>
-        ${roleOverride==='dealer'?`<td><code>${u.dealer_code||'-'}</code></td><td>${u.discount_rate>0?`<strong style="color:var(--c-success)">%${u.discount_rate}</strong>`:'-'}</td><td><button onclick="toggleUserActive(${u.id},${u.is_active?0:1})" class="btn btn-sm ${u.is_active?'btn-success':'btn-danger'}">${u.is_active?'Aktif':'Pasif'}</button></td>`:''}
+        ${roleOverride==='dealer'?`<td><code>${u.dealer_code||'-'}</code></td><td>${u.discount_rate>0?`<strong style="color:var(--c-success)">%${u.discount_rate}</strong>`:'-'}</td><td><button onclick="toggleUserActive(${u.id},${u.is_active?0:1})" class="btn btn-sm ${u.is_active?'btn-success':'btn-danger'}">${u.is_active?'Aktif':'Pasif'}</button></div></td>`:''}
         <td>${Format.date(u.created_at)}</td>
-        <td><button onclick='openEditUser(${JSON.stringify(u).replace(/&/g,"&amp;").replace(/'/g,"&apos;")})' class="btn btn-outline btn-sm">Düzenle</button></td>
+        <td><button onclick='openEditUser(${JSON.stringify(u).replace(/&/g,"&amp;").replace(/'/g,"&apos;")})' class="btn btn-outline btn-sm">Düzenle</button></div></td>
       </tr>`).join('')}
     </tbody></table></div>`;
   } catch(e) {}
@@ -1163,7 +1196,7 @@ async function loadDealerProjects() {
         <td>${Format.statusBadge(p.status)}</td>
         <td>${p.extra_discount_type==='amount'? (p.extra_discount_amount>0?`<span class="badge badge-green">${Format.price(p.extra_discount_amount)}</span>`:'-') : (p.extra_discount_rate>0?`<span class="badge badge-green">%${p.extra_discount_rate}</span>`:'-')}</td>
         <td>${Format.date(p.created_at)}</td>
-        <td><button onclick="viewDealerProject('${p.uuid}','${p.project_name.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')" class="btn btn-primary btn-sm">Detay</button></td>
+        <td><button onclick="viewDealerProject('${p.uuid}','${p.project_name.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')" class="btn btn-primary btn-sm">Detay</button></div></td>
       </tr>`).join('')}
     </tbody></table></div>`;
   } catch {}
@@ -1291,7 +1324,7 @@ async function loadPaymentLinks() {
           <td><a href="${l.url}" target="_blank" style="font-size:12px;word-break:break-all">${l.url.length>40?l.url.slice(0,40)+'...' :l.url}</a></td>
           <td>${l.order_uuid?`<code>${l.order_uuid.slice(0,8)}</code>`:'-'}</td>
           <td>${l.expires_at?Format.date(l.expires_at):'✴️ Süresiz'}</td>
-          <td style="display:flex;gap:4px">
+          <td><div style="display:flex;gap:4px;flex-wrap:wrap">
             <button onclick="navigator.clipboard.writeText('${l.url}').then(()=>Toast.success('Kopyalandı!'))" class="btn btn-outline btn-sm">📋 Kopyala</button>
             <button onclick="deletePaymentLink(${l.id})" class="btn btn-danger btn-sm">Sil</button>
           </td>

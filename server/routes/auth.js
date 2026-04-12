@@ -33,6 +33,13 @@ router.post('/register', async (req, res) => {
 
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
     const token = generateToken(user);
+    
+    // Merge cart
+    const sessionId = req.headers['x-session-id'];
+    if (sessionId) {
+      db.prepare('UPDATE carts SET user_id = ? WHERE session_id = ? AND user_id IS NULL').run(user.id, sessionId);
+    }
+
     res.json({ token, user: safeUser(user) });
   } catch (err) {
     console.error(err);
@@ -54,6 +61,13 @@ router.post('/login', async (req, res) => {
     if (!valid) return res.status(401).json({ error: 'Geçersiz e-posta veya şifre' });
 
     const token = generateToken(user);
+    
+    // Merge cart
+    const sessionId = req.headers['x-session-id'];
+    if (sessionId) {
+      db.prepare('UPDATE carts SET user_id = ? WHERE session_id = ? AND user_id IS NULL').run(user.id, sessionId);
+    }
+
     res.json({ token, user: safeUser(user) });
   } catch (err) {
     console.error(err);

@@ -73,6 +73,16 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="customer-order-modal">
+  <div class="modal" style="max-width:800px;width:90%">
+    <div class="modal-header">
+      <h3 class="modal-title">Sipariş Detayı</h3>
+      <button class="modal-close" onclick="closeModal('customer-order-modal')">&times;</button>
+    </div>
+    <div class="modal-body" id="customer-order-body">Yükleniyor...</div>
+  </div>
+</div>
+
 <script src="/js/app.js?v=3"></script>
 <script>
 if (!Auth.isLoggedIn()) {
@@ -124,6 +134,7 @@ async function loadOrders() {
           <div style="text-align:right">
             <span class="badge ${o.status==='completed'?'badge-green':o.status==='cancelled'?'badge-red':'badge-blue'}">${Format.orderStatus(o.status)}</span>
             <div style="font-weight:800;font-size:18px;margin-top:8px">${Format.price(o.total_amount)}</div>
+            <button onclick="viewCustomerOrder('${o.uuid}')" class="btn btn-outline btn-sm mt-2" style="width:100%">Detay & İncele</button>
           </div>
         </div>
         <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px">
@@ -141,6 +152,47 @@ async function loadOrders() {
     `).join('');
   } catch(e) {
     document.getElementById('orders-content').innerHTML = `<p style="color:var(--c-error)">Siparişler yüklenemedi: ${e.message}</p>`;
+  }
+}
+
+async function viewCustomerOrder(uuid) {
+  openModal('customer-order-modal');
+  document.getElementById('customer-order-body').innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
+  try {
+    const o = await API.get(`/orders/${uuid}`);
+    document.getElementById('customer-order-body').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-5);background:var(--c-bg);padding:16px;border-radius:var(--r-md);border:1px solid var(--c-border)">
+        <div>
+          <strong style="color:var(--c-text-muted);font-size:13px;display:block">Teslimat Adresi</strong>
+          <div style="font-size:14px;margin-top:4px;white-space:pre-wrap">${o.shipping_address||'Belirtilmedi'}</div>
+        </div>
+        <div>
+          <strong style="color:var(--c-text-muted);font-size:13px;display:block">Ödeme Yöntemi</strong>
+          <div style="font-size:14px;margin-top:4px">${o.payment_method}</div>
+          <strong style="color:var(--c-text-muted);font-size:13px;display:block;margin-top:8px">Mevcut Durum</strong>
+          <div style="font-size:14px;margin-top:4px">${Format.statusBadge(o.status)}</div>
+        </div>
+      </div>
+      
+      <h4 style="margin:0 0 12px 0;font-weight:700">Sipariş Kalemleri</h4>
+      <div class="table-wrap mb-4"><table><thead><tr><th>Ürün</th><th>Miktar</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>
+        ${(o.items||[]).map(i => `<tr>
+          <td>${i.product_name} ${i.product_sku?`<span class="text-sm text-muted">(${i.product_sku})</span>`:''}</td>
+          <td>${i.quantity}</td>
+          <td>${Format.price(i.unit_price)}</td>
+          <td><strong>${Format.price(i.total_price)}</strong></td>
+        </tr>`).join('')}
+      </tbody></table></div>
+      
+      <div style="text-align:right;font-size:15px;background:var(--c-bg);padding:16px;border-radius:var(--r-md);border:1px solid var(--c-border)">
+        <div style="color:var(--c-text-muted)">Ara Toplam: ${Format.price(o.subtotal)}</div>
+        <div style="color:var(--c-text-muted)">KDV (%20): ${Format.price(o.tax_amount)}</div>
+        ${o.discount_amount > 0 ? `<div style="color:var(--c-success);font-weight:600">İndirim: -${Format.price(o.discount_amount)}</div>` : ''}
+        <div style="font-size:22px;font-weight:800;margin-top:12px;padding-top:12px;border-top:1px solid var(--c-border);color:var(--c-primary)">Genel Toplam: ${Format.price(o.total_amount)}</div>
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('customer-order-body').innerHTML = `<p style="color:var(--c-error)">${e.message}</p>`;
   }
 }
 
