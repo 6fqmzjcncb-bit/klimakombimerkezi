@@ -535,15 +535,18 @@ async function loadDashboard() {
       <div class="stat-card orange"><span class="stat-icon">💰</span><div class="stat-label">Bekleyen İskonto</div><div class="stat-value">${stats.discount_requests.pending}</div></div>
       ${stats.users.pending_dealers>0 ? `<div class="stat-card red" style="cursor:pointer" onclick="showSection('dealers')"><span class="stat-icon">⚠️</span><div class="stat-label">Onay Bekleyen Bayi</div><div class="stat-value">${stats.users.pending_dealers}</div><div class="stat-sub" style="color:var(--c-error)">Onay gerekiyor!</div></div>` : ''}
     `;
-    if (stats.orders.pending_stock>0) { document.getElementById('orders-badge').textContent=stats.orders.pending_stock; document.getElementById('orders-badge').style.display=''; }
-    if (stats.discount_requests.pending>0) { document.getElementById('disc-badge').textContent=stats.discount_requests.pending; document.getElementById('disc-badge').style.display=''; }
-    if (stats.quote_requests.new>0) { document.getElementById('quote-badge').textContent=stats.quote_requests.new; document.getElementById('quote-badge').style.display=''; }
+    if (stats.orders?.pending_stock>0) { const el = document.getElementById('orders-badge'); if (el) { el.textContent=stats.orders.pending_stock; el.style.display=''; } }
+    if (stats.discount_requests?.pending>0) { const el = document.getElementById('disc-badge'); if (el) { el.textContent=stats.discount_requests.pending; el.style.display=''; } }
+    if (stats.quote_requests?.new>0) { const el = document.getElementById('quote-badge'); if (el) { el.textContent=stats.quote_requests.new; el.style.display=''; } }
 
     const orders = await API.get('/orders?limit=5');
-    document.getElementById('recent-orders').innerHTML = `<div class="table-wrap"><table><thead><tr><th>No</th><th>Müşteri</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th></th></tr></thead><tbody>
-      ${orders.slice(0,5).map(o => `<tr><td><code>${o.uuid.slice(0,8)}</code></td><td>${o.user_name||'-'} ${o.user_role==='dealer'?'<span class="badge badge-yellow">Bayi</span>':''}</td><td>${Format.price(o.total_amount)}</td><td>${Format.statusBadge(o.status)}</td><td>${Format.date(o.created_at)}</td><td><button onclick="viewOrder('${o.uuid}')" class="btn btn-outline btn-sm">Detay</button></div></td></tr>`).join('')}
+    document.getElementById('recent-orders').innerHTML = `<div class="table-wrap"><table><thead><tr><th>No</th><th>Müşteri</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead><tbody>
+      ${orders.slice(0,5).map(o => `<tr><td><code>${o.uuid.slice(0,8)}</code></td><td>${o.user_name||'-'} ${o.user_role==='dealer'?'<span class="badge badge-yellow">Bayi</span>':''}</td><td>${Format.price(o.total_amount)}</td><td>${Format.statusBadge(o.status)}</td><td>${Format.date(o.created_at)}</td><td><button onclick="viewOrder('${o.uuid}')" class="btn btn-outline btn-sm">Detay</button></td></tr>`).join('')}
     </tbody></table></div>`;
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    document.getElementById('stats-grid').innerHTML = `<div class="alert alert-error" style="grid-column: span 4">Dashboard verileri yüklenirken bir hata oluştu: ${e.message}</div>`;
+    document.getElementById('recent-orders').innerHTML = `<p class="text-muted text-center">Bağlantı hatası: ${e.message}</p>`;
+  }
 }
 
 // ===== ORDERS =====
