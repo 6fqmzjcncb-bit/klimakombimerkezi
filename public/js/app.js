@@ -446,6 +446,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Simulation Banner
+  if (localStorage.getItem('kkm_simulating_role') && localStorage.getItem('kkm_real_user')) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#ef4444;color:#fff;padding:8px;text-align:center;font-weight:700;font-size:14px;position:relative;z-index:9999;font-family:system-ui';
+    banner.innerHTML = `⚠️ DİKKAT: ŞU ANDA SİMÜLASYON MODUNDASINIZ [Görünüm: ${localStorage.getItem('kkm_simulating_role')}] — <button onclick="unsimulateRole()" style="background:#fff;color:#ef4444;border:none;padding:4px 8px;border-radius:4px;font-weight:700;cursor:pointer;margin-left:12px">Simülasyonu Kapat ve Yöneticiye Dön</button>`;
+    document.body.prepend(banner);
+  }
+
   // Dropdown close on outside click
   document.addEventListener('click', e => {
     if (!e.target.closest('#user-dropdown') && !e.target.closest('[onclick*="user-dropdown"]')) {
@@ -453,3 +461,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// ===== ADMIN SIMULATION ROLE =====
+function simulateRole(role) {
+  if (!Auth.isAdmin() && !localStorage.getItem('kkm_real_user')) return Toast.error('Sadece yöneticiler simülasyon başlatabilir.');
+  const realUser = localStorage.getItem('kkm_real_user') || localStorage.getItem('kkm_user'); // save real user if not already saving
+  localStorage.setItem('kkm_real_user', realUser);
+  const simUser = JSON.parse(realUser);
+  simUser.role = role;
+  localStorage.setItem('kkm_user', JSON.stringify(simUser));
+  localStorage.setItem('kkm_simulating_role', role);
+  Toast.success('Görünüm modu: ' + role);
+  setTimeout(() => window.location.href = role==='dealer'?'/bayi.html':role==='customer'?'/hesabim.html':'/admin.html', 500);
+}
+
+function unsimulateRole() {
+  const realUser = localStorage.getItem('kkm_real_user');
+  if(realUser) {
+    localStorage.setItem('kkm_user', realUser);
+    localStorage.removeItem('kkm_real_user');
+    localStorage.removeItem('kkm_simulating_role');
+    window.location.href = '/admin.html';
+  }
+}

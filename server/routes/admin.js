@@ -88,7 +88,7 @@ router.put('/users/:id', requireAuth, requireRole('admin', 'employee'), async (r
 // GET /api/admin/categories
 router.get('/categories', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
-  res.json(db.prepare('SELECT * FROM categories ORDER BY sort_order, name').all());
+  res.json(db.prepare('SELECT * FROM categories WHERE is_active=1 ORDER BY sort_order, name').all());
 });
 
 router.post('/categories', requireAuth, requireRole('admin', 'employee'), (req, res) => {

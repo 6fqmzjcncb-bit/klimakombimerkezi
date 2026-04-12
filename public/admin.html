@@ -43,6 +43,12 @@
       <button class="sidebar-item" onclick="showSection('settings')" data-section="settings"><span class="icon">⚙️</span> Site Ayarları</button>
 
       <hr style="border:none;border-top:1px solid var(--c-border);margin:8px 16px">
+      <div class="sidebar-section">Görünüm ve Test</div>
+      <button class="sidebar-item" onclick="simulateRole('customer')"><span class="icon">👀</span> Müşteri Şablonu</button>
+      <button class="sidebar-item" onclick="simulateRole('dealer')"><span class="icon">👀</span> Bayi Şablonu</button>
+      <button class="sidebar-item" onclick="simulateRole('employee')"><span class="icon">👀</span> Çalışan Şablonu</button>
+
+      <hr style="border:none;border-top:1px solid var(--c-border);margin:8px 16px">
       <button class="sidebar-item" onclick="Auth.logout()" style="color:var(--c-error)"><span class="icon">🚪</span> Çıkış</button>
     </nav>
   </aside>
@@ -468,6 +474,7 @@
         <div class="form-group"><label class="form-label">Meta Başlık</label><input type="text" class="form-input" id="cat-meta-title"></div>
         <div class="form-group"><label class="form-label">Meta Açıklama</label><textarea class="form-textarea" id="cat-meta-desc" rows="2"></textarea></div>
         <div class="form-group"><label class="form-label">Anahtar Kelimeler</label><input type="text" class="form-input" id="cat-meta-keywords" placeholder="klima, kombi, isitma..."></div>
+        <div class="form-group" style="margin-top:12px"><label style="display:flex;align-items:center;gap:8px;font-weight:600"><input type="checkbox" id="cat-active" checked> Kategoriyi Aktif (Görünür) Yap</label></div>
       </form>
     </div>
     <div class="modal-footer">
@@ -801,6 +808,16 @@ function viewQuoteDetail(r) {
   openModal('quote-detail-modal');
 }
 
+async function updateQuoteStatus(uuid, status) {
+  try {
+    await API.put(`/admin/quotes/${uuid}/status`, { status });
+    Toast.success('Durum başarıyla güncellendi.');
+    loadQuotes();
+  } catch(e) {
+    Toast.error('Hata: ' + e.message);
+  }
+}
+
 // ===== PRICE REQUESTS =====
 async function loadPriceRequests() {
   try {
@@ -812,16 +829,26 @@ async function loadPriceRequests() {
         <td>${r.email}<br>${r.phone||''}</td>
         <td>${r.message||'-'}</td>
         <td>${Format.statusBadge(r.status)}</td>
-        <td>${Format.date(r.created_at)}</td>
-        <td><select onchange="API.put('/admin/price-requests/${r.id}/status',{status:this.value})" class="form-select" style="width:130px">
-          <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
-          <option value="in_review" ${r.status==='in_review'?'selected':''}>İncelemede</option>
-          <option value="replied" ${r.status==='replied'?'selected':''}>Yanıtlandı</option>
-          <option value="closed" ${r.status==='closed'?'selected':''}>Kapalı</option>
-        </select></td>
-      </tr>`).join('')}
-    </tbody></table></div>`;
+          <td>${Format.date(r.created_at)}</td>
+          <td><select onchange="updatePriceReqStatus(${r.id}, this.value)" class="form-select" style="width:130px">
+            <option value="new" ${r.status==='new'?'selected':''}>Yeni</option>
+            <option value="in_review" ${r.status==='in_review'?'selected':''}>İncelemede</option>
+            <option value="replied" ${r.status==='replied'?'selected':''}>Yanıtlandı</option>
+            <option value="closed" ${r.status==='closed'?'selected':''}>Kapalı</option>
+          </select></td>
+        </tr>`).join('')}
+      </tbody></table></div>`;
   } catch(e) {}
+}
+
+async function updatePriceReqStatus(id, status) {
+  try {
+    await API.put(`/admin/price-requests/${id}/status`, { status });
+    Toast.success('Durum başarıyla güncellendi.');
+    loadPriceRequests();
+  } catch(e) {
+    Toast.error('Hata: ' + e.message);
+  }
 }
 
 // ===== PRODUCTS =====
@@ -1039,6 +1066,7 @@ async function openAddCategory() {
   document.getElementById('cat-meta-title').value = '';
   document.getElementById('cat-meta-desc').value = '';
   document.getElementById('cat-meta-keywords').value = '';
+  document.getElementById('cat-active').checked = true;
   openModal('category-modal');
 }
 async function openAddSubCategory(parentId, parentName) {
@@ -1060,6 +1088,7 @@ async function openEditCategory(cat) {
   document.getElementById('cat-meta-title').value = cat.meta_title || '';
   document.getElementById('cat-meta-desc').value = cat.meta_description || '';
   document.getElementById('cat-meta-keywords').value = cat.meta_keywords || '';
+  document.getElementById('cat-active').checked = cat.is_active !== 0;
   openModal('category-modal');
 }
 async function saveCategory() {
@@ -1071,6 +1100,7 @@ async function saveCategory() {
     sort_order: parseInt(document.getElementById('cat-sort-order').value)||0,
     parent_id: document.getElementById('cat-parent-id').value || null,
     filters: JSON.stringify(rawFilters),
+    is_active: document.getElementById('cat-active').checked ? 1 : 0,
     meta_title: document.getElementById('cat-meta-title').value,
     meta_description: document.getElementById('cat-meta-desc').value,
     meta_keywords: document.getElementById('cat-meta-keywords').value
