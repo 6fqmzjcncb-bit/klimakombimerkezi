@@ -438,17 +438,8 @@ function showInstallments(price) {
   openModal('installment-modal');
 }
 
-// Search
+// Search (set up in DOMContentLoaded below)
 let st;
-document.getElementById('search-input').value = searchQuery;
-document.getElementById('search-input').addEventListener('input', e => {
-  clearTimeout(st);
-  st = setTimeout(() => { searchQuery = e.target.value; currentPage = 1; loadProducts(); }, 400);
-});
-
-document.getElementById('filter-instock').addEventListener('change', () => { currentPage=1; loadProducts(); });
-document.getElementById('filter-opportunity').addEventListener('change', (e) => { opportunityOnly = e.target.checked; currentPage=1; loadProducts(); });
-document.getElementById('sort-select').addEventListener('change', () => { currentPage=1; loadProducts(); });
 
 // Single product detail view
 if (viewSlug) {
@@ -572,10 +563,21 @@ async function saveToProject(productId) {
   } catch(e) { Toast.error(e.message); }
 }
 
-if (!viewSlug) {
-  loadFilters();
-  loadProducts();
-}
+document.addEventListener('DOMContentLoaded', () => {
+  const searchEl = document.getElementById('search-input');
+  if (searchEl) {
+    searchEl.value = searchQuery;
+    searchEl.addEventListener('input', e => {
+      clearTimeout(st);
+      st = setTimeout(() => { searchQuery = e.target.value; currentPage = 1; loadProducts(); }, 400);
+    });
+  }
+  document.getElementById('sort-select')?.addEventListener('change', () => { currentPage = 1; loadProducts(); });
+  if (!viewSlug) {
+    loadFilters();
+    loadProducts();
+  }
+});
 </script>
 <div class="modal-overlay" id="installment-modal">
   <div class="modal">
