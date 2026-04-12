@@ -334,26 +334,29 @@ tbody tr:last-child td { border-bottom: none; }
 .category-nav-list li > a:hover,
 .category-nav-list li > button.cat-nav-btn:hover,
 .category-nav-list li.has-dropdown:hover > button.cat-nav-btn { color: var(--c-primary); border-bottom-color: var(--c-primary); }
-.cat-dropdown {
-  position: absolute; top: 100%; left: 0; min-width: 200px;
+.megamenu {
+  position: absolute; top: 100%; left: 0; min-width: 250px;
   background: var(--c-surface); border: 1px solid var(--c-border);
-  border-radius: 0 var(--r-lg) var(--r-lg) var(--r-lg);
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
   box-shadow: var(--shadow-xl); z-index: 200;
-  display: none; flex-direction: column; padding: 8px 0;
+  display: none; padding: 16px 20px; gap: 30px;
+  opacity: 0; transform: translateY(-5px); transition: all 0.2s ease;
 }
-.category-nav-list li.has-dropdown:hover .cat-dropdown { display: flex; }
-.cat-dropdown a {
-  padding: 10px 16px; font-size: 13px; font-weight: 500;
-  color: var(--c-text); text-decoration: none; white-space: nowrap;
-  transition: background var(--t-fast);
+.category-nav-list li.has-dropdown.static-pos { position: static; }
+.category-nav-list li.has-dropdown.static-pos .megamenu { width: 100%; left: 0; right: 0; }
+.category-nav-list li.has-dropdown:hover .megamenu { display: flex; opacity: 1; transform: translateY(0); }
+
+.megamenu-col { display: flex; flex-direction: column; min-width: 160px; }
+.megamenu-col h4 {
+  font-size: 14px; font-weight: 700; color: #dc2626; /* Kırmızı başlık */
+  margin-bottom: 12px; border-bottom: 2px solid #fee2e2; padding-bottom: 6px;
 }
-.cat-dropdown a:hover { background: var(--c-bg); color: var(--c-primary); }
-.cat-dropdown .cat-dropdown-header {
-  padding: 8px 16px; font-size: 11px; font-weight: 700;
-  color: var(--c-text-subtle); text-transform: uppercase; letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--c-border); margin-bottom: 4px;
+.megamenu-col a {
+  padding: 6px 0; font-size: 13px; font-weight: 500; color: var(--c-text);
+  text-decoration: none; display: block; transition: color 0.15s;
 }
-.cat-dropdown-arrow { font-size: 10px; opacity: 0.5; transition: transform var(--t-fast); }
+.megamenu-col a:hover { color: var(--c-primary); }
+.cat-dropdown-arrow { font-size: 10px; opacity: 0.5; transition: transform var(--t-fast); margin-left: 2px; }
 .category-nav-list li.has-dropdown:hover .cat-dropdown-arrow { transform: rotate(180deg); }
 
 /* ===== PRICE LABELS ===== */

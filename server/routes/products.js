@@ -28,12 +28,22 @@ router.get('/', optionalAuth, (req, res) => {
   if (opportunity === '1') { where.push('p.is_opportunity = 1'); }
   if (req.query.stock_status) { where.push('p.stock_status = ?'); params.push(req.query.stock_status); }
 
+  if (req.query.min_price) { where.push('p.base_price >= ?'); params.push(Number(req.query.min_price)); }
+  if (req.query.max_price) { where.push('p.base_price <= ?'); params.push(Number(req.query.max_price)); }
+
   // Dynamic specification filters
-  const reserved = ['category', 'brand', 'search', 'opportunity', 'page', 'limit', 'sort', 'stock_status'];
+  const reserved = ['category', 'brand', 'search', 'opportunity', 'page', 'limit', 'sort', 'stock_status', 'min_price', 'max_price'];
   for (const [k, v] of Object.entries(req.query)) {
     if (!reserved.includes(k) && v) {
-      where.push(`json_extract(p.specifications, ?) = ?`);
-      params.push('$."' + k.replace(/"/g, '') + '"', v);
+      if (Array.isArray(v)) {
+        // e.g. v = ['9000 Btu', '12000 Btu']
+        const placeholders = v.map(() => '?').join(',');
+        where.push(`json_extract(p.specifications, ?) IN (${placeholders})`);
+        params.push('$."' + k.replace(/"/g, '') + '"', ...v);
+      } else {
+        where.push(`json_extract(p.specifications, ?) = ?`);
+        params.push('$."' + k.replace(/"/g, '') + '"', v);
+      }
     }
   }
 
@@ -62,6 +72,33 @@ router.get('/', optionalAuth, (req, res) => {
   const isDealer = req.user?.role === 'dealer';
   const sanitized = products.map(p => sanitizeProduct(p, isDealer));
   res.json({ products: sanitized, total, page: Number(page), pages: Math.ceil(total / limit) });
+});
+
+// GET /api/products/available-filters
+router.get('/meta/available-filters', (req, res) => {
+  const db = getDb();
+  try {
+    const products = db.prepare('SELECT specifications FROM products WHERE is_active = 1').all();
+    const specs = {};
+    products.forEach(p => {
+      try {
+        const obj = JSON.parse(p.specifications || '{}');
+        for (const [k, v] of Object.entries(obj)) {
+          if (v) {
+            if (!specs[k]) specs[k] = new Set();
+            specs[k].add(String(v).trim());
+          }
+        }
+      } catch(e) {}
+    });
+    const result = {};
+    for (const [k, v] of Object.entries(specs)) {
+      result[k] = Array.from(v).sort((a,b) => a.localeCompare(b, undefined, { numeric: true }));
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /api/products/:slug

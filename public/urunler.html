@@ -8,11 +8,22 @@
 <link rel="stylesheet" href="/css/style.css?v=3">
 <style>
 .products-layout { display: grid; grid-template-columns: 240px 1fr; gap: var(--space-8); align-items: start; }
-.filter-panel { background: var(--c-surface); border-radius: var(--r-lg); padding: var(--space-5); border: 1px solid var(--c-border); position: sticky; top: 80px; }
-.filter-section { margin-bottom: var(--space-5); }
-.filter-section h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-text-muted); margin-bottom: var(--space-3); }
-.filter-option { display: flex; align-items: center; gap: var(--space-2); padding: 6px 0; cursor: pointer; font-size: 14px; }
-.filter-option input { accent-color: var(--c-primary); }
+.filter-panel { background: var(--c-surface); border-radius: var(--r-lg); padding: 0; border: 1px solid var(--c-border); position: sticky; top: 80px; overflow: hidden; }
+.filter-section { padding: 14px 16px; border-bottom: 1px solid var(--c-border); }
+.filter-section:last-child { border-bottom: none; }
+.filter-section-title {
+  font-size: 13px; font-weight: 800; color: #dc2626;
+  margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.filter-option { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; font-size: 13px; color: var(--c-text); }
+.filter-option input { accent-color: #dc2626; cursor: pointer; }
+.filter-scroll-list { max-height: 170px; overflow-y: auto; }
+.filter-scroll-list::-webkit-scrollbar { width: 4px; }
+.filter-scroll-list::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 99px; }
+.filter-price-row { display: flex; gap: 8px; }
+.filter-price-input { flex: 1; padding: 7px 10px; border: 1.5px solid var(--c-border); border-radius: var(--r-md); font-size: 13px; background: var(--c-bg); color: var(--c-text); }
+.filter-apply-btn { width: 100%; padding: 12px; background: #dc2626; color: #fff; border: none; border-radius: 0; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+.filter-apply-btn:hover { background: #b91c1c; }
 .products-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-5); gap: var(--space-3); flex-wrap: wrap; }
 .toolbar-left { display: flex; align-items: center; gap: var(--space-3); }
 .sort-select { padding: 8px 12px; border: 1.5px solid var(--c-border); border-radius: var(--r-md); font-size: 14px; }
@@ -85,28 +96,8 @@
   <div class="products-layout">
     <!-- FILTER PANEL -->
     <aside class="filter-panel">
-      <h3 style="font-size:16px;font-weight:700;margin-bottom:var(--space-5)">🔍 Filtrele</h3>
-
-      <div class="filter-section">
-        <h4>Kategoriler</h4>
-        <div id="category-filters"></div>
-      </div>
-
-      <div class="filter-section">
-        <h4>Markalar</h4>
-        <div id="brand-filters"></div>
-      </div>
-
-      <div id="dynamic-filters"></div>
-
-      <div class="filter-section">
-        <h4>Stok Durumu</h4>
-        <label class="filter-option"><input type="checkbox" id="filter-instock"> Stokta Mevcut</label>
-        <label class="filter-option"><input type="checkbox" id="filter-opportunity"> Fırsat Ürünleri</label>
-      </div>
-
-      <hr class="divider">
-      <button onclick="clearFilters()" class="btn btn-ghost btn-full btn-sm">Filtreleri Temizle</button>
+      <div id="filter-sections-container"><div class="filter-section"><p style="font-size:13px;color:var(--c-text-muted);padding:4px 0">Yükleniyor...</p></div></div>
+      <button onclick="applyFilters()" class="filter-apply-btn">Uygula</button>
     </aside>
 
     <!-- PRODUCT AREA -->
@@ -155,65 +146,112 @@ let currentView = 'grid';
 let allCategories = [];
 let allBrands = [];
 
-const params = new URLSearchParams(location.search);
-let activeCategory = params.get('category') || '';
+const _urlParams = new URLSearchParams(location.search);
+let activeCategory = _urlParams.get('category') || '';
 let activeBrand = '';
-let searchQuery = params.get('search') || '';
-let opportunityOnly = params.get('opportunity') === '1';
-let viewSlug = params.get('slug');
+let searchQuery = _urlParams.get('search') || '';
+let opportunityOnly = _urlParams.get('opportunity') === '1';
+let viewSlug = _urlParams.get('slug');
+
+let activeSpecFilters = {};
+let activeMinPrice = '';
+let activeMaxPrice = '';
 
 async function loadFilters() {
   try {
-    const filterStateParams = new URL(location.href).searchParams;
-    let extraFilters = {};
-    
-    [allCategories, allBrands] = await Promise.all([
+    const [allCats, allBrds, specFilters] = await Promise.all([
       fetch('/api/categories').then(r => r.json()),
-      fetch('/api/brands').then(r => r.json())
+      fetch('/api/brands').then(r => r.json()),
+      fetch('/api/products/meta/available-filters').then(r => r.json()).catch(() => ({}))
     ]);
-    const catEl = document.getElementById('category-filters');
-    catEl.innerHTML = `<label class="filter-option"><input type="radio" name="cat" value="" ${!activeCategory?'checked':''}> Tümü</label>`;
-    allCategories.forEach(c => {
-      catEl.innerHTML += `<label class="filter-option"><input type="radio" name="cat" value="${c.slug}" ${activeCategory===c.slug?'checked':''}> ${c.name}</label>`;
-    });
-    catEl.querySelectorAll('input').forEach(i => i.addEventListener('change', () => { activeCategory = i.value; currentPage = 1; loadProducts(); }));
+    allCategories = allCats;
+    allBrands = allBrds;
 
-    const brandEl = document.getElementById('brand-filters');
-    brandEl.innerHTML = `<label class="filter-option"><input type="radio" name="brand" value="" checked> Tümü</label>`;
-    allBrands.forEach(b => {
-      brandEl.innerHTML += `<label class="filter-option"><input type="radio" name="brand" value="${b.slug}"> ${b.name}</label>`;
-    });
-    brandEl.querySelectorAll('input').forEach(i => i.addEventListener('change', () => { activeBrand = i.value; currentPage = 1; loadProducts(); }));
+    const container = document.getElementById('filter-sections-container');
+    let html = '';
 
-    // Dynamic category filters
-    const dynamicEl = document.getElementById('dynamic-filters');
-    if (dynamicEl) {
-      dynamicEl.innerHTML = '';
-      if (activeCategory) {
-        const cat = allCategories.find(c => c.slug === activeCategory);
-        if (cat && cat.filters) {
-          try {
-            const filters = JSON.parse(cat.filters);
-            if (filters.length > 0) {
-              dynamicEl.innerHTML = `<h3 style="font-size:15px;font-weight:700;margin-bottom:12px;margin-top:24px;border-top:1px solid var(--c-border);padding-top:24px">Kategori Özellikleri</h3>`;
-              filters.forEach(fKey => {
-                const fVal = filterStateParams.get(fKey) || '';
-                dynamicEl.innerHTML += `
-                  <div style="margin-bottom:12px">
-                    <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">${fKey}</label>
-                    <input type="text" class="form-input form-input-sm dyn-filter-input" data-key="${fKey}" value="${fVal}" placeholder="${fKey} ara..." style="height:32px;font-size:13px">
-                  </div>
-                `;
-              });
-              dynamicEl.querySelectorAll('.dyn-filter-input').forEach(inp => {
-                inp.addEventListener('change', () => { currentPage = 1; loadProducts(); });
-              });
-            }
-          } catch {}
-        }
-      }
+    // --- Ürün Grubu (top-level categories) ---
+    const roots = allCats.filter(c => !c.parent_id);
+    if (roots.length) {
+      html += `<div class="filter-section">
+        <div class="filter-section-title">Ürün Grubu</div>`;
+      roots.forEach(c => {
+        const checked = activeCategory === c.slug ? 'checked' : '';
+        html += `<label class="filter-option"><input type="radio" name="cat-root" value="${c.slug}" ${checked}> ${c.name}</label>`;
+      });
+      html += `</div>`;
     }
-  } catch {}
+
+    // --- Marka ---
+    if (allBrds.length) {
+      html += `<div class="filter-section">
+        <div class="filter-section-title">Marka</div>
+        <div class="filter-scroll-list">`;
+      allBrds.forEach(b => {
+        const checked = activeBrand === b.slug ? 'checked' : '';
+        html += `<label class="filter-option"><input type="checkbox" name="brand-cb" value="${b.slug}" ${checked}> ${b.name}</label>`;
+      });
+      html += `</div></div>`;
+    }
+
+    // --- Dynamic specification checkboxes from product specs ---
+    const priorityKeys = ['Kapasite', 'Garanti Süresi', 'Özellik'];
+    const displayKeys = [...priorityKeys.filter(k => specFilters[k]), ...Object.keys(specFilters).filter(k => !priorityKeys.includes(k))];
+
+    displayKeys.forEach(key => {
+      const values = specFilters[key];
+      if (!values || values.length === 0) return;
+      const hasScroll = values.length > 6;
+      html += `<div class="filter-section">
+        <div class="filter-section-title">${key}</div>
+        <div ${hasScroll ? 'class="filter-scroll-list"' : ''}>`;
+      values.forEach(val => {
+        const checked = (activeSpecFilters[key] && activeSpecFilters[key].has(val)) ? 'checked' : '';
+        html += `<label class="filter-option"><input type="checkbox" data-spec-key="${key}" value="${val}" ${checked}> ${val}</label>`;
+      });
+      html += `</div></div>`;
+    });
+
+    // --- Price Range ---
+    html += `<div class="filter-section">
+      <div class="filter-section-title">Fiyat Aralığı</div>
+      <div class="filter-price-row">
+        <input type="number" class="filter-price-input" id="filter-min-price" placeholder="Min Fiyat" value="${activeMinPrice}">
+        <input type="number" class="filter-price-input" id="filter-max-price" placeholder="Maks Fiyat" value="${activeMaxPrice}">
+      </div>
+    </div>`;
+
+    container.innerHTML = html;
+
+    // Bind radio category
+    container.querySelectorAll('input[name="cat-root"]').forEach(i =>
+      i.addEventListener('change', () => { activeCategory = i.value; currentPage = 1; loadProducts(); })
+    );
+
+    // Bind brand checkboxes (multi-select or single last one wins)
+    container.querySelectorAll('input[name="brand-cb"]').forEach(i =>
+      i.addEventListener('change', () => {
+        const checked = [...container.querySelectorAll('input[name="brand-cb"]:checked')].map(x => x.value);
+        activeBrand = checked[checked.length - 1] || '';
+        currentPage = 1; loadProducts();
+      })
+    );
+  } catch(e) { console.error('Filter load error:', e); }
+}
+
+function applyFilters() {
+  // Collect spec checkboxes
+  activeSpecFilters = {};
+  document.querySelectorAll('input[data-spec-key]:checked').forEach(el => {
+    const k = el.dataset.specKey;
+    if (!activeSpecFilters[k]) activeSpecFilters[k] = new Set();
+    activeSpecFilters[k].add(el.value);
+  });
+  // Price
+  activeMinPrice = document.getElementById('filter-min-price')?.value || '';
+  activeMaxPrice = document.getElementById('filter-max-price')?.value || '';
+  currentPage = 1;
+  loadProducts();
 }
 
 async function loadProducts() {
@@ -226,12 +264,16 @@ async function loadProducts() {
   if (activeBrand) qs.set('brand', activeBrand);
   if (searchQuery) qs.set('search', searchQuery);
   if (opportunityOnly) qs.set('opportunity', '1');
-  if (document.getElementById('filter-instock').checked) qs.set('stock_status', 'in_stock');
+  if (activeMinPrice) qs.set('min_price', activeMinPrice);
+  if (activeMaxPrice) qs.set('max_price', activeMaxPrice);
 
-  const dynFilters = document.querySelectorAll('.dyn-filter-input');
-  dynFilters.forEach(inp => {
-    if (inp.value.trim()) qs.set(inp.dataset.key, inp.value.trim());
-  });
+  // Spec filters - multi-value
+  for (const [key, valSet] of Object.entries(activeSpecFilters)) {
+    for (const val of valSet) {
+      qs.append(encodeURIComponent(key), val);
+    }
+  }
+
 
   try {
     const { products, total, pages } = await fetch(`/api/products?${qs}`).then(r => r.json());
@@ -364,11 +406,10 @@ function setView(v) {
 
 function clearFilters() {
   activeCategory = ''; activeBrand = ''; searchQuery = ''; opportunityOnly = false;
-  document.querySelectorAll('input[name="cat"]')[0]?.click();
-  document.querySelectorAll('input[name="brand"]')[0]?.click();
-  document.getElementById('filter-instock').checked = false;
-  document.getElementById('filter-opportunity').checked = false;
-  currentPage = 1; loadProducts();
+  activeSpecFilters = {}; activeMinPrice = ''; activeMaxPrice = '';
+  currentPage = 1;
+  loadFilters(); // Re-render filter panel with reset state
+  loadProducts();
 }
 
 async function addToCart(productId, btn) {

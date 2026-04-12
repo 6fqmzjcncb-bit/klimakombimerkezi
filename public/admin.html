@@ -1399,7 +1399,9 @@ async function addBoilerModel() {
 }
 
 // Init
-loadDashboard();
+window.addEventListener('load', () => {
+    showSection('dashboard');
+});
 </script>
 </body>
 </html>

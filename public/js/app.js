@@ -284,16 +284,31 @@ const CategoryMenu = {
       roots.forEach(root => {
         const subs = children.filter(c => c.parent_id === root.id).sort((a,b)=>a.sort_order-b.sort_order);
         if (subs.length > 0) {
-          html += `<li class="has-dropdown">
-            <button class="cat-nav-btn" onclick="window.location.href='/urunler.html?category=${root.id}'">
+          // If we have many subcategories or they have their own children, use static-pos for wide megamenu
+          const hasGrandChildren = subs.some(s => children.some(gc => gc.parent_id === s.id));
+          const liClass = hasGrandChildren || subs.length > 3 ? 'has-dropdown static-pos' : 'has-dropdown';
+          
+          html += `<li class="${liClass}">
+            <button class="cat-nav-btn" onclick="window.location.href='/urunler.html?category=${root.slug}'">
               ${root.name} <span class="cat-dropdown-arrow">▼</span>
             </button>
-            <div class="cat-dropdown">
-              ${subs.map(s => `<a href="/urunler.html?category=${s.id}">${s.name}</a>`).join('')}
-            </div>
-          </li>`;
+            <div class="megamenu">`;
+            
+            subs.forEach(sub => {
+              const grandChildren = children.filter(c => c.parent_id === sub.id).sort((a,b)=>a.sort_order-b.sort_order);
+              html += `<div class="megamenu-col">
+                <h4><a href="/urunler.html?category=${sub.slug}" style="color:inherit;text-decoration:none;border:none;padding:0;display:inline">${sub.name}</a></h4>`;
+              if (grandChildren.length > 0) {
+                grandChildren.forEach(gc => {
+                  html += `<a href="/urunler.html?category=${gc.slug}">${gc.name}</a>`;
+                });
+              }
+              html += `</div>`;
+            });
+            
+          html += `</div></li>`;
         } else {
-          html += `<li><a href="/urunler.html?category=${root.id}">${root.name}</a></li>`;
+          html += `<li><a href="/urunler.html?category=${root.slug}">${root.name}</a></li>`;
         }
       });
       nav.innerHTML = html;
