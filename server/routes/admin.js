@@ -93,16 +93,30 @@ router.get('/categories', requireAuth, requireRole('admin', 'employee'), (req, r
 
 router.post('/categories', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
-  const { name, slug, description, parent_id, sort_order } = req.body;
+  const { name, slug, description, parent_id, sort_order, filters, meta_title, meta_description, meta_keywords } = req.body;
   const safeSlug = slug || slugify(name);
-  const result = db.prepare('INSERT INTO categories (name, slug, description, parent_id, sort_order) VALUES (?,?,?,?,?)').run(name, safeSlug, description || null, parent_id || null, sort_order || 0);
+  const result = db.prepare(`
+    INSERT INTO categories (name, slug, description, parent_id, sort_order, filters, meta_title, meta_description, meta_keywords) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    name, safeSlug, description || null, parent_id || null, sort_order || 0,
+    filters || '[]', meta_title || null, meta_description || null, meta_keywords || null
+  );
   res.json({ id: result.lastInsertRowid });
 });
 
 router.put('/categories/:id', requireAuth, requireRole('admin', 'employee'), (req, res) => {
   const db = getDb();
-  const { name, slug, description, parent_id, sort_order, is_active } = req.body;
-  db.prepare('UPDATE categories SET name=?,slug=?,description=?,parent_id=?,sort_order=?,is_active=? WHERE id=?').run(name, slug, description || null, parent_id || null, sort_order || 0, is_active ? 1 : 0, req.params.id);
+  const { name, slug, description, parent_id, sort_order, is_active, filters, meta_title, meta_description, meta_keywords } = req.body;
+  const safeSlug = slug || slugify(name);
+  db.prepare(`
+    UPDATE categories 
+    SET name=?, slug=?, description=?, parent_id=?, sort_order=?, is_active=?, filters=?, meta_title=?, meta_description=?, meta_keywords=? 
+    WHERE id=?
+  `).run(
+    name, safeSlug, description || null, parent_id || null, sort_order || 0, is_active ? 1 : 0,
+    filters || '[]', meta_title || null, meta_description || null, meta_keywords || null, req.params.id
+  );
   res.json({ success: true });
 });
 

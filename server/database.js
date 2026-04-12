@@ -349,6 +349,12 @@ function initializeSchema() {
   try { db.exec('ALTER TABLE discount_requests ADD COLUMN requested_amount REAL DEFAULT 0.0'); } catch {}
   try { db.exec('ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0.0'); } catch {}
   
+  // Categories expansions
+  try { db.exec('ALTER TABLE categories ADD COLUMN filters TEXT DEFAULT \'[]\''); } catch {}
+  try { db.exec('ALTER TABLE categories ADD COLUMN meta_title TEXT'); } catch {}
+  try { db.exec('ALTER TABLE categories ADD COLUMN meta_description TEXT'); } catch {}
+  try { db.exec('ALTER TABLE categories ADD COLUMN meta_keywords TEXT'); } catch {}
+  
   // Default site settings migration
   [
     {key: 'site_logo', val: ''},
@@ -359,6 +365,7 @@ function initializeSchema() {
   ].forEach(set => {
     db.prepare('INSERT OR IGNORE INTO settings (key,value) VALUES (?,?)').run(set.key, set.val);
   });
+
 
   try {
     db.exec(`CREATE TABLE IF NOT EXISTS user_addresses (

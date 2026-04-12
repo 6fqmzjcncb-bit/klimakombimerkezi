@@ -148,11 +148,11 @@ const Format = {
     }[s] || 'badge-gray';
     return `<span class="badge ${cls}">${Format.statusLabel(s)}</span>`;
   },
-  stockBadge: (status, supplyDays) => {
+  stockBadge: (status) => {
     const map = {
       in_stock: ['in-stock', '✓ Stokta'],
-      out_of_stock: supplyDays ? ['on-request', `⏱ Tedarik: ${supplyDays} Gün`] : ['out-stock', '✗ Stok Yok'],
-      on_request: ['on-request', `⏱ Tedarik: ${supplyDays || 0} Gün - Teklif İsteyiniz`],
+      out_of_stock: ['out-stock', '✗ Stok Yok'],
+      on_request: ['on-request', '⏱ Talep Üzerine / Stok Sorunuz'],
       price_on_request: ['price-req', '💰 Fiyat Sorunuz']
     };
     const [cls, label] = map[status] || ['out-stock', 'Bilinmiyor'];

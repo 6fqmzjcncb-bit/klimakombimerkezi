@@ -26,6 +26,16 @@ router.get('/', optionalAuth, (req, res) => {
   if (brand) { where.push('b.slug = ?'); params.push(brand); }
   if (search) { where.push('(p.name LIKE ? OR p.sku LIKE ? OR p.description LIKE ?)'); params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
   if (opportunity === '1') { where.push('p.is_opportunity = 1'); }
+  if (req.query.stock_status) { where.push('p.stock_status = ?'); params.push(req.query.stock_status); }
+
+  // Dynamic specification filters
+  const reserved = ['category', 'brand', 'search', 'opportunity', 'page', 'limit', 'sort', 'stock_status'];
+  for (const [k, v] of Object.entries(req.query)) {
+    if (!reserved.includes(k) && v) {
+      where.push(`json_extract(p.specifications, '$.' || ?) = ?`);
+      params.push(k, v);
+    }
+  }
 
   const whereClause = where.length ? 'WHERE ' + where.join(' AND ') : '';
   const sortMap = { id: 'p.id', price: 'p.base_price', name: 'p.name' };

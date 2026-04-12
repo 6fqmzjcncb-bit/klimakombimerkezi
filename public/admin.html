@@ -211,20 +211,6 @@
               <div class="form-group"><label class="form-label">Banner 2 URL</label><input type="url" class="form-input" name="site_banner_2" placeholder="https://.../banner2.jpg"></div>
               <div class="form-group"><label class="form-label">Banner 3 URL</label><input type="url" class="form-input" name="site_banner_3" placeholder="https://.../banner3.jpg"></div>
               <button type="submit" class="btn btn-primary mt-4">Kaydet</button>
-            </form>
-          </div></div>
-          <!-- Kâr Marjı Ayarları -->
-          <div class="card"><div class="card-body">
-            <h4 style="font-weight:700;margin-bottom:var(--space-4)">💰 Varsayılan Kâr Marjı</h4>
-            <div class="alert alert-info" style="font-size:13px">Yeni ürün eklerken otomatik hesaplama için kullanılır. Ürün bazında değiştirilebilir.</div>
-            <form id="margin-settings-form">
-              <div class="form-group"><label class="form-label">Perakende Kâr Marjı (%)</label><input type="number" class="form-input" name="retail_margin" step="0.1"></div>
-              <div class="form-group"><label class="form-label">Bayi Nakit Kâr Marjı (%)</label><input type="number" class="form-input" name="dealer_cash_margin" step="0.1"></div>
-              <div class="form-group"><label class="form-label">Bayi K.Kartı Kâr Marjı (%)</label><input type="number" class="form-input" name="dealer_card_margin" step="0.1"></div>
-              <button type="submit" class="btn btn-primary">Kaydet</button>
-            </form>
-          </div></div>
-        </div>
         <!-- Ödeme Linki Yönetimi -->
         <div class="card" style="margin-top:var(--space-6)"><div class="card-body">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
@@ -274,7 +260,8 @@
     <div class="modal-body">
       <div class="tabs" id="product-tabs" style="margin-bottom:var(--space-4)">
         <button class="tab active" data-tab="ptab-main" onclick="switchProductTab('main')">📦 Temel Bilgiler</button>
-        <button class="tab" data-tab="ptab-pricing" onclick="switchProductTab('pricing')">💰 Fiyatlandırma</button>
+        <button class="tab" data-tab="ptab-specs" onclick="switchProductTab('specs')">🔧 Özellikler / Filtreler</button>
+        <button class="tab" data-tab="ptab-pricing" onclick="switchProductTab('pricing')">💰 Fiyat</button>
         <button class="tab" data-tab="ptab-media" onclick="switchProductTab('media')">🖼️ Görseller</button>
         <button class="tab" data-tab="ptab-seo" onclick="switchProductTab('seo')">&#128270; SEO</button>
       </div>
@@ -289,7 +276,7 @@
             <div class="form-group"><label class="form-label">Marka</label><select class="form-select" id="p-brand"><option value="">Seçin...</option></select></div>
             <div class="form-group"><label class="form-label">Stok Durumu</label><select class="form-select" id="p-stock-status"><option value="in_stock">Stokta Var</option><option value="out_of_stock">Stok Yok</option><option value="on_request">Tedarik/Teklif</option><option value="price_on_request">Fiyat Sorunuz</option></select></div>
             <div class="form-group"><label class="form-label">Stok Miktarı</label><input type="number" class="form-input" id="p-qty" value="0"></div>
-            <div class="form-group"><label class="form-label">Tedarik Süresi (gün)</label><input type="number" class="form-input" id="p-supply" value="0"></div>
+            <div class="form-group" style="display:none"><label class="form-label">Tedarik Süresi (gün)</label><input type="number" class="form-input" id="p-supply" value="0"></div>
           </div>
           <div class="form-group"><label class="form-label">Kısa Açıklama</label><textarea class="form-textarea" id="p-short-desc" rows="2"></textarea></div>
           <div class="form-group"><label class="form-label">Uzun Açıklama</label><textarea class="form-textarea" id="p-desc" rows="4"></textarea></div>
@@ -299,6 +286,13 @@
             <label class="filter-option"><input type="checkbox" id="p-bundle"> Bileşenli Paket</label>
             <label class="filter-option"><input type="checkbox" id="p-active" checked> Aktif</label>
           </div>
+        </div>
+
+        <!-- TAB: SPECS -->
+        <div id="ptab-specs" style="display:none">
+          <div class="alert alert-info mb-4" style="font-size:13px">Kategori seçtiğinizde, kategoriye ait filtreler (Kapasite, Renk vb.) otomatik olarak aşağıda belirecektir. Ekstra özellikler de ekleyebilirsiniz.</div>
+          <div id="p-specs-container"></div>
+          <button type="button" class="btn btn-outline btn-sm mt-4" onclick="addSpecRow()">+ Ekstra Özellik Ekle</button>
         </div>
 
         <!-- TAB: PRICING -->
@@ -459,10 +453,21 @@
     <div class="modal-body">
       <form id="cat-form">
         <input type="hidden" id="edit-cat-id">
-        <input type="hidden" id="cat-parent-id">
+        <div class="form-group">
+          <label class="form-label">Üst Kategori</label>
+          <select class="form-select" id="cat-parent-id">
+            <option value="">-- Ana Kategori (Yok) --</option>
+          </select>
+        </div>
         <div class="form-group"><label class="form-label">Kategori Adı *</label><input type="text" class="form-input" id="cat-name" required></div>
         <div class="form-group"><label class="form-label">Slug (boş bırakırsan otomatik)</label><input type="text" class="form-input" id="cat-slug" placeholder="ornek-kategori"></div>
+        <div class="form-group"><label class="form-label">Filtreler (Özellikler)</label><input type="text" class="form-input" id="cat-filters" placeholder="Kapasite, Renk, Marka (Virgülle ayırın)"></div>
         <div class="form-group"><label class="form-label">Sıra Numarası</label><input type="number" class="form-input" id="cat-sort-order" value="0"></div>
+        <hr class="divider">
+        <strong style="margin-bottom:8px;display:block">SEO (Arama Motoru) Bilgileri</strong>
+        <div class="form-group"><label class="form-label">Meta Başlık</label><input type="text" class="form-input" id="cat-meta-title"></div>
+        <div class="form-group"><label class="form-label">Meta Açıklama</label><textarea class="form-textarea" id="cat-meta-desc" rows="2"></textarea></div>
+        <div class="form-group"><label class="form-label">Anahtar Kelimeler</label><input type="text" class="form-input" id="cat-meta-keywords" placeholder="klima, kombi, isitma..."></div>
       </form>
     </div>
     <div class="modal-footer">
@@ -805,6 +810,26 @@ async function loadAdminProducts() {
   } catch(e) {}
 }
 
+function renderSpecs(specs = {}) {
+  const container = document.getElementById('p-specs-container');
+  container.innerHTML = '';
+  Object.entries(specs).forEach(([k, v]) => {
+    addSpecRow(k, v);
+  });
+}
+
+function addSpecRow(key = '', val = '') {
+  const div = document.createElement('div');
+  div.className = 'spec-row';
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 40px;gap:8px;margin-bottom:8px;align-items:end';
+  div.innerHTML = `
+    <div class="form-group"><label class="form-label">Özellik Adı</label><input type="text" class="form-input spec-key" value="${key.replace(/"/g,'&quot;')}"></div>
+    <div class="form-group"><label class="form-label">Değer</label><input type="text" class="form-input spec-val" value="${val.replace(/"/g,'&quot;')}"></div>
+    <div class="form-group"><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.spec-row').remove()">&times;</button></div>
+  `;
+  document.getElementById('p-specs-container').appendChild(div);
+}
+
 let categories = [], brands = [];
 async function openAddProduct() {
   editingProductId = null;
@@ -819,6 +844,22 @@ async function openAddProduct() {
     if (s.dealer_card_margin) document.getElementById('p-dealer-card-margin').value = s.dealer_card_margin;
   } catch {}
   await loadCatBrandSelects();
+  
+  // Attach category change listener for dynamic filters
+  document.getElementById('p-category').onchange = (e) => {
+    const cid = e.target.value;
+    const cat = categories.find(c=>c.id == cid);
+    let specs = {};
+    if (cat && cat.filters) {
+      try {
+        const filters = JSON.parse(cat.filters);
+        filters.forEach(f => { specs[f] = ''; });
+      } catch{}
+    }
+    renderSpecs(specs);
+  };
+  
+  renderSpecs({});
   openModal('product-modal');
 }
 async function openEditProduct(p) {
@@ -846,6 +887,14 @@ async function openEditProduct(p) {
   document.getElementById('p-active').checked=!!p.is_active;
   document.getElementById('p-meta-title').value=p.meta_title||'';
   document.getElementById('p-meta-desc').value=p.meta_description||'';
+  
+  // Load specs
+  let specs = {};
+  if (p.specifications) {
+    try { specs = typeof p.specifications === 'string' ? JSON.parse(p.specifications) : p.specifications; } catch {}
+  }
+  renderSpecs(specs);
+  
   openModal('product-modal');
 }
 async function loadCatBrandSelects() {
@@ -854,6 +903,15 @@ async function loadCatBrandSelects() {
   document.getElementById('p-brand').innerHTML='<option value="">Seçin...</option>'+brands.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
 }
 async function saveProduct() {
+  // Collect specs
+  const specDivs = document.querySelectorAll('.spec-row');
+  const specifications = {};
+  specDivs.forEach(div => {
+    const key = div.querySelector('.spec-key').value.trim();
+    const val = div.querySelector('.spec-val').value.trim();
+    if (key && val) specifications[key] = val;
+  });
+
   const imgRaw = document.getElementById('p-images').value;
   const images = imgRaw.includes('\n')
     ? imgRaw.split('\n').map(s=>s.trim()).filter(Boolean)
@@ -869,7 +927,6 @@ async function saveProduct() {
     dealer_card_price: parseFloat(document.getElementById('p-dealer-card').value)||0,
     stock_status: document.getElementById('p-stock-status').value,
     stock_quantity: parseInt(document.getElementById('p-qty').value)||0,
-    supply_days: parseInt(document.getElementById('p-supply').value)||0,
     short_description: document.getElementById('p-short-desc').value,
     description: document.getElementById('p-desc').value,
     images,
@@ -878,7 +935,8 @@ async function saveProduct() {
     is_bundle: document.getElementById('p-bundle').checked,
     is_active: document.getElementById('p-active').checked,
     meta_title: document.getElementById('p-meta-title').value||null,
-    meta_description: document.getElementById('p-meta-desc').value||null
+    meta_description: document.getElementById('p-meta-desc').value||null,
+    specifications: specifications
   };
   try {
     if (editingProductId) await API.put(`/products/${editingProductId}`, payload);
@@ -924,6 +982,11 @@ async function loadCategories() {
     const cats = await API.get('/admin/categories');
     const roots = cats.filter(c=>!c.parent_id);
     const children = cats.filter(c=>!!c.parent_id);
+    
+    // Update parent select options
+    const pSelect = document.getElementById('cat-parent-id');
+    pSelect.innerHTML = '<option value="">-- Ana Kategori (Yok) --</option>' + roots.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+
     const rows = [];
     roots.sort((a,b)=>a.sort_order-b.sort_order).forEach(root => {
       rows.push(`<tr style="background:var(--c-surface)"><td><strong>${root.name}</strong></td><td><code>${root.slug}</code></td><td>-</td><td>${root.sort_order}</td><td style="display:flex;gap:4px"><button onclick="openEditCategory(${JSON.stringify(root).replace(/"/g,'&quot;')})" class="btn btn-outline btn-sm">Düzenle</button><button onclick="openAddSubCategory(${root.id},'${root.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" class="btn btn-outline btn-sm">+ Alt</button><button onclick="deleteCategory(${root.id})" class="btn btn-danger btn-sm">Sil</button></td></tr>`);
@@ -939,14 +1002,16 @@ async function openAddCategory() {
   document.getElementById('cat-form').reset();
   document.getElementById('cat-parent-id').value = '';
   document.getElementById('edit-cat-id').value = '';
+  document.getElementById('cat-filters').value = '';
+  document.getElementById('cat-meta-title').value = '';
+  document.getElementById('cat-meta-desc').value = '';
+  document.getElementById('cat-meta-keywords').value = '';
   openModal('category-modal');
 }
 async function openAddSubCategory(parentId, parentName) {
+  openAddCategory();
   document.getElementById('cat-modal-title').textContent = `"${parentName}" Alt Kategorisi`;
-  document.getElementById('cat-form').reset();
   document.getElementById('cat-parent-id').value = parentId;
-  document.getElementById('edit-cat-id').value = '';
-  openModal('category-modal');
 }
 async function openEditCategory(cat) {
   document.getElementById('cat-modal-title').textContent = 'Kategori Düzenle';
@@ -955,15 +1020,27 @@ async function openEditCategory(cat) {
   document.getElementById('cat-slug').value = cat.slug || '';
   document.getElementById('cat-sort-order').value = cat.sort_order || 0;
   document.getElementById('cat-parent-id').value = cat.parent_id || '';
+  
+  let fltMap = [];
+  if (cat.filters) { try { fltMap = JSON.parse(cat.filters); } catch{} }
+  document.getElementById('cat-filters').value = fltMap.join(', ');
+  document.getElementById('cat-meta-title').value = cat.meta_title || '';
+  document.getElementById('cat-meta-desc').value = cat.meta_description || '';
+  document.getElementById('cat-meta-keywords').value = cat.meta_keywords || '';
   openModal('category-modal');
 }
 async function saveCategory() {
   const id = document.getElementById('edit-cat-id').value;
+  const rawFilters = document.getElementById('cat-filters').value.split(',').map(f=>f.trim()).filter(Boolean);
   const payload = {
     name: document.getElementById('cat-name').value,
     slug: document.getElementById('cat-slug').value,
     sort_order: parseInt(document.getElementById('cat-sort-order').value)||0,
-    parent_id: document.getElementById('cat-parent-id').value || null
+    parent_id: document.getElementById('cat-parent-id').value || null,
+    filters: JSON.stringify(rawFilters),
+    meta_title: document.getElementById('cat-meta-title').value,
+    meta_description: document.getElementById('cat-meta-desc').value,
+    meta_keywords: document.getElementById('cat-meta-keywords').value
   };
   try {
     if (id) await API.put(`/admin/categories/${id}`, payload);

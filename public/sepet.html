@@ -252,18 +252,18 @@ function renderAddresses(selectedId = null) {
   }
 
   container.innerHTML = `
-    <div style="display:grid;gap:var(--space-3);margin-bottom:var(--space-4)">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:var(--space-4);margin-bottom:var(--space-4)">
       ${userAddresses.map(a => `
-        <label class="address-card ${a.id === selectedId ? 'selected' : ''}" style="display:flex;gap:var(--space-3);padding:var(--space-4);border:2px solid ${a.id === selectedId ? 'var(--c-primary)' : 'var(--c-border)'};border-radius:var(--r-md);cursor:pointer;background:${a.id === selectedId ? 'var(--c-primary-light)' : '#fff'}">
+        <label class="address-card ${a.id === selectedId ? 'selected' : ''}" style="display:flex;gap:var(--space-3);padding:var(--space-4);border:2px solid ${a.id === selectedId ? 'var(--c-primary)' : 'var(--c-border)'};border-radius:var(--r-md);cursor:pointer;background:${a.id === selectedId ? 'var(--c-primary-light)' : '#fff'};transition:all 0.2s">
           <input type="radio" name="checkout_address" value="${a.id}" ${a.id === selectedId ? 'checked' : ''} onchange="renderAddresses(${a.id})" style="margin-top:4px">
           <div style="flex:1">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-              <strong style="color:var(--c-primary)">${a.title}</strong>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <strong style="color:var(--c-primary);font-size:15px">${a.title}</strong>
               ${a.is_default ? '<span class="badge badge-green" style="font-size:10px">Varsayılan</span>' : ''}
             </div>
-            <div style="font-size:14px;font-weight:600">${a.name}</div>
-            <div style="font-size:13px;color:var(--c-text-muted);margin-top:4px">${a.address}</div>
-            <div style="font-size:13px;color:var(--c-text-muted)">${a.city} ${a.district ? '/ ' + a.district : ''}</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px">${a.name}</div>
+            <div style="font-size:13px;color:var(--c-text-muted);line-height:1.4">${a.address}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--c-text);margin-top:6px">${a.city} ${a.district ? '/ ' + a.district : ''}</div>
           </div>
         </label>
       `).join('')}
